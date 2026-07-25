@@ -1,0 +1,16 @@
+<resources>
+    <string name="home_wordmark">MISE</string>
+    <string name="home_tagline">Scan · Understand · Cook</string>
+    <string name="home_headline">Know what you\'re buying, before you buy it.</string>
+    <string name="home_profile_initials">AK</string>
+    <string name="home_profile_action">Open profile</string>
+    <string name="home_profile_coming_soon">Profile — coming soon</string>
+    <string name="home_scan_title">Scan a product</string>
+    <string name="home_scan_subtitle">Barcode → nutrients → recipes</string>
+    <string name="home_saved_title">Saved recipes</string>
+    <string name="home_saved_empty">Nothing saved yet</string>
+    <string name="home_saved_one">1 recipe ready</string>
+    <string name="home_saved_many">%1$d recipes ready</string>
+    <string name="home_history_title">Recent scans</string>
+    <string name="home_history_count">%1$d →</string>
+</resources>

@@ -1,0 +1,25 @@
+<resources>
+    <string name="graph_title">Combination graph</string>
+    <string name="graph_count_one">1 product linked</string>
+    <string name="graph_count_many">%1$d products linked</string>
+    <string name="graph_back">Back</string>
+    <string name="graph_scan_more">Scan another product</string>
+    <string name="graph_find_recipes">Find recipes (%1$d)</string>
+    <string name="graph_saved">Saved recipes</string>
+    <string name="graph_profile_initials">AK</string>
+    <string name="graph_profile_action">Open profile</string>
+    <string name="graph_profile_coming_soon">Profile — coming soon</string>
+    <string name="graph_catalogue_exhausted">No more products in the catalogue</string>
+    <string name="graph_hint">drag nodes · tap empty space to add a product</string>
+    <string name="graph_empty">Nothing scanned yet — tap anywhere to add a product.</string>
+
+    <string name="product_incomplete_data">⚠ Incomplete data — some nutrients estimated</string>
+    <string name="product_alternatives">Healthier alternatives</string>
+    <string name="product_cook">What can I cook?</string>
+    <string name="product_add">+ Add</string>
+    <string name="product_remove">×</string>
+
+    <string name="history_title">History</string>
+    <string name="history_clear">clear</string>
+    <string name="history_empty">No scans yet.</string>
+</resources>

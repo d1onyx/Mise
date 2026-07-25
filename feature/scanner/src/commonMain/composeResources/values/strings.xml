@@ -1,0 +1,20 @@
+<resources>
+    <string name="scan_title">Scanning</string>
+    <string name="scan_title_resolving">Resolving</string>
+    <string name="scan_back">Back</string>
+    <string name="scan_hint_primary">Point at a barcode</string>
+    <string name="scan_hint_secondary">Hold steady · auto-detects</string>
+    <string name="scan_capture">Capture scan</string>
+    <string name="scan_manual_entry">Enter barcode manually</string>
+    <string name="scan_manual_placeholder">Barcode digits</string>
+    <string name="scan_manual_submit">Look up barcode</string>
+    <string name="scan_manual_cancel">Cancel</string>
+    <string name="scan_simulate_not_found">simulate “not found” →</string>
+    <string name="scan_camera_starting">Starting the camera…</string>
+    <string name="scan_camera_denied">Camera access is off — use “Capture scan” or type a barcode below.</string>
+
+    <string name="not_found_title">Product not found</string>
+    <string name="not_found_message">Barcode %1$s isn\'t in the catalogue yet. Try again, or add it manually.</string>
+    <string name="not_found_retry">Retry scan</string>
+    <string name="not_found_home">back to home</string>
+</resources>

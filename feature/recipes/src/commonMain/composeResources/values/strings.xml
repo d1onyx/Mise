@@ -1,0 +1,37 @@
+<resources>
+    <string name="recipes_title">Recipes</string>
+    <string name="recipes_search_placeholder">Search recipes</string>
+    <string name="recipes_empty">No recipes match those filters.</string>
+    <string name="saved_title">Saved</string>
+    <string name="saved_search_placeholder">Search saved</string>
+    <string name="saved_empty">Nothing saved matches those filters.</string>
+    <string name="recipes_minutes">%1$d min</string>
+
+    <string name="filter_group_difficulty">Difficulty</string>
+    <string name="filter_group_category">Category</string>
+    <string name="filter_group_time">Time</string>
+    <string name="difficulty_easy">Easy</string>
+    <string name="difficulty_medium">Medium</string>
+    <string name="difficulty_hard">Hard</string>
+    <string name="time_under_15">&lt; 15 min</string>
+    <string name="time_under_30">&lt; 30 min</string>
+    <string name="time_over_30">30 min +</string>
+
+    <string name="recipe_back">Back</string>
+    <string name="recipe_save">Save recipe</string>
+    <string name="recipe_unsave">Remove from saved</string>
+    <string name="recipe_ingredients">Ingredients</string>
+    <string name="recipe_steps">Steps · %1$d</string>
+    <string name="recipe_timer_minutes">◷ timer %1$d min</string>
+    <string name="recipe_timer_seconds">◷ timer %1$ds</string>
+    <string name="recipe_start_cooking">Start cooking mode</string>
+
+    <string name="cooking_step_counter">Step %1$d / %2$d</string>
+    <string name="cooking_exit">Exit cooking mode</string>
+    <string name="cooking_back">Back</string>
+    <string name="cooking_next">Next step</string>
+    <string name="cooking_finish">Finish ✓</string>
+    <string name="cooking_timer_start">Start</string>
+    <string name="cooking_timer_pause">Pause</string>
+    <string name="cooking_timer_resume">Resume</string>
+</resources>

@@ -1,0 +1,129 @@
+[
+  {
+    "id": "bowl",
+    "name": "Banana Oat Breakfast Bowl",
+    "minutes": 10,
+    "difficulty": "Easy",
+    "categories": ["Breakfast", "Vegetarian"],
+    "productIds": ["oats", "banana"],
+    "description": "Creamy stovetop oats topped with caramelized banana — a 10-minute breakfast that keeps you full till lunch.",
+    "ingredients": [
+      { "quantity": "50 g", "name": "Rolled oats" },
+      { "quantity": "200 ml", "name": "Milk or water" },
+      { "quantity": "1", "name": "Ripe banana" },
+      { "quantity": "1 tsp", "name": "Honey (optional)" },
+      { "quantity": "Pinch", "name": "Cinnamon" }
+    ],
+    "steps": [
+      { "title": "Simmer the oats", "description": "Combine oats and milk in a small pot. Bring to a gentle simmer over medium heat.", "timerSeconds": 120 },
+      { "title": "Stir until creamy", "description": "Stir often for 3–4 minutes until thick and creamy.", "timerSeconds": 180 },
+      { "title": "Slice the banana", "description": "While the oats cook, slice the banana into thin rounds." },
+      { "title": "Assemble & finish", "description": "Pour oats into a bowl, top with banana, a drizzle of honey and a pinch of cinnamon." }
+    ]
+  },
+  {
+    "id": "overnight",
+    "name": "Overnight Oats & Berries",
+    "minutes": 5,
+    "difficulty": "Easy",
+    "categories": ["Breakfast", "Vegetarian"],
+    "productIds": ["oats", "yogurt", "banana"],
+    "description": "No cooking required — layer it at night, wake up to a ready breakfast.",
+    "ingredients": [
+      { "quantity": "50 g", "name": "Rolled oats" },
+      { "quantity": "120 g", "name": "Greek yogurt" },
+      { "quantity": "100 ml", "name": "Milk" },
+      { "quantity": "1 tbsp", "name": "Chia seeds" },
+      { "quantity": "1 handful", "name": "Berries" }
+    ],
+    "steps": [
+      { "title": "Mix the base", "description": "Stir oats, yogurt, milk and chia together in a jar." },
+      { "title": "Layer & chill", "description": "Top with berries, seal and refrigerate overnight (8 h)." },
+      { "title": "Serve", "description": "Give it a stir and eat cold, or warm briefly if you prefer." }
+    ]
+  },
+  {
+    "id": "pancakes",
+    "name": "2-Ingredient Banana Oat Pancakes",
+    "minutes": 20,
+    "difficulty": "Medium",
+    "categories": ["Breakfast", "Dessert"],
+    "productIds": ["oats", "banana"],
+    "description": "Fluffy flourless pancakes from just banana and oats — naturally sweet.",
+    "ingredients": [
+      { "quantity": "1", "name": "Ripe banana" },
+      { "quantity": "40 g", "name": "Rolled oats" },
+      { "quantity": "1", "name": "Egg" },
+      { "quantity": "1/2 tsp", "name": "Baking powder" }
+    ],
+    "steps": [
+      { "title": "Blend", "description": "Blend banana, oats, egg and baking powder into a smooth batter.", "timerSeconds": 60 },
+      { "title": "Heat the pan", "description": "Warm a non-stick pan over medium-low with a little oil." },
+      { "title": "Cook the pancakes", "description": "Pour small rounds, cook 2 min per side until golden.", "timerSeconds": 120 },
+      { "title": "Serve warm", "description": "Stack and top with fruit or yogurt." }
+    ]
+  },
+  {
+    "id": "savory",
+    "name": "Savory Oat & Veg Porridge",
+    "minutes": 25,
+    "difficulty": "Medium",
+    "categories": ["Vegetarian", "Lunch"],
+    "productIds": ["oats"],
+    "description": "Oats aren't only for breakfast — a savory, cozy bowl with vegetables.",
+    "ingredients": [
+      { "quantity": "50 g", "name": "Rolled oats" },
+      { "quantity": "300 ml", "name": "Vegetable stock" },
+      { "quantity": "1 handful", "name": "Spinach" },
+      { "quantity": "1", "name": "Egg" },
+      { "quantity": "To taste", "name": "Salt & pepper" }
+    ],
+    "steps": [
+      { "title": "Simmer in stock", "description": "Cook oats in vegetable stock for 5 minutes.", "timerSeconds": 300 },
+      { "title": "Add greens", "description": "Stir in spinach until wilted." },
+      { "title": "Top with egg", "description": "Add a soft-boiled or fried egg on top, season and serve." }
+    ]
+  },
+  {
+    "id": "balls",
+    "name": "Peanut Oat Energy Balls",
+    "minutes": 15,
+    "difficulty": "Easy",
+    "categories": ["Snack", "Vegetarian"],
+    "productIds": ["oats", "honey"],
+    "description": "No-bake bites for a quick, portable snack.",
+    "ingredients": [
+      { "quantity": "80 g", "name": "Rolled oats" },
+      { "quantity": "3 tbsp", "name": "Peanut butter" },
+      { "quantity": "2 tbsp", "name": "Honey" },
+      { "quantity": "1 tbsp", "name": "Cacao nibs" }
+    ],
+    "steps": [
+      { "title": "Mix", "description": "Combine all ingredients into a sticky dough." },
+      { "title": "Roll", "description": "Roll into small balls." },
+      { "title": "Chill", "description": "Refrigerate 30 minutes to firm up.", "timerSeconds": 1800 }
+    ]
+  },
+  {
+    "id": "meatballs",
+    "name": "Chicken & Oat Meatballs",
+    "minutes": 35,
+    "difficulty": "Hard",
+    "categories": ["Meat", "Dinner"],
+    "productIds": ["oats"],
+    "description": "Oats replace breadcrumbs for tender, high-protein meatballs.",
+    "ingredients": [
+      { "quantity": "400 g", "name": "Ground chicken" },
+      { "quantity": "40 g", "name": "Rolled oats" },
+      { "quantity": "1", "name": "Egg" },
+      { "quantity": "1 clove", "name": "Garlic" },
+      { "quantity": "To taste", "name": "Herbs & salt" }
+    ],
+    "steps": [
+      { "title": "Mix the mince", "description": "Combine chicken, oats, egg, minced garlic and seasoning." },
+      { "title": "Shape", "description": "Roll into even meatballs." },
+      { "title": "Sear", "description": "Brown in a hot pan on all sides.", "timerSeconds": 300 },
+      { "title": "Finish in sauce", "description": "Simmer in tomato sauce until cooked through, 15 min.", "timerSeconds": 900 }
+    ]
+  }
+]

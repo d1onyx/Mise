@@ -1,0 +1,126 @@
+[
+  {
+    "id": "oats",
+    "barcode": "5010026551017",
+    "name": "Rolled Oats",
+    "category": "Grains",
+    "score": 82,
+    "accentColor": "#C8FF4D",
+    "initial": "O",
+    "summary": "High in fiber and plant protein, almost no sugar. A great slow-energy base.",
+    "hasCompleteData": true,
+    "nutrients": [
+      { "name": "Energy", "amount": "389", "unit": "kcal" },
+      { "name": "Carbs", "amount": "66", "unit": "g" },
+      { "name": "Fiber", "amount": "10", "unit": "g" },
+      { "name": "Protein", "amount": "13", "unit": "g" },
+      { "name": "Fat", "amount": "7", "unit": "g" },
+      { "name": "Sugar", "amount": "1", "unit": "g" }
+    ],
+    "alternatives": []
+  },
+  {
+    "id": "banana",
+    "barcode": "4011200296908",
+    "name": "Banana",
+    "category": "Fruit",
+    "score": 76,
+    "accentColor": "#FFE24E",
+    "initial": "B",
+    "summary": "Natural sugars and potassium. Great pre-workout, but watch portions.",
+    "hasCompleteData": true,
+    "nutrients": [
+      { "name": "Energy", "amount": "89", "unit": "kcal" },
+      { "name": "Carbs", "amount": "23", "unit": "g" },
+      { "name": "Fiber", "amount": "2.6", "unit": "g" },
+      { "name": "Protein", "amount": "1.1", "unit": "g" },
+      { "name": "Fat", "amount": "0.3", "unit": "g" },
+      { "name": "Sugar", "amount": "12", "unit": "g" }
+    ],
+    "alternatives": []
+  },
+  {
+    "id": "yogurt",
+    "barcode": "5411188119098",
+    "name": "Greek Yogurt",
+    "category": "Dairy",
+    "score": 88,
+    "accentColor": "#4EE9E0",
+    "initial": "Y",
+    "summary": "Excellent protein-to-calorie ratio and probiotics. Low sugar when plain.",
+    "hasCompleteData": true,
+    "nutrients": [
+      { "name": "Energy", "amount": "59", "unit": "kcal" },
+      { "name": "Carbs", "amount": "3.6", "unit": "g" },
+      { "name": "Protein", "amount": "10", "unit": "g" },
+      { "name": "Fat", "amount": "0.4", "unit": "g" },
+      { "name": "Sugar", "amount": "3.2", "unit": "g" },
+      { "name": "Calcium", "amount": "110", "unit": "mg" }
+    ],
+    "alternatives": []
+  },
+  {
+    "id": "almonds",
+    "barcode": "8410179000107",
+    "name": "Almonds",
+    "category": "Nuts",
+    "score": 71,
+    "accentColor": "#C89B6A",
+    "initial": "A",
+    "summary": "Rich in healthy fats, fiber and vitamin E. Calorie-dense — keep to a handful.",
+    "hasCompleteData": true,
+    "nutrients": [
+      { "name": "Energy", "amount": "579", "unit": "kcal" },
+      { "name": "Carbs", "amount": "22", "unit": "g" },
+      { "name": "Fiber", "amount": "12", "unit": "g" },
+      { "name": "Protein", "amount": "21", "unit": "g" },
+      { "name": "Fat", "amount": "49", "unit": "g" },
+      { "name": "Sugar", "amount": "4.4", "unit": "g" }
+    ],
+    "alternatives": []
+  },
+  {
+    "id": "honey",
+    "barcode": "3175681800014",
+    "name": "Honey",
+    "category": "Sweetener",
+    "score": 44,
+    "accentColor": "#FFC24E",
+    "initial": "H",
+    "summary": "Almost pure sugar. Fine as a drizzle, but not a health food.",
+    "hasCompleteData": false,
+    "nutrients": [
+      { "name": "Energy", "amount": "304", "unit": "kcal" },
+      { "name": "Carbs", "amount": "82", "unit": "g" },
+      { "name": "Sugar", "amount": "82", "unit": "g" },
+      { "name": "Protein", "amount": "0.3", "unit": "g" },
+      { "name": "Fat", "amount": "0", "unit": "g" }
+    ],
+    "alternatives": [
+      { "name": "Date syrup", "score": 60 },
+      { "name": "Mashed banana", "score": 76 }
+    ]
+  },
+  {
+    "id": "choc",
+    "barcode": "7622210449283",
+    "name": "Dark Chocolate 70%",
+    "category": "Snack",
+    "score": 58,
+    "accentColor": "#B98A5E",
+    "initial": "D",
+    "summary": "Antioxidants and fiber, but high in fat and sugar. A little goes a long way.",
+    "hasCompleteData": true,
+    "nutrients": [
+      { "name": "Energy", "amount": "598", "unit": "kcal" },
+      { "name": "Carbs", "amount": "46", "unit": "g" },
+      { "name": "Fiber", "amount": "11", "unit": "g" },
+      { "name": "Protein", "amount": "7.8", "unit": "g" },
+      { "name": "Fat", "amount": "43", "unit": "g" },
+      { "name": "Sugar", "amount": "24", "unit": "g" }
+    ],
+    "alternatives": [
+      { "name": "Cacao nibs", "score": 74 }
+    ]
+  }
+]
