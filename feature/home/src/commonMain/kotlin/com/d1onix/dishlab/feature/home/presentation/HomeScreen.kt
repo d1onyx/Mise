@@ -51,7 +51,6 @@ import com.d1onix.dishlab.feature.home.resources.home_scan_title
 import com.d1onix.dishlab.feature.home.resources.home_tagline
 import com.d1onix.dishlab.feature.home.resources.home_wordmark
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun HomeScreen(viewModel: HomeViewModel) {
@@ -60,7 +59,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
 }
 
 @Composable
-private fun HomeContent(
+internal fun HomeContent(
     state: HomeUiState,
     onAction: (HomeAction) -> Unit,
     modifier: Modifier = Modifier,
@@ -274,32 +273,4 @@ private fun GlowDot() {
                 drawCircle(color = colors.lime, alpha = pulse.value * 0.35f, radius = size.minDimension)
             }
     )
-}
-
-@Preview
-@Composable
-private fun HomeContentPreview() {
-    MiseTheme {
-        HomeContent(state = HomeUiState(savedCount = 3, historyCount = 5), onAction = {})
-    }
-}
-
-/** First launch: nothing saved, nothing scanned. */
-@Preview
-@Composable
-private fun HomeContentEmptyPreview() {
-    MiseTheme {
-        HomeContent(state = HomeUiState(), onAction = {})
-    }
-}
-
-@Preview
-@Composable
-private fun HomeContentToastPreview() {
-    MiseTheme {
-        HomeContent(
-            state = HomeUiState(savedCount = 1, historyCount = 1, showProfileHint = true),
-            onAction = {},
-        )
-    }
 }

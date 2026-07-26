@@ -1,0 +1,72 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "0a44f28b86971aee25b18f74b6d8015b",
+    "entities": [
+      {
+        "tableName": "graph_products",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`productId` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `xFraction` REAL, `yFraction` REAL, PRIMARY KEY(`productId`))",
+        "fields": [
+          {
+            "fieldPath": "productId",
+            "columnName": "productId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "xFraction",
+            "columnName": "xFraction",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "yFraction",
+            "columnName": "yFraction",
+            "affinity": "REAL"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "productId"
+          ]
+        }
+      },
+      {
+        "tableName": "graph_connections",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`firstProductId` TEXT NOT NULL, `secondProductId` TEXT NOT NULL, PRIMARY KEY(`firstProductId`, `secondProductId`))",
+        "fields": [
+          {
+            "fieldPath": "firstProductId",
+            "columnName": "firstProductId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "secondProductId",
+            "columnName": "secondProductId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "firstProductId",
+            "secondProductId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0a44f28b86971aee25b18f74b6d8015b')"
+    ]
+  }
+}

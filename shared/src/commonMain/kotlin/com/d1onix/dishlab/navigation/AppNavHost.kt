@@ -14,8 +14,10 @@ import com.d1onix.dishlab.feature.home.navigation.HomeRoute
 import com.d1onix.dishlab.feature.home.presentation.HomeScreen
 import com.d1onix.dishlab.feature.products.navigation.GraphRoute
 import com.d1onix.dishlab.feature.products.navigation.HistoryRoute
+import com.d1onix.dishlab.feature.products.navigation.ConnectionOverviewRoute
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphScreen
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryScreen
+import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewScreen
 import com.d1onix.dishlab.feature.recipes.navigation.CookingRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipeDetailRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRoute
@@ -67,6 +69,10 @@ fun AppNavHost(graph: AppGraph) {
 
             composable<GraphRoute> {
                 GraphScreen(viewModel { graph.graphViewModel })
+            }
+
+            composable<ConnectionOverviewRoute> {
+                ConnectionOverviewScreen(viewModel { graph.connectionOverviewViewModel })
             }
 
             composable<HistoryRoute> {

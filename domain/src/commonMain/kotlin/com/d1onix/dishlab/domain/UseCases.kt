@@ -1,6 +1,7 @@
 package com.d1onix.dishlab.domain
 
 import com.d1onix.dishlab.domain.model.Product
+import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeFilters
@@ -23,6 +24,14 @@ fun interface GetAllProductsUseCase {
 
 fun interface GetRecipesForProductsUseCase {
     suspend operator fun invoke(productIds: List<ProductId>): List<Recipe>
+}
+
+fun interface FilterRecipesByConnectionsUseCase {
+    operator fun invoke(
+        recipes: List<Recipe>,
+        sessionProductIds: List<ProductId>,
+        connections: Set<ProductConnection>,
+    ): List<Recipe>
 }
 
 fun interface GetRecipeUseCase {

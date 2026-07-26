@@ -27,14 +27,12 @@ import com.d1onix.dishlab.designsystem.component.MiseTextAction
 import com.d1onix.dishlab.designsystem.component.ProductAvatar
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.d1onix.dishlab.feature.products.presentation.previewProducts
 import com.d1onix.dishlab.feature.products.presentation.scoreColor
 import com.d1onix.dishlab.feature.products.resources.Res
 import com.d1onix.dishlab.feature.products.resources.history_clear
 import com.d1onix.dishlab.feature.products.resources.history_empty
 import com.d1onix.dishlab.feature.products.resources.history_title
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun HistoryScreen(viewModel: HistoryViewModel) {
@@ -43,7 +41,7 @@ fun HistoryScreen(viewModel: HistoryViewModel) {
 }
 
 @Composable
-private fun HistoryContent(
+internal fun HistoryContent(
     state: HistoryUiState,
     onAction: (HistoryAction) -> Unit,
     modifier: Modifier = Modifier,
@@ -118,21 +116,5 @@ private fun HistoryContent(
                 }
             }
         }
-    }
-}
-
-@Preview
-@Composable
-private fun HistoryContentPreview() {
-    MiseTheme {
-        HistoryContent(state = HistoryUiState(products = previewProducts()), onAction = {})
-    }
-}
-
-@Preview
-@Composable
-private fun HistoryContentEmptyPreview() {
-    MiseTheme {
-        HistoryContent(state = HistoryUiState(), onAction = {})
     }
 }

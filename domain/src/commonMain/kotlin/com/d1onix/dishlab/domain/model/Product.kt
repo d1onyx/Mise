@@ -5,6 +5,39 @@ import kotlin.jvm.JvmInline
 @JvmInline
 value class ProductId(val value: String)
 
+/** Resolution-independent top-left position of a product on the graph canvas. */
+data class ProductGraphPosition(
+    val xFraction: Float,
+    val yFraction: Float,
+)
+
+/** An undirected user-defined relationship between two scanned products. */
+data class ProductConnection(
+    val first: ProductId,
+    val second: ProductId,
+) {
+    init {
+        require(first != second) { "A product cannot be connected to itself" }
+    }
+
+    fun contains(id: ProductId): Boolean = first == id || second == id
+
+    fun other(id: ProductId): ProductId? = when (id) {
+        first -> second
+        second -> first
+        else -> null
+    }
+
+    companion object {
+        fun between(first: ProductId, second: ProductId): ProductConnection =
+            if (first.value <= second.value) {
+                ProductConnection(first, second)
+            } else {
+                ProductConnection(second, first)
+            }
+    }
+}
+
 /**
  * A scanned product with the nutrition facts the app rates it on.
  *

@@ -7,7 +7,14 @@ plugins {
 kotlin {
     android {
         namespace = "com.d1onix.dishlab.domain"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        // API 37 ships only as minor releases (android-37.0, android-37.1) — there
+        // is no plain `android-37` platform, so the minor level has to be explicit
+        // or the IDE looks for a compile target that does not exist.
+        compileSdk {
+            version = release(libs.versions.android.compileSdk.get().toInt()) {
+                minorApiLevel = libs.versions.android.compileSdkMinor.get().toInt()
+            }
+        }
         minSdk = libs.versions.android.minSdk.get().toInt()
 
         // Without this there is no JVM test target at all and commonTest

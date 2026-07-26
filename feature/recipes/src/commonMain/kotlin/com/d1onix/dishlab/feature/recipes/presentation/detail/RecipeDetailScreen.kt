@@ -36,8 +36,6 @@ import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.feature.recipes.presentation.components.difficultyColor
 import com.d1onix.dishlab.feature.recipes.presentation.difficultyLabel
-import com.d1onix.dishlab.feature.recipes.presentation.previewBowl
-import com.d1onix.dishlab.feature.recipes.presentation.previewProducts
 import com.d1onix.dishlab.feature.recipes.resources.Res
 import com.d1onix.dishlab.feature.recipes.resources.recipe_back
 import com.d1onix.dishlab.feature.recipes.resources.recipe_ingredients
@@ -49,7 +47,6 @@ import com.d1onix.dishlab.feature.recipes.resources.recipe_timer_seconds
 import com.d1onix.dishlab.feature.recipes.resources.recipe_unsave
 import com.d1onix.dishlab.feature.recipes.resources.recipes_minutes
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun RecipeDetailScreen(viewModel: RecipeDetailViewModel) {
@@ -58,7 +55,7 @@ fun RecipeDetailScreen(viewModel: RecipeDetailViewModel) {
 }
 
 @Composable
-private fun RecipeDetailContent(
+internal fun RecipeDetailContent(
     state: RecipeDetailUiState,
     onAction: (RecipeDetailAction) -> Unit,
     modifier: Modifier = Modifier,
@@ -259,35 +256,5 @@ private fun RecipeDetailContent(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-    }
-}
-
-@Preview
-@Composable
-private fun RecipeDetailContentPreview() {
-    MiseTheme {
-        RecipeDetailContent(
-            state = RecipeDetailUiState(
-                recipe = previewBowl,
-                products = previewProducts,
-                isSaved = false,
-            ),
-            onAction = {},
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun RecipeDetailContentSavedPreview() {
-    MiseTheme {
-        RecipeDetailContent(
-            state = RecipeDetailUiState(
-                recipe = previewBowl,
-                products = previewProducts,
-                isSaved = true,
-            ),
-            onAction = {},
-        )
     }
 }

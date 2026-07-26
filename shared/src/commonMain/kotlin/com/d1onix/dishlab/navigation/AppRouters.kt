@@ -6,6 +6,7 @@ import com.d1onix.dishlab.feature.home.navigation.HomeRouter
 import com.d1onix.dishlab.feature.products.navigation.GraphRoute
 import com.d1onix.dishlab.feature.products.navigation.HistoryRoute
 import com.d1onix.dishlab.feature.products.navigation.ProductsRouter
+import com.d1onix.dishlab.feature.products.navigation.ConnectionOverviewRoute
 import com.d1onix.dishlab.feature.recipes.navigation.CookingRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipeDetailRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRoute
@@ -50,6 +51,7 @@ class ProductsRouterImpl(private val router: AppRouter) : ProductsRouter {
     override fun openRecipes() = router.launch(RecipesRoute)
     override fun openSavedRecipes() = router.launch(SavedRoute)
     override fun openCombinationGraph() = router.launch(GraphRoute)
+    override fun openConnectionOverview() = router.launch(ConnectionOverviewRoute)
     override fun goBack() = router.goBack()
 }
 

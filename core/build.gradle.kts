@@ -21,7 +21,11 @@ val androidxCoreVersion = "1.18.0"
 kotlin {
     android {
         namespace = "com.d1onyx.core"
-        compileSdk = 37
+        // API 37 ships only as minor releases (android-37.0) — there is no plain
+        // `android-37` platform, so the minor level has to be explicit.
+        compileSdk {
+            version = release(37) { minorApiLevel = 0 }
+        }
         minSdk = 24
 
         // Creates the `androidHostTest` source set. Without it there is no JVM

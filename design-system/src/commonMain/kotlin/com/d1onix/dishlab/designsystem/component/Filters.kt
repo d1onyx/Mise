@@ -21,13 +21,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Search box used on the Recipes and Saved screens. */
 @Composable
@@ -104,16 +104,18 @@ fun FilterChipBar(
             groups.forEach { group ->
                 val active = group.selected.isNotEmpty()
                 val expanded = expandedGroupId == group.id
+                val shape = RoundedCornerShape(14.dp)
                 Row(
                     modifier = Modifier
+                        .clip(shape)
                         .background(
                             if (active) colors.lime.copy(alpha = 0.14f) else colors.panel,
-                            RoundedCornerShape(14.dp),
+                            shape,
                         )
                         .border(
                             1.dp,
                             if (active) colors.lime.copy(alpha = 0.4f) else colors.border,
-                            RoundedCornerShape(14.dp),
+                            shape,
                         )
                         .clickable { onGroupClick(group.id) }
                         .padding(horizontal = 14.dp, vertical = 9.dp),
@@ -158,19 +160,21 @@ fun FilterChipBar(
             ) {
                 group.options.forEach { option ->
                     val on = option.id in group.selected
+                    val shape = RoundedCornerShape(12.dp)
                     Text(
                         text = option.label,
                         style = MiseTheme.typography.bodySmall,
                         color = if (on) colors.onLime else colors.text,
                         modifier = Modifier
+                            .clip(shape)
                             .background(
                                 if (on) colors.lime else Color.Transparent,
-                                RoundedCornerShape(12.dp),
+                                shape,
                             )
                             .border(
                                 1.dp,
                                 if (on) colors.lime else colors.border,
-                                RoundedCornerShape(12.dp),
+                                shape,
                             )
                             .clickable { onOptionClick(group.id, option.id) }
                             .padding(horizontal = 14.dp, vertical = 8.dp),
@@ -178,46 +182,5 @@ fun FilterChipBar(
                 }
             }
         }
-    }
-}
-
-@Preview
-@Composable
-private fun MiseSearchFieldPreview() {
-    MiseTheme {
-        Column {
-            MiseSearchField(value = "", onValueChange = {}, placeholder = "Search recipes")
-            MiseSearchField(value = "oat", onValueChange = {}, placeholder = "Search recipes")
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun FilterChipBarPreview() {
-    MiseTheme {
-        FilterChipBar(
-            groups = listOf(
-                FilterGroup(
-                    id = "difficulty",
-                    name = "Difficulty",
-                    options = listOf(
-                        FilterOption("easy", "Easy"),
-                        FilterOption("medium", "Medium"),
-                        FilterOption("hard", "Hard"),
-                    ),
-                    selected = setOf("easy"),
-                ),
-                FilterGroup(
-                    id = "category",
-                    name = "Category",
-                    options = listOf(FilterOption("breakfast", "Breakfast")),
-                    selected = emptySet(),
-                ),
-            ),
-            expandedGroupId = "difficulty",
-            onGroupClick = {},
-            onOptionClick = { _, _ -> },
-        )
     }
 }

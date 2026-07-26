@@ -38,10 +38,19 @@ class DebouncingAppRouterTest {
     }
 
     @Test
-    fun `drops a second command inside the debounce window`() {
+    fun `allows a different destination inside the debounce window`() {
         router.launch(HomeRoute)
         clock.millis += 100
         router.launch(ChatRoute)
+
+        assertEquals(listOf("launch:HomeRoute", "launch:ChatRoute"), delegate.commands)
+    }
+
+    @Test
+    fun `drops the same destination inside the debounce window`() {
+        router.launch(HomeRoute)
+        clock.millis += 100
+        router.launch(HomeRoute)
 
         assertEquals(listOf("launch:HomeRoute"), delegate.commands)
     }
@@ -65,12 +74,12 @@ class DebouncingAppRouterTest {
     }
 
     @Test
-    fun `debounces across different command types`() {
+    fun `allows a different command type inside the debounce window`() {
         router.launch(HomeRoute)
         clock.millis += 100
         router.goBack()
 
-        assertEquals(listOf("launch:HomeRoute"), delegate.commands)
+        assertEquals(listOf("launch:HomeRoute", "goBack"), delegate.commands)
     }
 
     @Test

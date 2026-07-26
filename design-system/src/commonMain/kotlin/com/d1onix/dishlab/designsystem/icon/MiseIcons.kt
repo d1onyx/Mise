@@ -19,6 +19,10 @@ object MiseIcons {
         strokeIcon("chevron_left", 16f, "M10 3L5 8l5 5")
     }
 
+    val ChevronRight: ImageVector by lazy {
+        strokeIcon("chevron_right", 16f, "M6 3l5 5-5 5")
+    }
+
     val ChevronDown: ImageVector by lazy {
         strokeIcon("chevron_down", 10f, "M2 3.5L5 6.5l3-3", strokeWidth = 1.5f)
     }
@@ -29,6 +33,19 @@ object MiseIcons {
 
     val Close: ImageVector by lazy {
         strokeIcon("close", 20f, "M5 5l10 10M15 5L5 15", strokeWidth = 1.6f)
+    }
+
+    val Check: ImageVector by lazy {
+        strokeIcon("check", 16f, "M3 8l3 3 7-7", strokeWidth = 1.9f)
+    }
+
+    val Scissors: ImageVector by lazy {
+        strokeIcon(
+            "scissors",
+            20f,
+            "M7 7a3 3 0 11-6 0 3 3 0 016 0zM7 13a3 3 0 11-6 0 3 3 0 016 0zM6.5 8.5L18 3M6.5 11.5L18 17",
+            strokeWidth = 1.6f,
+        )
     }
 
     val Search: ImageVector by lazy {

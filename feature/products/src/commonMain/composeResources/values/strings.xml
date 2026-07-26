@@ -1,7 +1,7 @@
 <resources>
     <string name="graph_title">Combination graph</string>
-    <string name="graph_count_one">1 product linked</string>
-    <string name="graph_count_many">%1$d products linked</string>
+    <string name="graph_count_one">1 product</string>
+    <string name="graph_count_many">%1$d products</string>
     <string name="graph_back">Back</string>
     <string name="graph_scan_more">Scan another product</string>
     <string name="graph_find_recipes">Find recipes (%1$d)</string>
@@ -9,14 +9,28 @@
     <string name="graph_profile_initials">AK</string>
     <string name="graph_profile_action">Open profile</string>
     <string name="graph_profile_coming_soon">Profile — coming soon</string>
-    <string name="graph_catalogue_exhausted">No more products in the catalogue</string>
-    <string name="graph_hint">drag nodes · tap empty space to add a product</string>
-    <string name="graph_empty">Nothing scanned yet — tap anywhere to add a product.</string>
+    <string name="graph_edit_connections">Edit recipe connections</string>
+    <string name="graph_hint">drag nodes · tap empty space to scan a product</string>
+    <string name="graph_hint_edit">tap a line to cut · tap two products to connect</string>
+    <string name="graph_hint_connect">select the second product · tap empty space to cancel</string>
+    <string name="graph_empty">Nothing scanned yet — tap anywhere to scan a product.</string>
+
+    <string name="connections_title">Product connections</string>
+    <string name="connections_summary">%1$d products · %2$d total connections</string>
+    <string name="connections_empty">Add products to the graph to inspect their connections.</string>
+    <string name="connections_product_picker">Choose a product</string>
+    <string name="connections_direct">Direct</string>
+    <string name="connections_missing">Not connected</string>
+    <string name="connections_direct_status">Direct connection · tap to inspect</string>
+    <string name="connections_missing_status">No direct connection · tap to inspect</string>
+    <string name="connections_connect">Connect</string>
+    <string name="connections_disconnect">Disconnect</string>
+    <string name="connections_none_direct">This product has no direct connections.</string>
+    <string name="connections_none_missing">This product is connected to every other product.</string>
 
     <string name="product_incomplete_data">⚠ Incomplete data — some nutrients estimated</string>
     <string name="product_alternatives">Healthier alternatives</string>
     <string name="product_cook">What can I cook?</string>
-    <string name="product_add">+ Add</string>
     <string name="product_remove">×</string>
 
     <string name="history_title">History</string>

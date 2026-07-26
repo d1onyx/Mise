@@ -22,7 +22,11 @@ kotlin {
 
     android {
         namespace = "com.d1onix.dishlab.shared"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        compileSdk {
+            version = release(libs.versions.android.compileSdk.get().toInt()) {
+                minorApiLevel = libs.versions.android.compileSdkMinor.get().toInt()
+            }
+        }
         minSdk = libs.versions.android.minSdk.get().toInt()
 
         compilerOptions {
@@ -43,6 +47,9 @@ kotlin {
 
     sourceSets {
         androidMain.dependencies {
+            // The renderer the preview panel loads. Previews themselves live in
+            // each feature's androidMain; iOS previews are UIViewControllers in
+            // iosMain (see Previews.kt) that Xcode hosts instead.
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
         }
@@ -66,7 +73,6 @@ kotlin {
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
-            implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
         }

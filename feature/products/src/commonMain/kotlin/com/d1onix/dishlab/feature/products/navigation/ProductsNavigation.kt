@@ -8,6 +8,9 @@ import kotlinx.serialization.Serializable
 data object GraphRoute : Route
 
 @Serializable
+data object ConnectionOverviewRoute : Route
+
+@Serializable
 data object HistoryRoute : Route
 
 interface ProductsRouter {
@@ -15,5 +18,6 @@ interface ProductsRouter {
     fun openRecipes()
     fun openSavedRecipes()
     fun openCombinationGraph()
+    fun openConnectionOverview()
     fun goBack()
 }

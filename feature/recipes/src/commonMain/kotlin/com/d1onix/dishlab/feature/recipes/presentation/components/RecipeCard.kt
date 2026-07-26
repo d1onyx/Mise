@@ -28,13 +28,9 @@ import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeDifficulty
 import com.d1onix.dishlab.feature.recipes.presentation.difficultyLabel
-import com.d1onix.dishlab.feature.recipes.presentation.previewBowl
-import com.d1onix.dishlab.feature.recipes.presentation.previewMeatballs
-import com.d1onix.dishlab.feature.recipes.presentation.previewProducts
 import com.d1onix.dishlab.feature.recipes.resources.Res
 import com.d1onix.dishlab.feature.recipes.resources.recipes_minutes
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Colour of a difficulty tag — the recipe equivalent of a product's verdict. */
 @Composable
@@ -111,26 +107,5 @@ fun RecipeCard(
                 recipe.categories.forEach { category -> MiseTag(text = category) }
             }
         }
-    }
-}
-
-@Preview
-@Composable
-private fun RecipeCardPreview() {
-    MiseTheme {
-        RecipeCard(recipe = previewBowl, products = previewProducts, onClick = {})
-    }
-}
-
-/** One product, hard difficulty — the other end of the card's range. */
-@Preview
-@Composable
-private fun RecipeCardSingleProductPreview() {
-    MiseTheme {
-        RecipeCard(
-            recipe = previewMeatballs,
-            products = previewProducts.take(1),
-            onClick = {},
-        )
     }
 }

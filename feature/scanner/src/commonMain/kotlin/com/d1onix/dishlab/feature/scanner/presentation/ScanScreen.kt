@@ -2,8 +2,11 @@ package com.d1onix.dishlab.feature.scanner.presentation
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,9 +42,13 @@ import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.MiseSearchField
 import com.d1onix.dishlab.designsystem.component.MiseTextAction
+import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
+import com.d1onix.dishlab.designsystem.component.VerdictBadge
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
+import com.d1onix.dishlab.domain.model.Product
+import com.d1onix.dishlab.domain.model.ScoreVerdict
 import com.d1onix.dishlab.feature.scanner.resources.Res
 import com.d1onix.dishlab.feature.scanner.resources.scan_back
 import com.d1onix.dishlab.feature.scanner.resources.scan_camera_denied
@@ -51,6 +60,14 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_manual_cancel
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_entry
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_placeholder
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_submit
+import com.d1onix.dishlab.feature.scanner.resources.scan_review_add
+import com.d1onix.dishlab.feature.scanner.resources.scan_review_alternatives
+import com.d1onix.dishlab.feature.scanner.resources.scan_review_incomplete
+import com.d1onix.dishlab.feature.scanner.resources.scan_review_nutrition
+import com.d1onix.dishlab.feature.scanner.resources.scan_review_open_graph
+import com.d1onix.dishlab.feature.scanner.resources.scan_review_question
+import com.d1onix.dishlab.feature.scanner.resources.scan_review_skip
+import com.d1onix.dishlab.feature.scanner.resources.scan_review_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_simulate_not_found
 import com.d1onix.dishlab.feature.scanner.resources.scan_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_title_resolving
@@ -59,7 +76,6 @@ import com.kashif.cameraK.compose.rememberCameraKState
 import com.kashif.cameraK.permissions.providePermissions
 import com.kashif.qrscannerplugin.QRScannerPlugin
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -76,13 +92,23 @@ fun ScanScreen(viewModel: ScanViewModel) {
 }
 
 @Composable
-private fun ScanContent(
+internal fun ScanContent(
     state: ScanUiState,
     onAction: (ScanAction) -> Unit,
     modifier: Modifier = Modifier,
     cameraPreview: @Composable (onBarcode: (String) -> Unit) -> Unit = {},
 ) {
     val colors = MiseTheme.colors
+
+    state.reviewedProduct?.let { product ->
+        ScannedProductReview(
+            product = product,
+            alreadyAdded = state.reviewedProductAlreadyAdded,
+            onAction = onAction,
+            modifier = modifier,
+        )
+        return
+    }
 
     Box(modifier.fillMaxSize().background(colors.backgroundDeep)) {
         cameraPreview { barcode -> onAction(ScanAction.BarcodeDetected(barcode)) }
@@ -175,6 +201,210 @@ private fun ScanContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ScannedProductReview(
+    product: Product,
+    alreadyAdded: Boolean,
+    onAction: (ScanAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MiseTheme.colors
+    val scoreColor = when (product.verdict) {
+        ScoreVerdict.Buy -> colors.lime
+        ScoreVerdict.Maybe -> colors.amber
+        ScoreVerdict.Skip -> colors.red
+    }
+
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(colors.background)
+            .safeDrawingPadding()
+            .screenIn(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            MiseIconCircleButton(
+                icon = MiseIcons.ChevronLeft,
+                contentDescription = stringResource(Res.string.scan_back),
+                onClick = { onAction(ScanAction.ReviewBackClicked) },
+            )
+            SectionLabel(
+                text = stringResource(Res.string.scan_review_title),
+                modifier = Modifier.padding(start = 14.dp),
+            )
+        }
+
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(scoreColor.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+                        .border(
+                            1.dp,
+                            scoreColor.copy(alpha = 0.4f),
+                            RoundedCornerShape(8.dp),
+                        )
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ScoreRing(score = product.score, color = scoreColor, size = 68, strokeWidth = 6) {
+                        Text(
+                            text = product.score.toString(),
+                            style = MiseTheme.typography.mono,
+                            color = scoreColor,
+                        )
+                    }
+                    Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
+                        Text(product.name, style = MiseTheme.typography.title, color = colors.text)
+                        Text(
+                            product.category,
+                            style = MiseTheme.typography.monoSmall,
+                            color = colors.textMuted,
+                        )
+                    }
+                    VerdictBadge(product.verdict.label, scoreColor)
+                }
+            }
+
+            if (!product.hasCompleteData) {
+                item {
+                    Text(
+                        text = stringResource(Res.string.scan_review_incomplete),
+                        style = MiseTheme.typography.monoSmall,
+                        color = colors.amber,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(colors.amber.copy(alpha = 0.10f), RoundedCornerShape(8.dp))
+                            .border(
+                                1.dp,
+                                colors.amber.copy(alpha = 0.3f),
+                                RoundedCornerShape(8.dp),
+                            )
+                            .padding(12.dp),
+                    )
+                }
+            }
+
+            item {
+                Text(
+                    text = product.summary,
+                    style = MiseTheme.typography.body,
+                    color = colors.text.copy(alpha = 0.82f),
+                )
+            }
+
+            if (product.nutrients.isNotEmpty()) {
+                item { SectionLabel(stringResource(Res.string.scan_review_nutrition)) }
+                product.nutrients.chunked(3).forEach { nutrients ->
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            nutrients.forEach { nutrient ->
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .background(colors.panel, RoundedCornerShape(8.dp))
+                                        .border(1.dp, colors.border, RoundedCornerShape(8.dp))
+                                        .padding(12.dp),
+                                ) {
+                                    Text(
+                                        nutrient.name.uppercase(),
+                                        style = MiseTheme.typography.monoTiny,
+                                        color = colors.textMuted,
+                                    )
+                                    Row(verticalAlignment = Alignment.Bottom) {
+                                        Text(
+                                            nutrient.amount,
+                                            style = MiseTheme.typography.titleSmall,
+                                            color = colors.text,
+                                        )
+                                        Text(
+                                            nutrient.unit,
+                                            style = MiseTheme.typography.monoTiny,
+                                            color = colors.textMuted,
+                                            modifier = Modifier.padding(start = 2.dp, bottom = 1.dp),
+                                        )
+                                    }
+                                }
+                            }
+                            repeat(3 - nutrients.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                }
+            }
+
+            if (product.alternatives.isNotEmpty()) {
+                item { SectionLabel(stringResource(Res.string.scan_review_alternatives)) }
+                items(product.alternatives.size) { index ->
+                    val alternative = product.alternatives[index]
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(colors.lime.copy(alpha = 0.07f), RoundedCornerShape(8.dp))
+                            .border(
+                                1.dp,
+                                colors.lime.copy(alpha = 0.2f),
+                                RoundedCornerShape(8.dp),
+                            )
+                            .padding(horizontal = 14.dp, vertical = 11.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(alternative.name, style = MiseTheme.typography.body, color = colors.text)
+                        Text(
+                            alternative.score.toString(),
+                            style = MiseTheme.typography.mono,
+                            color = colors.lime,
+                        )
+                    }
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(colors.surface)
+                .border(1.dp, colors.border)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+        ) {
+            Text(
+                text = stringResource(Res.string.scan_review_question),
+                style = MiseTheme.typography.bodySmall,
+                color = colors.textMuted,
+                modifier = Modifier.padding(bottom = 10.dp),
+            )
+            MisePrimaryButton(
+                text = stringResource(
+                    if (alreadyAdded) {
+                        Res.string.scan_review_open_graph
+                    } else {
+                        Res.string.scan_review_add
+                    }
+                ),
+                onClick = { onAction(ScanAction.AddReviewedProductClicked) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(8.dp))
+            MiseGhostButton(
+                text = stringResource(Res.string.scan_review_skip),
+                onClick = { onAction(ScanAction.ReviewedProductSkipped) },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -288,32 +518,5 @@ private fun ScanFrame() {
             end = Offset(size.width - inset, y),
             strokeWidth = 2.dp.toPx(),
         )
-    }
-}
-
-@Preview
-@Composable
-private fun ScanContentPreview() {
-    MiseTheme {
-        ScanContent(state = ScanUiState(), onAction = {})
-    }
-}
-
-@Preview
-@Composable
-private fun ScanContentManualEntryPreview() {
-    MiseTheme {
-        ScanContent(
-            state = ScanUiState(manualEntryVisible = true, manualBarcode = "4011200296908"),
-            onAction = {},
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun ScanContentResolvingPreview() {
-    MiseTheme {
-        ScanContent(state = ScanUiState(isResolving = true), onAction = {})
     }
 }

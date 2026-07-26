@@ -17,7 +17,11 @@ val navigationVersion = "2.9.2"
 kotlin {
     android {
         namespace = "com.d1onyx.navigation"
-        compileSdk = 37
+        // API 37 ships only as minor releases (android-37.0) — there is no plain
+        // `android-37` platform, so the minor level has to be explicit.
+        compileSdk {
+            version = release(37) { minorApiLevel = 0 }
+        }
         minSdk = 24
         withHostTestBuilder {}.configure {}
     }

@@ -4,6 +4,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.d1onyx.core.datastore.createPreferencesDataStore
 import com.d1onyx.core.datastore.preferencesDataStorePath
+import com.d1onix.dishlab.data.session.GraphDatabase
+import com.d1onix.dishlab.data.session.buildGraphDatabase
+import com.d1onix.dishlab.data.session.graphDatabaseBuilder
 import com.d1onyx.core.essentials.di.AppScope
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
 import com.d1onyx.core.essentials.logger.LogLevel
@@ -25,6 +28,11 @@ interface IosAppGraph : AppGraph {
     @SingleIn(AppScope::class)
     fun provideDataStore(): DataStore<Preferences> =
         createPreferencesDataStore { preferencesDataStorePath() }
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideGraphDatabase(): GraphDatabase =
+        buildGraphDatabase(graphDatabaseBuilder())
 
     @Provides
     fun provideLogger(): Logger = Logger

@@ -24,7 +24,6 @@ import com.d1onix.dishlab.designsystem.component.MiseSearchField
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.feature.recipes.presentation.components.RecipeCard
 import com.d1onix.dishlab.feature.recipes.presentation.difficultyLabel
-import com.d1onix.dishlab.feature.recipes.presentation.previewRecipes
 import com.d1onix.dishlab.feature.recipes.presentation.timeBucketLabel
 import com.d1onix.dishlab.feature.recipes.resources.Res
 import com.d1onix.dishlab.feature.recipes.resources.filter_group_category
@@ -38,7 +37,6 @@ import com.d1onix.dishlab.feature.recipes.resources.saved_search_placeholder
 import com.d1onix.dishlab.feature.recipes.resources.saved_title
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /** Recipes for what is currently on the combination graph. */
 @Composable
@@ -70,7 +68,7 @@ fun SavedRecipesScreen(viewModel: SavedRecipesViewModel) {
  * so they share one composable rather than two near-identical copies.
  */
 @Composable
-private fun RecipeListContent(
+internal fun RecipeListContent(
     title: StringResource,
     searchPlaceholder: StringResource,
     emptyText: StringResource,
@@ -149,53 +147,3 @@ private fun RecipeListUiState.filterGroups(): List<FilterGroup> = listOf(
         selected = filters.times.map { it.name }.toSet(),
     ),
 )
-
-@Preview
-@Composable
-private fun RecipeListContentPreview() {
-    val recipes = previewRecipes()
-    MiseTheme {
-        RecipeListContent(
-            title = Res.string.recipes_title,
-            searchPlaceholder = Res.string.recipes_search_placeholder,
-            emptyText = Res.string.recipes_empty,
-            state = RecipeListUiState(all = recipes, visible = recipes),
-            onAction = {},
-        )
-    }
-}
-
-/** Filters that match nothing — the state a user hits and then reports as a bug. */
-@Preview
-@Composable
-private fun RecipeListContentEmptyPreview() {
-    val recipes = previewRecipes()
-    MiseTheme {
-        RecipeListContent(
-            title = Res.string.saved_title,
-            searchPlaceholder = Res.string.saved_search_placeholder,
-            emptyText = Res.string.saved_empty,
-            state = RecipeListUiState(all = recipes, visible = emptyList()),
-            onAction = {},
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun RecipeListContentExpandedFilterPreview() {
-    val recipes = previewRecipes()
-    MiseTheme {
-        RecipeListContent(
-            title = Res.string.recipes_title,
-            searchPlaceholder = Res.string.recipes_search_placeholder,
-            emptyText = Res.string.recipes_empty,
-            state = RecipeListUiState(
-                all = recipes,
-                visible = recipes,
-                expandedGroup = FilterGroupId.Difficulty,
-            ),
-            onAction = {},
-        )
-    }
-}

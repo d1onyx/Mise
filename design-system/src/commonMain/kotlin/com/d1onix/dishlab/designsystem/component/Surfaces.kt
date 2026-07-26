@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,6 +38,7 @@ fun MisePanel(
     val shape = RoundedCornerShape(cornerRadius.dp)
     Box(
         modifier = modifier
+            .clip(shape)
             .background(background, shape)
             .border(1.dp, borderColor, shape)
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }

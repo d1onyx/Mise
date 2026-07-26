@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -22,14 +25,16 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextAlign
 import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.component.ScoreBadge
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
 import kotlin.math.roundToInt
 
-/** Diameter of the circular token, used by the graph to lay nodes out. */
-val ProductNodeSize = 66.dp
+/** Stable layout size; its center is also the center of the 66dp product circle. */
+val ProductNodeSize = 78.dp
+private val ProductNodeCircleSize = 66.dp
 
 /**
  * A draggable product token.
@@ -52,30 +57,38 @@ fun ProductNode(
     val colors = MiseTheme.colors
     val accent = Color(product.accentColor)
     val ring = rememberPulse(durationMillis = 1800, from = 0f, to = 1f, label = "nodeRing")
+    val currentOnDrag by rememberUpdatedState(onDrag)
+    val currentOnDragStart by rememberUpdatedState(onDragStart)
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
+    val currentOnClick by rememberUpdatedState(onClick)
 
     Column(
         modifier = modifier
+            .width(ProductNodeSize)
             .offset { position().let { IntOffset(it.x.roundToInt(), it.y.roundToInt()) } }
             .pointerInput(product.id) {
                 detectDragGestures(
-                    onDragStart = { onDragStart() },
-                    onDragEnd = onDragEnd,
-                    onDragCancel = onDragEnd,
+                    onDragStart = { currentOnDragStart() },
+                    onDragEnd = { currentOnDragEnd() },
+                    onDragCancel = { currentOnDragEnd() },
                 ) { change, dragAmount ->
                     change.consume()
-                    onDrag(dragAmount)
+                    currentOnDrag(dragAmount)
                 }
             }
             .pointerInput(product.id) {
-                detectTapGestures { onClick() }
+                detectTapGestures { currentOnClick() }
             },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.size(ProductNodeSize),
+            contentAlignment = Alignment.Center,
+        ) {
             if (selected) {
                 Box(
                     Modifier
-                        .size(ProductNodeSize + 12.dp)
+                        .size(ProductNodeSize)
                         .drawBehind {
                             // Expanding, fading ring — the prototype's `nodeRing`.
                             drawCircle(
@@ -89,7 +102,7 @@ fun ProductNode(
             }
             Box(
                 Modifier
-                    .size(ProductNodeSize)
+                    .size(ProductNodeCircleSize)
                     .background(colors.surface, CircleShape)
                     .border(2.dp, accent, CircleShape)
                     .drawBehind {
@@ -114,6 +127,8 @@ fun ProductNode(
             style = MiseTheme.typography.bodySmall,
             color = colors.text,
             modifier = Modifier.padding(top = 8.dp),
+            textAlign = TextAlign.Center,
+            maxLines = 2,
         )
     }
 }

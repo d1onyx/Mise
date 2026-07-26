@@ -58,7 +58,7 @@ class HistoryViewModel(
     }
 
     /** Opening a past scan starts a fresh combination from that product alone. */
-    private fun openGraphWith(id: ProductId) {
+    private fun openGraphWith(id: ProductId) = launch("openHistoryProduct") {
         session.reset(listOf(id))
         router.openCombinationGraph()
     }

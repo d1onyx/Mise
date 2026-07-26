@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -34,17 +35,19 @@ fun MisePrimaryButton(
     contentPadding: PaddingValues = PaddingValues(vertical = 17.dp, horizontal = 20.dp),
 ) {
     val colors = MiseTheme.colors
+    val shape = RoundedCornerShape(18.dp)
     Box(
         modifier = modifier
             .shadow(
                 elevation = 24.dp,
-                shape = RoundedCornerShape(18.dp),
+                shape = shape,
                 ambientColor = colors.lime,
                 spotColor = colors.lime,
             )
+            .clip(shape)
             .background(
                 brush = Brush.linearGradient(listOf(colors.lime, colors.limeDeep)),
-                shape = RoundedCornerShape(18.dp),
+                shape = shape,
             )
             .clickable(enabled = enabled, onClick = onClick)
             .padding(contentPadding),
@@ -68,9 +71,11 @@ fun MiseGhostButton(
     contentPadding: PaddingValues = PaddingValues(vertical = 15.dp, horizontal = 18.dp),
 ) {
     val colors = MiseTheme.colors
+    val shape = RoundedCornerShape(16.dp)
     Box(
         modifier = modifier
-            .border(1.dp, colors.border, RoundedCornerShape(16.dp))
+            .clip(shape)
+            .border(1.dp, colors.border, shape)
             .clickable(onClick = onClick)
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
@@ -92,7 +97,10 @@ fun MiseTextAction(
         style = MiseTheme.typography.monoSmall,
         color = color,
         textAlign = TextAlign.Center,
-        modifier = modifier.clickable(onClick = onClick).padding(vertical = 6.dp),
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
     )
 }
 
@@ -109,6 +117,7 @@ fun MiseCircleButton(
     Box(
         modifier = modifier
             .size(size.dp)
+            .clip(CircleShape)
             .background(background, CircleShape)
             .border(1.dp, borderColor, CircleShape)
             .clickable(onClick = onClick),

@@ -37,7 +37,6 @@ import com.d1onix.dishlab.feature.scanner.resources.not_found_retry
 import com.d1onix.dishlab.feature.scanner.resources.not_found_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_back
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ScanNotFoundScreen(viewModel: ScanNotFoundViewModel) {
@@ -46,7 +45,7 @@ fun ScanNotFoundScreen(viewModel: ScanNotFoundViewModel) {
 }
 
 @Composable
-private fun ScanNotFoundContent(
+internal fun ScanNotFoundContent(
     state: ScanNotFoundUiState,
     onAction: (ScanNotFoundAction) -> Unit,
     modifier: Modifier = Modifier,
@@ -118,17 +117,6 @@ private fun ScanNotFoundContent(
         MiseTextAction(
             text = stringResource(Res.string.not_found_home),
             onClick = { onAction(ScanNotFoundAction.HomeClicked) },
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun ScanNotFoundContentPreview() {
-    MiseTheme {
-        ScanNotFoundContent(
-            state = ScanNotFoundUiState(barcode = "000000000000"),
-            onAction = {},
         )
     }
 }

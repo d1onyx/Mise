@@ -43,6 +43,11 @@ class ScanViewModel(
             }
 
             ScanAction.ManualBarcodeSubmitted -> submitManualBarcode()
+            ScanAction.AddReviewedProductClicked -> addReviewedProduct()
+            ScanAction.ReviewedProductSkipped -> skipReviewedProduct()
+            ScanAction.ReviewBackClicked -> _uiState.update {
+                it.copy(reviewedProduct = null, reviewedProductAlreadyAdded = false)
+            }
             ScanAction.BackClicked -> router.goBack()
         }
     }
@@ -52,7 +57,7 @@ class ScanViewModel(
      * wins and everything else is dropped until this screen is left behind.
      */
     private fun onBarcodeDetected(barcode: String) {
-        if (_uiState.value.isResolving) return
+        if (_uiState.value.isResolving || _uiState.value.reviewedProduct != null) return
         _uiState.update { it.copy(isResolving = true) }
         resolve(barcode)
     }
@@ -70,7 +75,7 @@ class ScanViewModel(
             if (product == null) {
                 _uiState.update { it.copy(isResolving = false) }
             } else {
-                accept(product)
+                present(product)
             }
         }
     }
@@ -94,17 +99,45 @@ class ScanViewModel(
             _uiState.update { it.copy(isResolving = false) }
             router.openNotFound(barcode)
         } else {
-            accept(product)
+            present(product)
         }
     }
 
-    private suspend fun accept(product: Product) {
-        session.add(product.id)
+    private suspend fun present(product: Product) {
         recordScan(product.id)
         _uiState.update {
-            it.copy(isResolving = false, manualEntryVisible = false, manualBarcode = "")
+            it.copy(
+                isResolving = false,
+                manualEntryVisible = false,
+                manualBarcode = "",
+                reviewedProduct = product,
+                reviewedProductAlreadyAdded = product.id in session.products.value,
+            )
         }
-        router.openCombinationGraph()
+    }
+
+    private fun addReviewedProduct() {
+        val state = _uiState.value
+        val product = state.reviewedProduct ?: return
+        launch("addReviewedProduct") {
+            if (!state.reviewedProductAlreadyAdded) {
+                session.add(product.id)
+            }
+            router.openCombinationGraph()
+            clearReview()
+        }
+    }
+
+    private fun skipReviewedProduct() {
+        if (_uiState.value.reviewedProduct == null) return
+        router.goBack()
+        clearReview()
+    }
+
+    private fun clearReview() {
+        _uiState.update {
+            it.copy(reviewedProduct = null, reviewedProductAlreadyAdded = false)
+        }
     }
 
     private companion object {

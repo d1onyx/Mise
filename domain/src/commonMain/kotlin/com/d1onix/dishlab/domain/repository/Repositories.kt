@@ -1,7 +1,9 @@
 package com.d1onix.dishlab.domain.repository
 
 import com.d1onix.dishlab.domain.model.Product
+import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductId
+import com.d1onix.dishlab.domain.model.ProductGraphPosition
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeId
 import kotlinx.coroutines.flow.Flow
@@ -40,13 +42,18 @@ interface ScanHistoryRepository {
 /**
  * The products currently on the combination graph.
  *
- * Process-scoped rather than persisted: a session is what the user is holding in
- * their hands right now. The scanner writes to it, the graph reads from it, and
- * neither feature needs to know about the other.
+ * Persisted locally so the graph can be restored independently of the product
+ * catalogue implementation.
  */
 interface ScanSessionStore {
     val products: StateFlow<List<ProductId>>
-    fun add(id: ProductId)
-    fun remove(id: ProductId)
-    fun reset(ids: List<ProductId>)
+    /** User-defined undirected edges that constrain which product sets may form recipes. */
+    val connections: StateFlow<Set<ProductConnection>>
+    val positions: StateFlow<Map<ProductId, ProductGraphPosition>>
+    suspend fun add(id: ProductId)
+    suspend fun remove(id: ProductId)
+    suspend fun connect(first: ProductId, second: ProductId)
+    suspend fun disconnect(first: ProductId, second: ProductId)
+    suspend fun updatePosition(id: ProductId, position: ProductGraphPosition)
+    suspend fun reset(ids: List<ProductId>)
 }

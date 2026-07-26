@@ -1,6 +1,7 @@
 package com.d1onix.dishlab.feature.scanner.presentation
 
 import androidx.compose.runtime.Immutable
+import com.d1onix.dishlab.domain.model.Product
 
 @Immutable
 data class ScanUiState(
@@ -8,6 +9,8 @@ data class ScanUiState(
     val isResolving: Boolean = false,
     val manualEntryVisible: Boolean = false,
     val manualBarcode: String = "",
+    val reviewedProduct: Product? = null,
+    val reviewedProductAlreadyAdded: Boolean = false,
 ) {
     val canSubmitManualBarcode: Boolean get() = manualBarcode.isNotBlank() && !isResolving
 }
@@ -20,5 +23,8 @@ sealed interface ScanAction {
     data object ManualEntryToggled : ScanAction
     data class ManualBarcodeChanged(val value: String) : ScanAction
     data object ManualBarcodeSubmitted : ScanAction
+    data object AddReviewedProductClicked : ScanAction
+    data object ReviewedProductSkipped : ScanAction
+    data object ReviewBackClicked : ScanAction
     data object BackClicked : ScanAction
 }

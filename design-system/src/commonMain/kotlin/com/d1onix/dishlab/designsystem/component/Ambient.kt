@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import kotlinx.coroutines.delay
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -100,19 +99,3 @@ fun MiseToast(
 }
 
 private const val MISE_TOAST_MILLIS = 1800L
-
-@Preview
-@Composable
-private fun MiseToastPreview() {
-    MiseTheme {
-        MiseToast(text = "No more products in the catalogue")
-    }
-}
-
-@Preview
-@Composable
-private fun AmbientConstellationPreview() {
-    MiseTheme {
-        AmbientConstellation(Modifier.fillMaxSize())
-    }
-}

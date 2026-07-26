@@ -28,24 +28,19 @@ import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.component.VerdictBadge
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
-import com.d1onix.dishlab.feature.products.presentation.previewHoney
-import com.d1onix.dishlab.feature.products.presentation.previewOats
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphAction
 import com.d1onix.dishlab.feature.products.presentation.scoreColor
 import com.d1onix.dishlab.feature.products.resources.Res
-import com.d1onix.dishlab.feature.products.resources.product_add
 import com.d1onix.dishlab.feature.products.resources.product_alternatives
 import com.d1onix.dishlab.feature.products.resources.product_cook
 import com.d1onix.dishlab.feature.products.resources.product_incomplete_data
 import com.d1onix.dishlab.feature.products.resources.product_remove
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * The product sheet: score, verdict, nutrients and alternatives.
- *
- * Hand-rolled rather than a `ModalBottomSheet` so it keeps the prototype's
- * translucent panel, rounded top and 72%-height cap.
+ * Its visual surface stays separate from the Material modal container, which
+ * owns swipe-to-dismiss, nested scrolling and accessibility semantics.
  */
 @Composable
 fun ProductDetailSheet(
@@ -205,27 +200,6 @@ fun ProductDetailSheet(
                 onClick = { onAction(GraphAction.FindRecipesClicked) },
                 modifier = Modifier.weight(1f),
             )
-            MiseGhostButton(
-                text = stringResource(Res.string.product_add),
-                onClick = { onAction(GraphAction.EmptySpaceClicked) },
-            )
         }
-    }
-}
-
-@Preview
-@Composable
-private fun ProductDetailSheetPreview() {
-    MiseTheme {
-        ProductDetailSheet(product = previewOats, onAction = {})
-    }
-}
-
-/** Low score, estimated nutrients and alternatives — the busiest version of the sheet. */
-@Preview
-@Composable
-private fun ProductDetailSheetIncompletePreview() {
-    MiseTheme {
-        ProductDetailSheet(product = previewHoney, onAction = {})
     }
 }

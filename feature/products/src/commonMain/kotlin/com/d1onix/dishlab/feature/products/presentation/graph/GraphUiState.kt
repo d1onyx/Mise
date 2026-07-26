@@ -2,7 +2,9 @@ package com.d1onix.dishlab.feature.products.presentation.graph
 
 import androidx.compose.runtime.Immutable
 import com.d1onix.dishlab.domain.model.Product
+import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductId
+import com.d1onix.dishlab.domain.model.ProductGraphPosition
 
 /**
  * `@Immutable` is the promise that makes this skippable in Compose: the state is
@@ -11,9 +13,11 @@ import com.d1onix.dishlab.domain.model.ProductId
 @Immutable
 data class GraphUiState(
     val products: List<Product> = emptyList(),
+    val connections: Set<ProductConnection> = emptySet(),
+    val positions: Map<ProductId, ProductGraphPosition> = emptyMap(),
     val selectedId: ProductId? = null,
-    /** Set when the catalogue has nothing left to add; the text is a resource. */
-    val showCatalogueExhausted: Boolean = false,
+    val isEditingConnections: Boolean = false,
+    val pendingConnectionId: ProductId? = null,
     val showProfileHint: Boolean = false,
 ) {
     val selected: Product? get() = products.firstOrNull { it.id == selectedId }
@@ -22,6 +26,14 @@ data class GraphUiState(
 sealed interface GraphAction {
     data class NodeClicked(val id: ProductId) : GraphAction
     data class RemoveClicked(val id: ProductId) : GraphAction
+    data class ConnectionNodeClicked(val id: ProductId) : GraphAction
+    data class ConnectionClicked(val connection: ProductConnection) : GraphAction
+    data class NodePositionChanged(
+        val id: ProductId,
+        val position: ProductGraphPosition,
+    ) : GraphAction
+    data object ConnectionEditingToggled : GraphAction
+    data object ConnectionOverviewClicked : GraphAction
     data object EmptySpaceClicked : GraphAction
     data object ScanMoreClicked : GraphAction
     data object FindRecipesClicked : GraphAction

@@ -1,12 +1,14 @@
 package com.d1onix.dishlab.domain.usecases
 
 import com.d1onix.dishlab.domain.FilterRecipesUseCase
+import com.d1onix.dishlab.domain.FilterRecipesByConnectionsUseCase
 import com.d1onix.dishlab.domain.GetRecipeUseCase
 import com.d1onix.dishlab.domain.GetRecipesForProductsUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipeIdsUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipesUseCase
 import com.d1onix.dishlab.domain.ToggleSavedRecipeUseCase
 import com.d1onix.dishlab.domain.model.ProductId
+import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeFilters
 import com.d1onix.dishlab.domain.model.RecipeId
@@ -25,6 +27,42 @@ class GetRecipesForProductsUseCaseImpl(
 ) : GetRecipesForProductsUseCase {
     override suspend fun invoke(productIds: List<ProductId>): List<Recipe> =
         recipes.forProducts(productIds)
+}
+
+@ContributesBinding(AppScope::class)
+@Inject
+class FilterRecipesByConnectionsUseCaseImpl : FilterRecipesByConnectionsUseCase {
+    override fun invoke(
+        recipes: List<Recipe>,
+        sessionProductIds: List<ProductId>,
+        connections: Set<ProductConnection>,
+    ): List<Recipe> {
+        val sessionProducts = sessionProductIds.toSet()
+        return recipes.filter { recipe ->
+            val recipeProducts = recipe.productIds.distinct().filterTo(mutableSetOf()) {
+                it in sessionProducts
+            }
+            recipeProducts.size <= 1 || recipeProducts.isConnectedBy(connections)
+        }
+    }
+}
+
+private fun Set<ProductId>.isConnectedBy(
+    connections: Set<ProductConnection>,
+): Boolean {
+    val visited = mutableSetOf<ProductId>()
+    val queue = ArrayDeque<ProductId>()
+    queue.add(first())
+
+    while (queue.isNotEmpty()) {
+        val current = queue.removeFirst()
+        if (!visited.add(current)) continue
+        connections.forEach { connection ->
+            val next = connection.other(current)
+            if (next != null && next in this && next !in visited) queue.add(next)
+        }
+    }
+    return visited.containsAll(this)
 }
 
 @ContributesBinding(AppScope::class)

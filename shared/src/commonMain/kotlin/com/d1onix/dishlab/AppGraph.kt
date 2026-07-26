@@ -4,6 +4,7 @@ import com.d1onix.dishlab.data.demo.DemoDataSeeder
 import com.d1onix.dishlab.feature.home.presentation.HomeViewModel
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphViewModel
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryViewModel
+import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.cooking.CookingViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.detail.RecipeDetailViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.list.RecipesViewModel
@@ -33,6 +34,7 @@ interface AppGraph {
     val homeViewModel: HomeViewModel
     val scanViewModel: ScanViewModel
     val graphViewModel: GraphViewModel
+    val connectionOverviewViewModel: ConnectionOverviewViewModel
     val historyViewModel: HistoryViewModel
     val recipesViewModel: RecipesViewModel
     val savedRecipesViewModel: SavedRecipesViewModel

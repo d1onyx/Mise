@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.anim.screenIn
@@ -29,7 +30,6 @@ import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.d1onix.dishlab.feature.recipes.presentation.previewBowl
 import com.d1onix.dishlab.feature.recipes.resources.Res
 import com.d1onix.dishlab.feature.recipes.resources.cooking_back
 import com.d1onix.dishlab.feature.recipes.resources.cooking_exit
@@ -40,7 +40,6 @@ import com.d1onix.dishlab.feature.recipes.resources.cooking_timer_pause
 import com.d1onix.dishlab.feature.recipes.resources.cooking_timer_resume
 import com.d1onix.dishlab.feature.recipes.resources.cooking_timer_start
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun CookingScreen(viewModel: CookingViewModel) {
@@ -50,7 +49,7 @@ fun CookingScreen(viewModel: CookingViewModel) {
 
 /** Step-by-step cooking with the per-step countdown. */
 @Composable
-private fun CookingContent(
+internal fun CookingContent(
     state: CookingUiState,
     onAction: (CookingAction) -> Unit,
     modifier: Modifier = Modifier,
@@ -136,6 +135,7 @@ private fun CookingContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
+                    val timerButtonShape = RoundedCornerShape(13.dp)
                     Text(
                         text = state.timerLabel,
                         style = MiseTheme.typography.monoDisplay,
@@ -154,13 +154,14 @@ private fun CookingContent(
                         color = if (state.isTimerRunning) colors.red else colors.onCyan,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
+                            .clip(timerButtonShape)
                             .background(
                                 if (state.isTimerRunning) {
                                     colors.red.copy(alpha = 0.15f)
                                 } else {
                                     colors.cyan
                                 },
-                                RoundedCornerShape(13.dp),
+                                timerButtonShape,
                             )
                             .clickable { onAction(CookingAction.TimerClicked) }
                             .padding(horizontal = 20.dp, vertical = 11.dp),
@@ -191,40 +192,5 @@ private fun CookingContent(
             )
         }
         Spacer(Modifier.height(4.dp))
-    }
-}
-
-@Preview
-@Composable
-private fun CookingContentPreview() {
-    MiseTheme {
-        CookingContent(state = CookingUiState(recipe = previewBowl), onAction = {})
-    }
-}
-
-/** Timer counting down — the state that only exists a few seconds in the app. */
-@Preview
-@Composable
-private fun CookingContentRunningTimerPreview() {
-    MiseTheme {
-        CookingContent(
-            state = CookingUiState(
-                recipe = previewBowl,
-                remainingSeconds = 77,
-                isTimerRunning = true,
-            ),
-            onAction = {},
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun CookingContentLastStepPreview() {
-    MiseTheme {
-        CookingContent(
-            state = CookingUiState(recipe = previewBowl, stepIndex = previewBowl.steps.lastIndex),
-            onAction = {},
-        )
     }
 }
