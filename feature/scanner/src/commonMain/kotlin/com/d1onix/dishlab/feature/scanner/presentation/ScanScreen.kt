@@ -45,6 +45,7 @@ import com.d1onix.dishlab.designsystem.component.VerdictBadge
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
+import com.d1onix.dishlab.domain.model.ProductDataOrigin
 import com.d1onix.dishlab.domain.model.ScoreVerdict
 import com.d1onix.dishlab.feature.scanner.resources.Res
 import com.d1onix.dishlab.feature.scanner.resources.scan_back
@@ -66,6 +67,9 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_review_question
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_skip
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_server_unavailable
+import com.d1onix.dishlab.feature.scanner.resources.scan_server_fallback_body
+import com.d1onix.dishlab.feature.scanner.resources.scan_server_fallback_title
+import com.d1onix.dishlab.feature.scanner.resources.scan_server_retry
 import com.d1onix.dishlab.feature.scanner.resources.scan_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_title_resolving
 import com.kashif.cameraK.permissions.providePermissions
@@ -99,6 +103,7 @@ internal fun ScanContent(
             product = product,
             alreadyAdded = state.reviewedProductAlreadyAdded,
             comparisonMode = state.isComparison,
+            usedDeviceFallback = product.dataOrigin == ProductDataOrigin.DeviceFallback,
             onAction = onAction,
             modifier = modifier,
         )
@@ -161,6 +166,12 @@ internal fun ScanContent(
                     color = colors.red,
                     textAlign = TextAlign.Center,
                 )
+                Spacer(Modifier.height(10.dp))
+                MiseGhostButton(
+                    text = stringResource(Res.string.scan_server_retry),
+                    onClick = { onAction(ScanAction.RetryResolutionClicked) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             Spacer(Modifier.weight(1f))
@@ -201,6 +212,7 @@ private fun ScannedProductReview(
     product: Product,
     alreadyAdded: Boolean,
     comparisonMode: Boolean,
+    usedDeviceFallback: Boolean,
     onAction: (ScanAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -238,6 +250,29 @@ private fun ScannedProductReview(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
+            if (usedDeviceFallback) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(colors.amber.copy(alpha = 0.10f), RoundedCornerShape(8.dp))
+                            .border(1.dp, colors.amber.copy(alpha = 0.32f), RoundedCornerShape(8.dp))
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.scan_server_fallback_title),
+                            style = MiseTheme.typography.monoSmall,
+                            color = colors.amber,
+                        )
+                        Text(
+                            text = stringResource(Res.string.scan_server_fallback_body),
+                            style = MiseTheme.typography.bodySmall,
+                            color = colors.textMuted,
+                        )
+                    }
+                }
+            }
             item {
                 Row(
                     modifier = Modifier

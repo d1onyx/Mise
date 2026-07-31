@@ -13,6 +13,7 @@ data class ScanUiState(
     val manualBarcode: String = "",
     /** The barcode was valid, but the server could not be reached. */
     val resolutionFailed: Boolean = false,
+    val failedBarcode: String? = null,
     val reviewedProduct: Product? = null,
     val reviewedProductAlreadyAdded: Boolean = false,
 ) {
@@ -26,6 +27,7 @@ sealed interface ScanAction {
     data object ManualEntryToggled : ScanAction
     data class ManualBarcodeChanged(val value: String) : ScanAction
     data object ManualBarcodeSubmitted : ScanAction
+    data object RetryResolutionClicked : ScanAction
     data object AddReviewedProductClicked : ScanAction
     data object ReviewedProductSkipped : ScanAction
     data object ReviewBackClicked : ScanAction

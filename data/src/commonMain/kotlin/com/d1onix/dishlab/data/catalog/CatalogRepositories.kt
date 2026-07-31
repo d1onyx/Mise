@@ -5,6 +5,7 @@ import com.d1onix.dishlab.data.catalog.off.OpenFoodFactsProductDataSource
 import com.d1onix.dishlab.domain.model.Nutrient
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductAlternative
+import com.d1onix.dishlab.domain.model.ProductDataOrigin
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeId
@@ -14,6 +15,8 @@ import com.d1onyx.core.datastore.KeyValueStorage
 import com.d1onyx.core.datastore.PreferenceKey
 import com.d1onyx.core.datastore.get
 import com.d1onyx.core.essentials.di.AppScope
+import com.d1onyx.core.essentials.exceptions.BackendException
+import com.d1onyx.core.essentials.exceptions.ConnectionException
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -103,6 +106,7 @@ private data class CachedRemoteProductDto(
     val nutrients: List<CachedNutrientDto>,
     val summary: String,
     val hasCompleteData: Boolean,
+    val dataOrigin: ProductDataOrigin = ProductDataOrigin.Canonical,
 )
 
 @Serializable
@@ -139,7 +143,10 @@ class BackendProductRepository(
             }
         } catch (exception: Throwable) {
             if (exception is CancellationException) throw exception
-            snapshot.toBackendProduct().toDomain().also { remoteCache.put(it) }
+            if (!exception.isBackendUnavailable()) throw exception
+            snapshot.toBackendProduct().toDomain()
+                .copy(dataOrigin = ProductDataOrigin.DeviceFallback)
+                .also { remoteCache.put(it) }
         }
     }
 
@@ -238,6 +245,7 @@ private fun Product.toCached(): CachedRemoteProductDto = CachedRemoteProductDto(
     nutrients = nutrients.map { CachedNutrientDto(it.name, it.amount, it.unit) },
     summary = summary,
     hasCompleteData = hasCompleteData,
+    dataOrigin = dataOrigin,
 )
 
 private fun CachedRemoteProductDto.toDomain(): Product = Product(
@@ -251,8 +259,14 @@ private fun CachedRemoteProductDto.toDomain(): Product = Product(
     nutrients = nutrients.map { Nutrient(it.name, it.amount, it.unit) },
     summary = summary,
     hasCompleteData = hasCompleteData,
+    dataOrigin = dataOrigin,
     alternatives = emptyList(),
 )
+
+private fun Throwable.isBackendUnavailable(): Boolean =
+    this is ConnectionException || this is BackendException && httpCode.value >= HTTP_SERVER_ERROR
+
+private const val HTTP_SERVER_ERROR = 500
 
 private fun String?.toDishLabScore(): Int = when (this) {
     "a" -> 90

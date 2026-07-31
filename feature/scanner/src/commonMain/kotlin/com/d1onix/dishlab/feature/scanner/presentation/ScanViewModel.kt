@@ -43,10 +43,15 @@ class ScanViewModel(
                 _uiState.update { it.copy(manualEntryVisible = !it.manualEntryVisible) }
 
             is ScanAction.ManualBarcodeChanged -> _uiState.update {
-                it.copy(manualBarcode = action.value.filter { char -> !char.isWhitespace() })
+                it.copy(
+                    manualBarcode = action.value.filter { char -> !char.isWhitespace() },
+                    resolutionFailed = false,
+                    failedBarcode = null,
+                )
             }
 
             ScanAction.ManualBarcodeSubmitted -> submitManualBarcode()
+            ScanAction.RetryResolutionClicked -> retryResolution()
             ScanAction.AddReviewedProductClicked -> addReviewedProduct()
             ScanAction.ReviewedProductSkipped -> skipReviewedProduct()
             ScanAction.ReviewBackClicked -> _uiState.update {
@@ -62,13 +67,20 @@ class ScanViewModel(
      */
     private fun onBarcodeDetected(barcode: String) {
         if (_uiState.value.isResolving || _uiState.value.reviewedProduct != null) return
-        _uiState.update { it.copy(isResolving = true, resolutionFailed = false) }
+        _uiState.update { it.copy(isResolving = true, resolutionFailed = false, failedBarcode = null) }
         resolve(barcode)
     }
 
     private fun submitManualBarcode() {
         val barcode = _uiState.value.manualBarcode
         if (barcode.isBlank() || _uiState.value.isResolving) return
+        _uiState.update { it.copy(isResolving = true, resolutionFailed = false, failedBarcode = null) }
+        resolve(barcode)
+    }
+
+    private fun retryResolution() {
+        val barcode = _uiState.value.failedBarcode ?: return
+        if (_uiState.value.isResolving) return
         _uiState.update { it.copy(isResolving = true, resolutionFailed = false) }
         resolve(barcode)
     }
@@ -90,7 +102,9 @@ class ScanViewModel(
                 tag = logTag,
                 throwable = exception,
             ) { "Barcode resolution failed" }
-            _uiState.update { it.copy(isResolving = false, resolutionFailed = true) }
+            _uiState.update {
+                it.copy(isResolving = false, resolutionFailed = true, failedBarcode = barcode)
+            }
         }
     }
 
@@ -99,6 +113,8 @@ class ScanViewModel(
         _uiState.update {
             it.copy(
                 isResolving = false,
+                resolutionFailed = false,
+                failedBarcode = null,
                 manualEntryVisible = false,
                 manualBarcode = "",
                 reviewedProduct = product,

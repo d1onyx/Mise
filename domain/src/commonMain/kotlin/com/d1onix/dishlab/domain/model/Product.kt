@@ -58,8 +58,15 @@ data class Product(
     /** `false` when some nutrients were estimated — the UI warns about it. */
     val hasCompleteData: Boolean,
     val alternatives: List<ProductAlternative>,
+    /** Whether DishLab could apply its own canonicalization to this product. */
+    val dataOrigin: ProductDataOrigin = ProductDataOrigin.Canonical,
 ) {
     val verdict: ScoreVerdict get() = ScoreVerdict.of(score)
+}
+
+enum class ProductDataOrigin {
+    Canonical,
+    DeviceFallback,
 }
 
 data class Nutrient(

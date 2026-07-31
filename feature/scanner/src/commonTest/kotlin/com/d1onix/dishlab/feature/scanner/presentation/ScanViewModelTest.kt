@@ -13,6 +13,7 @@ import com.d1onix.dishlab.domain.repository.UserSessionRepository
 import com.d1onix.dishlab.feature.scanner.navigation.ScanTarget
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
+import com.d1onyx.core.essentials.exceptions.ConnectionException
 import com.d1onyx.core.essentials.logger.DefaultLogger
 import com.d1onyx.core.essentials.logger.RecordingLogSink
 import com.d1onyx.core.presentation.CommonDependencies
@@ -109,6 +110,31 @@ class ScanViewModelTest {
     }
 
     @Test
+    fun `a connection failure stays on the scanner and can be retried`() = runTest(dispatcher) {
+        var attempts = 0
+        val viewModel = viewModel(
+            session = FakeSessionStore(),
+            router = FakeRouter(),
+            productLookup = {
+                attempts++
+                throw ConnectionException()
+            },
+        )
+
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
+        testScheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.resolutionFailed)
+        assertEquals("111", viewModel.uiState.value.failedBarcode)
+
+        viewModel.onAction(ScanAction.RetryResolutionClicked)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(2, attempts)
+        assertTrue(viewModel.uiState.value.resolutionFailed)
+    }
+
+    @Test
     fun `not now keeps the scanned product out of the graph`() = runTest(dispatcher) {
         val session = FakeSessionStore()
         val router = FakeRouter()
@@ -169,11 +195,12 @@ class ScanViewModelTest {
         target: ScanTarget = ScanTarget.Graph,
         comparison: ProductComparisonStore = FakeComparisonStore(),
         authenticated: Boolean = true,
-    ) = ScanViewModel(
-        dependencies = CommonDependencies(DefaultLogger(RecordingLogSink()), ExceptionHandler { }),
-        getProductByBarcode = GetProductByBarcodeUseCase { barcode ->
+        productLookup: suspend (String) -> Product? = { barcode ->
             if (barcode == "111") product else null
         },
+    ) = ScanViewModel(
+        dependencies = CommonDependencies(DefaultLogger(RecordingLogSink()), ExceptionHandler { }),
+        getProductByBarcode = GetProductByBarcodeUseCase(productLookup),
         recordScan = RecordScanUseCase { id -> recorded += id },
         target = target,
         session = session,
