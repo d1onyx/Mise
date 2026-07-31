@@ -1,5 +1,9 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+val backendUrl = providers.gradleProperty("dishLabApiUrl")
+    .orElse("http://10.0.2.2:8080/")
+    .get()
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
@@ -34,6 +38,8 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "DISH_LAB_API_URL", "\"$backendUrl\"")
+        buildConfigField("String", "DISH_LAB_DEV_TOKEN", "\"\"")
     }
     packaging {
         resources {
@@ -41,6 +47,9 @@ android {
         }
     }
     buildTypes {
+        debug {
+            buildConfigField("String", "DISH_LAB_DEV_TOKEN", "\":dishlab-mobile\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -55,6 +64,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     lint {
         // The `core` template ships AndroidNotificationController, which lint

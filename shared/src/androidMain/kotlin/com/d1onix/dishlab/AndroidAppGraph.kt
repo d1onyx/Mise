@@ -12,6 +12,8 @@ import com.d1onyx.core.essentials.di.AppScope
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
 import com.d1onyx.core.essentials.logger.LogLevel
 import com.d1onyx.core.essentials.logger.Logger
+import com.d1onyx.core.network.NetworkConfig
+import com.d1onyx.core.network.auth.AuthTokenProvider
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
@@ -26,7 +28,10 @@ interface AndroidAppGraph : AppGraph {
 
     @DependencyGraph.Factory
     fun interface Factory {
-        fun create(@Provides context: Context): AndroidAppGraph
+        fun create(
+            @Provides context: Context,
+            @Provides backendConfig: BackendRuntimeConfig,
+        ): AndroidAppGraph
     }
 
     @Provides
@@ -41,6 +46,18 @@ interface AndroidAppGraph : AppGraph {
 
     @Provides
     fun provideLogger(): Logger = Logger
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideNetworkConfig(config: BackendRuntimeConfig): NetworkConfig = NetworkConfig(
+        baseUrl = config.baseUrl,
+        isDebug = config.isDebug,
+    )
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAuthTokenProvider(config: BackendRuntimeConfig): AuthTokenProvider =
+        AuthTokenProvider { config.developmentToken }
 
     /**
      * Failures that reach the user have no UI of their own yet, so they are
@@ -57,5 +74,7 @@ interface AndroidAppGraph : AppGraph {
  * Builds the graph for the Android composition root, so the app module does not
  * need the Metro compiler plugin just to call `createGraphFactory`.
  */
-fun createAndroidAppGraph(context: Context): AppGraph =
-    createGraphFactory<AndroidAppGraph.Factory>().create(context)
+fun createAndroidAppGraph(
+    context: Context,
+    backendConfig: BackendRuntimeConfig,
+): AppGraph = createGraphFactory<AndroidAppGraph.Factory>().create(context, backendConfig)

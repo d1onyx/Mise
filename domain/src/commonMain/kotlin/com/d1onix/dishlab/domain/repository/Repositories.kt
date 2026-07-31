@@ -4,15 +4,15 @@ import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.ProductGraphPosition
+import com.d1onix.dishlab.domain.model.ProfileSettings
+import com.d1onix.dishlab.domain.model.CookingPreferences
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeId
+import com.d1onix.dishlab.domain.model.UserSession
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
-/**
- * The product catalogue. Backed by a bundled dataset today; the OpenFoodFacts
- * client will implement the same interface without any feature changing.
- */
+/** Products resolved by the backend and cached locally after a successful scan. */
 interface ProductRepository {
     suspend fun byBarcode(barcode: String): Product?
     suspend fun byId(id: ProductId): Product?
@@ -36,6 +36,7 @@ interface ScanHistoryRepository {
     /** Most recently scanned first. */
     val history: Flow<List<ProductId>>
     suspend fun add(id: ProductId)
+    suspend fun remove(id: ProductId)
     suspend fun clear()
 }
 
@@ -56,4 +57,36 @@ interface ScanSessionStore {
     suspend fun disconnect(first: ProductId, second: ProductId)
     suspend fun updatePosition(id: ProductId, position: ProductGraphPosition)
     suspend fun reset(ids: List<ProductId>)
+}
+
+interface ProfileSettingsRepository {
+    val settings: Flow<ProfileSettings>
+    suspend fun setDisplayName(value: String)
+    suspend fun setAutoConnectNewProducts(enabled: Boolean)
+    suspend fun setReduceGraphMotion(enabled: Boolean)
+    suspend fun setShowProductScores(enabled: Boolean)
+}
+
+interface UserSessionRepository {
+    val session: Flow<UserSession>
+    suspend fun signIn(email: String, password: String)
+    suspend fun register(email: String, password: String)
+    suspend fun signOut()
+    suspend fun markOnboardingCompleted()
+}
+
+interface CookingPreferencesRepository {
+    val preferences: Flow<CookingPreferences>
+    suspend fun save(preferences: CookingPreferences)
+}
+
+interface ProductComparisonStore {
+    val products: StateFlow<List<ProductId>>
+    suspend fun add(id: ProductId): Boolean
+    suspend fun remove(id: ProductId)
+    suspend fun clear()
+
+    companion object {
+        const val MAX_PRODUCTS = 5
+    }
 }

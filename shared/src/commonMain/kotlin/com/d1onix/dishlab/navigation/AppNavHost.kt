@@ -11,20 +11,30 @@ import androidx.navigation.toRoute
 import com.d1onix.dishlab.AppGraph
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.feature.home.navigation.HomeRoute
+import com.d1onix.dishlab.feature.home.navigation.AuthRoute
+import com.d1onix.dishlab.feature.home.navigation.OnboardingRoute
+import com.d1onix.dishlab.feature.home.navigation.ProfileRoute
 import com.d1onix.dishlab.feature.home.presentation.HomeScreen
+import com.d1onix.dishlab.feature.home.presentation.auth.AuthScreen
+import com.d1onix.dishlab.feature.home.presentation.onboarding.OnboardingScreen
+import com.d1onix.dishlab.feature.home.presentation.profile.ProfileScreen
 import com.d1onix.dishlab.feature.products.navigation.GraphRoute
+import com.d1onix.dishlab.feature.products.navigation.ComparisonRoute
 import com.d1onix.dishlab.feature.products.navigation.HistoryRoute
 import com.d1onix.dishlab.feature.products.navigation.ConnectionOverviewRoute
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphScreen
+import com.d1onix.dishlab.feature.products.presentation.comparison.ComparisonScreen
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryScreen
 import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewScreen
 import com.d1onix.dishlab.feature.recipes.navigation.CookingRoute
+import com.d1onix.dishlab.feature.recipes.navigation.DiscoverRecipesRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipeDetailRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRoute
 import com.d1onix.dishlab.feature.recipes.navigation.SavedRoute
 import com.d1onix.dishlab.feature.recipes.presentation.cooking.CookingScreen
 import com.d1onix.dishlab.feature.recipes.presentation.detail.RecipeDetailScreen
 import com.d1onix.dishlab.feature.recipes.presentation.list.RecipesScreen
+import com.d1onix.dishlab.feature.recipes.presentation.list.DiscoverRecipesScreen
 import com.d1onix.dishlab.feature.recipes.presentation.list.SavedRecipesScreen
 import com.d1onix.dishlab.feature.scanner.navigation.ScanNotFoundRoute
 import com.d1onix.dishlab.feature.scanner.navigation.ScanRoute
@@ -56,19 +66,42 @@ fun AppNavHost(graph: AppGraph) {
                 HomeScreen(viewModel { graph.homeViewModel })
             }
 
-            composable<ScanRoute> {
-                ScanScreen(viewModel { graph.scanViewModel })
+            composable<ProfileRoute> {
+                ProfileScreen(viewModel { graph.profileViewModel })
+            }
+
+            composable<AuthRoute> { entry ->
+                val destination = entry.toRoute<AuthRoute>().destination
+                AuthScreen(viewModel { graph.authViewModelFactory.create(destination) })
+            }
+
+            composable<OnboardingRoute> { entry ->
+                val route = entry.toRoute<OnboardingRoute>()
+                OnboardingScreen(
+                    viewModel {
+                        graph.onboardingViewModelFactory.create(route.showIntro, route.destination)
+                    },
+                )
+            }
+
+            composable<ScanRoute> { entry ->
+                val target = entry.toRoute<ScanRoute>().target
+                ScanScreen(viewModel { graph.scanViewModelFactory.create(target) })
             }
 
             composable<ScanNotFoundRoute> { entry ->
-                val barcode = entry.toRoute<ScanNotFoundRoute>().barcode
+                val route = entry.toRoute<ScanNotFoundRoute>()
                 ScanNotFoundScreen(
-                    viewModel { graph.scanNotFoundViewModelFactory.create(barcode) },
+                    viewModel { graph.scanNotFoundViewModelFactory.create(route.barcode, route.target) },
                 )
             }
 
             composable<GraphRoute> {
                 GraphScreen(viewModel { graph.graphViewModel })
+            }
+
+            composable<ComparisonRoute> {
+                ComparisonScreen(viewModel { graph.comparisonViewModel })
             }
 
             composable<ConnectionOverviewRoute> {
@@ -81,6 +114,10 @@ fun AppNavHost(graph: AppGraph) {
 
             composable<RecipesRoute> {
                 RecipesScreen(viewModel { graph.recipesViewModel })
+            }
+
+            composable<DiscoverRecipesRoute> {
+                DiscoverRecipesScreen(viewModel { graph.discoverRecipesViewModel })
             }
 
             composable<SavedRoute> {

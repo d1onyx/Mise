@@ -2,18 +2,25 @@ package com.d1onix.dishlab.navigation
 
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.feature.home.navigation.HomeRoute
+import com.d1onix.dishlab.feature.home.navigation.AuthRoute
 import com.d1onix.dishlab.feature.home.navigation.HomeRouter
+import com.d1onix.dishlab.feature.home.navigation.OnboardingRoute
+import com.d1onix.dishlab.feature.home.navigation.ProfileRoute
+import com.d1onix.dishlab.feature.home.navigation.ProtectedDestination
 import com.d1onix.dishlab.feature.products.navigation.GraphRoute
+import com.d1onix.dishlab.feature.products.navigation.ComparisonRoute
 import com.d1onix.dishlab.feature.products.navigation.HistoryRoute
 import com.d1onix.dishlab.feature.products.navigation.ProductsRouter
 import com.d1onix.dishlab.feature.products.navigation.ConnectionOverviewRoute
 import com.d1onix.dishlab.feature.recipes.navigation.CookingRoute
+import com.d1onix.dishlab.feature.recipes.navigation.DiscoverRecipesRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipeDetailRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRouter
 import com.d1onix.dishlab.feature.recipes.navigation.SavedRoute
 import com.d1onix.dishlab.feature.scanner.navigation.ScanNotFoundRoute
 import com.d1onix.dishlab.feature.scanner.navigation.ScanRoute
+import com.d1onix.dishlab.feature.scanner.navigation.ScanTarget
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
 import com.d1onyx.core.essentials.di.AppScope
 import com.d1onyx.navigation.AppRouter
@@ -28,9 +35,25 @@ import dev.zacsweers.metro.Inject
 @ContributesBinding(AppScope::class)
 @Inject
 class HomeRouterImpl(private val router: AppRouter) : HomeRouter {
-    override fun openScanner() = router.launch(ScanRoute)
+    override fun openScanner() = router.launch(ScanRoute())
     override fun openSavedRecipes() = router.launch(SavedRoute)
     override fun openHistory() = router.launch(HistoryRoute)
+    override fun openProfile() = router.launch(ProfileRoute)
+    override fun openAuth(destination: ProtectedDestination) = router.launch(AuthRoute(destination))
+    override fun openPostRegistrationOnboarding(destination: ProtectedDestination) =
+        router.replace(OnboardingRoute(showIntro = true, destination = destination))
+    override fun completeProtectedNavigation(destination: ProtectedDestination) = when (destination) {
+        ProtectedDestination.Previous -> router.goBack()
+        ProtectedDestination.Profile -> router.replace(ProfileRoute)
+        ProtectedDestination.Comparison -> router.replace(ComparisonRoute)
+        ProtectedDestination.RecipeDiscovery -> router.replace(DiscoverRecipesRoute)
+        ProtectedDestination.Saved -> router.replace(SavedRoute)
+        ProtectedDestination.History -> router.replace(HistoryRoute)
+    }
+    override fun openPreferenceSetup() = router.launch(OnboardingRoute(showIntro = false))
+    override fun openComparison() = router.launch(ComparisonRoute)
+    override fun openRecipeDiscovery() = router.launch(DiscoverRecipesRoute)
+    override fun goBack() = router.goBack()
 }
 
 @ContributesBinding(AppScope::class)
@@ -38,8 +61,11 @@ class HomeRouterImpl(private val router: AppRouter) : HomeRouter {
 class ScannerRouterImpl(private val router: AppRouter) : ScannerRouter {
     /** `replace`, so backing out of the graph does not return to the viewfinder. */
     override fun openCombinationGraph() = router.replace(GraphRoute)
-    override fun openNotFound(barcode: String) = router.replace(ScanNotFoundRoute(barcode))
-    override fun openScanner() = router.replace(ScanRoute)
+    override fun openNotFound(barcode: String, target: ScanTarget) =
+        router.replace(ScanNotFoundRoute(barcode, target))
+    override fun openScanner(target: ScanTarget) = router.replace(ScanRoute(target))
+    override fun openComparison() = router.replace(ComparisonRoute)
+    override fun openAuth() = router.launch(AuthRoute())
     override fun openHome() = router.restart(HomeRoute)
     override fun goBack() = router.goBack()
 }
@@ -47,11 +73,13 @@ class ScannerRouterImpl(private val router: AppRouter) : ScannerRouter {
 @ContributesBinding(AppScope::class)
 @Inject
 class ProductsRouterImpl(private val router: AppRouter) : ProductsRouter {
-    override fun openScanner() = router.launch(ScanRoute)
+    override fun openScanner() = router.launch(ScanRoute())
     override fun openRecipes() = router.launch(RecipesRoute)
     override fun openSavedRecipes() = router.launch(SavedRoute)
     override fun openCombinationGraph() = router.launch(GraphRoute)
     override fun openConnectionOverview() = router.launch(ConnectionOverviewRoute)
+    override fun openProfile() = router.launch(ProfileRoute)
+    override fun openComparisonScanner() = router.launch(ScanRoute(ScanTarget.Comparison))
     override fun goBack() = router.goBack()
 }
 

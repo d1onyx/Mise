@@ -19,11 +19,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +39,6 @@ import com.d1onix.dishlab.designsystem.component.MiseGhostButton
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.MiseSearchField
-import com.d1onix.dishlab.designsystem.component.MiseTextAction
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.component.VerdictBadge
@@ -53,7 +50,6 @@ import com.d1onix.dishlab.feature.scanner.resources.Res
 import com.d1onix.dishlab.feature.scanner.resources.scan_back
 import com.d1onix.dishlab.feature.scanner.resources.scan_camera_denied
 import com.d1onix.dishlab.feature.scanner.resources.scan_camera_starting
-import com.d1onix.dishlab.feature.scanner.resources.scan_capture
 import com.d1onix.dishlab.feature.scanner.resources.scan_hint_primary
 import com.d1onix.dishlab.feature.scanner.resources.scan_hint_secondary
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_cancel
@@ -61,6 +57,7 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_manual_entry
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_placeholder
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_submit
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add
+import com.d1onix.dishlab.feature.scanner.resources.scan_review_add_comparison
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_alternatives
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_incomplete
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_nutrition
@@ -68,13 +65,10 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_review_open_graph
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_question
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_skip
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_title
-import com.d1onix.dishlab.feature.scanner.resources.scan_simulate_not_found
+import com.d1onix.dishlab.feature.scanner.resources.scan_server_unavailable
 import com.d1onix.dishlab.feature.scanner.resources.scan_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_title_resolving
-import com.kashif.cameraK.compose.CameraKScreen
-import com.kashif.cameraK.compose.rememberCameraKState
 import com.kashif.cameraK.permissions.providePermissions
-import com.kashif.qrscannerplugin.QRScannerPlugin
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.PI
 import kotlin.math.sin
@@ -104,6 +98,7 @@ internal fun ScanContent(
         ScannedProductReview(
             product = product,
             alreadyAdded = state.reviewedProductAlreadyAdded,
+            comparisonMode = state.isComparison,
             onAction = onAction,
             modifier = modifier,
         )
@@ -158,6 +153,15 @@ internal fun ScanContent(
                 style = MiseTheme.typography.monoSmall,
                 color = colors.textFaint,
             )
+            if (state.resolutionFailed) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = stringResource(Res.string.scan_server_unavailable),
+                    style = MiseTheme.typography.bodySmall,
+                    color = colors.red,
+                    textAlign = TextAlign.Center,
+                )
+            }
 
             Spacer(Modifier.weight(1f))
 
@@ -182,22 +186,9 @@ internal fun ScanContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             } else {
-                MisePrimaryButton(
-                    text = stringResource(Res.string.scan_capture),
-                    onClick = { onAction(ScanAction.CaptureClicked) },
-                    enabled = !state.isResolving,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(10.dp))
                 MiseGhostButton(
                     text = stringResource(Res.string.scan_manual_entry),
                     onClick = { onAction(ScanAction.ManualEntryToggled) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                MiseTextAction(
-                    text = stringResource(Res.string.scan_simulate_not_found),
-                    onClick = { onAction(ScanAction.SimulateNotFoundClicked) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -209,6 +200,7 @@ internal fun ScanContent(
 private fun ScannedProductReview(
     product: Product,
     alreadyAdded: Boolean,
+    comparisonMode: Boolean,
     onAction: (ScanAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -390,7 +382,9 @@ private fun ScannedProductReview(
             )
             MisePrimaryButton(
                 text = stringResource(
-                    if (alreadyAdded) {
+                    if (comparisonMode) {
+                        Res.string.scan_review_add_comparison
+                    } else if (alreadyAdded) {
                         Res.string.scan_review_open_graph
                     } else {
                         Res.string.scan_review_add
@@ -410,9 +404,8 @@ private fun ScannedProductReview(
 }
 
 /**
- * Camera preview plus the ZXing/AVFoundation barcode plugin. Kept out of the
- * content composable so the screen renders without a camera — in a preview, on
- * an emulator, or when the permission is refused.
+ * Camera preview kept out of the content composable so previews and manual
+ * barcode entry work even when a camera is unavailable.
  */
 @Composable
 private fun CameraLayer(onBarcodeDetected: (String) -> Unit) {
@@ -432,22 +425,9 @@ private fun CameraLayer(onBarcodeDetected: (String) -> Unit) {
         return
     }
 
-    val scope = rememberCoroutineScope()
-    val qrPlugin = remember(scope) { QRScannerPlugin(scope) }
-    val cameraState by rememberCameraKState(
-        setupPlugins = { holder -> qrPlugin.attachToStateHolder(holder) },
-    )
-
-    LaunchedEffect(qrPlugin) {
-        qrPlugin.getQrCodeFlow().collect(onBarcodeDetected)
-    }
-
-    CameraKScreen(
+    ProductBarcodeCamera(
+        onBarcodeDetected = onBarcodeDetected,
         modifier = Modifier.fillMaxSize(),
-        cameraState = cameraState,
-        loadingContent = { Box(Modifier.fillMaxSize().background(MiseTheme.colors.backgroundDeep)) },
-        errorContent = { CameraUnavailable(permissionDenied = false) },
-        content = { },
     )
 }
 

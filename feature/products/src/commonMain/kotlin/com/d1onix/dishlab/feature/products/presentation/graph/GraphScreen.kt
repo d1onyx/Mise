@@ -42,7 +42,6 @@ import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.component.MiseCircleButton
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
-import com.d1onix.dishlab.designsystem.component.MiseToast
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
@@ -63,8 +62,6 @@ import com.d1onix.dishlab.feature.products.resources.graph_find_recipes
 import com.d1onix.dishlab.feature.products.resources.graph_hint
 import com.d1onix.dishlab.feature.products.resources.graph_hint_connect
 import com.d1onix.dishlab.feature.products.resources.graph_hint_edit
-import com.d1onix.dishlab.feature.products.resources.graph_profile_coming_soon
-import com.d1onix.dishlab.feature.products.resources.graph_profile_initials
 import com.d1onix.dishlab.feature.products.resources.graph_saved
 import com.d1onix.dishlab.feature.products.resources.graph_scan_more
 import com.d1onix.dishlab.feature.products.resources.graph_title
@@ -138,6 +135,8 @@ internal fun GraphContent(
                 selectedId = state.selectedId,
                 isEditingConnections = state.isEditingConnections,
                 pendingConnectionId = state.pendingConnectionId,
+                reduceMotion = state.reduceMotion,
+                showProductScores = state.showProductScores,
                 onAction = onAction,
                 modifier = Modifier.weight(1f).fillMaxWidth(),
             )
@@ -168,7 +167,7 @@ internal fun GraphContent(
                     size = 56,
                 ) {
                     Text(
-                        text = stringResource(Res.string.graph_profile_initials),
+                        text = state.profileInitials,
                         style = MiseTheme.typography.monoSmall,
                         color = colors.textMuted,
                     )
@@ -195,21 +194,6 @@ internal fun GraphContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-        }
-
-        val message = when {
-            state.showProfileHint -> stringResource(Res.string.graph_profile_coming_soon)
-            else -> null
-        }
-        if (message != null) {
-            MiseToast(
-                text = message,
-                onShown = { onAction(GraphAction.MessageShown) },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .safeDrawingPadding()
-                    .padding(top = 70.dp),
-            )
         }
     }
 }
@@ -255,13 +239,23 @@ private fun GraphCanvas(
     selectedId: ProductId?,
     isEditingConnections: Boolean,
     pendingConnectionId: ProductId?,
+    reduceMotion: Boolean,
+    showProductScores: Boolean,
     onAction: (GraphAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = MiseTheme.colors
     val density = LocalDensity.current
-    val drift = rememberSweep(durationMillis = 7000, label = "graphDrift")
-    val edgePulse = rememberPulse(durationMillis = 3200, from = 0.35f, to = 0.85f, label = "edge")
+    val drift = if (reduceMotion) {
+        0f
+    } else {
+        rememberSweep(durationMillis = 7000, label = "graphDrift").value
+    }
+    val edgePulse = if (reduceMotion) {
+        0.72f
+    } else {
+        rememberPulse(durationMillis = 3200, from = 0.35f, to = 0.85f, label = "edge").value
+    }
 
     BoxWithConstraints(
         modifier
@@ -308,7 +302,7 @@ private fun GraphCanvas(
         fun drifted(id: ProductId, index: Int, dragging: Boolean): Offset {
             val base = basePosition(id, index)
             if (dragging) return base
-            val phase = drift.value * 2f * PI.toFloat() + index * 1.7f
+            val phase = drift * 2f * PI.toFloat() + index * 1.7f
             return Offset(base.x + sin(phase) * 4f, base.y + cos(phase * 0.85f) * 4f)
         }
 
@@ -379,6 +373,9 @@ private fun GraphCanvas(
                     }
                 }
                 .drawBehind {
+                    val focusedId = if (isEditingConnections) pendingConnectionId else selectedId
+                    val focusedProduct = products.firstOrNull { it.id == focusedId }
+                    val focusedColor = focusedProduct?.let { Color(it.accentColor) } ?: colors.lime
                     connections.forEach { connection ->
                         val fromIndex = productIndices[connection.first] ?: return@forEach
                         val toIndex = productIndices[connection.second] ?: return@forEach
@@ -393,12 +390,32 @@ private fun GraphCanvas(
                             dragging[connection.second] == true,
                         )
                         val center = Offset(nodePx / 2, nodePx / 2)
+                        val isFocused = focusedId != null && connection.contains(focusedId)
+                        val lineColor = when {
+                            isFocused -> focusedColor
+                            isEditingConnections -> colors.lime
+                            else -> colors.violet
+                        }
+                        val lineAlpha = when {
+                            isFocused -> 0.96f
+                            focusedId != null -> 0.12f
+                            else -> edgePulse
+                        }
+                        if (isFocused) {
+                            drawLine(
+                                color = focusedColor,
+                                start = from + center,
+                                end = to + center,
+                                strokeWidth = 7.dp.toPx(),
+                                alpha = 0.14f,
+                            )
+                        }
                         drawLine(
-                            color = if (isEditingConnections) colors.lime else colors.violet,
+                            color = lineColor,
                             start = from + center,
                             end = to + center,
-                            strokeWidth = 1.8.dp.toPx(),
-                            alpha = edgePulse.value,
+                            strokeWidth = if (isFocused) 3.2.dp.toPx() else 1.6.dp.toPx(),
+                            alpha = lineAlpha,
                         )
                     }
                 }
@@ -408,6 +425,7 @@ private fun GraphCanvas(
             ProductNode(
                 product = product,
                 scoreColor = scoreColor(product.verdict),
+                showScore = showProductScores,
                 selected = if (isEditingConnections) {
                     product.id == pendingConnectionId
                 } else {

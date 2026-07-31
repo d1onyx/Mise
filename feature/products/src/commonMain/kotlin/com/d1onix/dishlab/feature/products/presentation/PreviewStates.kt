@@ -2,6 +2,7 @@ package com.d1onix.dishlab.feature.products.presentation
 
 import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewUiState
+import com.d1onix.dishlab.feature.products.presentation.comparison.ComparisonUiState
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphUiState
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryUiState
 
@@ -49,4 +50,12 @@ internal object ConnectionOverviewPreviewStates {
         directConnectionIds = setOf(previewProducts().last().id),
         connectionCount = 1,
     )
+}
+
+internal object ComparisonPreviewStates {
+    val Default = ComparisonUiState(
+        products = previewProducts(),
+        selectedForGraph = setOf(previewOats.id),
+    )
+    val Empty = ComparisonUiState()
 }

@@ -3,13 +3,12 @@
     <string name="scan_title_resolving">Resolving</string>
     <string name="scan_back">Back</string>
     <string name="scan_hint_primary">Point at a barcode</string>
-    <string name="scan_hint_secondary">Hold steady · auto-detects</string>
-    <string name="scan_capture">Capture scan</string>
+    <string name="scan_hint_secondary">Hold steady · scan from any orientation</string>
+    <string name="scan_server_unavailable">Can’t reach the product service. Check the connection and try again.</string>
     <string name="scan_manual_entry">Enter barcode manually</string>
     <string name="scan_manual_placeholder">Barcode digits</string>
     <string name="scan_manual_submit">Look up barcode</string>
     <string name="scan_manual_cancel">Cancel</string>
-    <string name="scan_simulate_not_found">simulate “not found” →</string>
     <string name="scan_camera_starting">Starting the camera…</string>
     <string name="scan_camera_denied">Camera access is off — use “Capture scan” or type a barcode below.</string>
     <string name="scan_review_title">Product found</string>
@@ -19,6 +18,7 @@
     <string name="scan_review_question">Add this product to your combination graph?</string>
     <string name="scan_review_add">Add to combination graph</string>
     <string name="scan_review_open_graph">Already added · open graph</string>
+    <string name="scan_review_add_comparison">Add to comparison</string>
     <string name="scan_review_skip">Not now</string>
 
     <string name="not_found_title">Product not found</string>

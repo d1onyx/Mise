@@ -5,6 +5,7 @@ import com.d1onix.dishlab.designsystem.preview.MiseComponentPreview
 import com.d1onix.dishlab.designsystem.preview.MiseScreenPreviews
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewContent
+import com.d1onix.dishlab.feature.products.presentation.comparison.ComparisonContent
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphContent
 import com.d1onix.dishlab.feature.products.presentation.graph.components.ProductDetailSheet
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryContent
@@ -65,6 +66,22 @@ private fun ConnectionOverviewContentPreview() {
             state = ConnectionOverviewPreviewStates.Default,
             onAction = {},
         )
+    }
+}
+
+@MiseScreenPreviews
+@Composable
+private fun ComparisonContentPreview() {
+    MiseTheme {
+        ComparisonContent(state = ComparisonPreviewStates.Default, onAction = {})
+    }
+}
+
+@MiseScreenPreviews
+@Composable
+private fun ComparisonContentEmptyPreview() {
+    MiseTheme {
+        ComparisonContent(state = ComparisonPreviewStates.Empty, onAction = {})
     }
 }
 

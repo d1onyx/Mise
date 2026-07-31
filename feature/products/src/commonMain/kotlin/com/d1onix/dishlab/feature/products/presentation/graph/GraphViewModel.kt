@@ -3,8 +3,10 @@ package com.d1onix.dishlab.feature.products.presentation.graph
 import androidx.lifecycle.viewModelScope
 import com.d1onix.dishlab.domain.GetProductsUseCase
 import com.d1onix.dishlab.domain.model.ProductConnection
+import com.d1onix.dishlab.domain.model.ProductGraphPosition
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
+import com.d1onix.dishlab.domain.repository.ProfileSettingsRepository
 import com.d1onix.dishlab.feature.products.navigation.ProductsRouter
 import com.d1onyx.core.presentation.CommonDependencies
 import com.d1onyx.core.presentation.WithMviState
@@ -23,6 +25,7 @@ class GraphViewModel(
     dependencies: CommonDependencies,
     private val session: ScanSessionStore,
     private val getProducts: GetProductsUseCase,
+    private val profileSettings: ProfileSettingsRepository,
     private val router: ProductsRouter,
 ) : AbstractViewModel(dependencies), WithMviState<GraphUiState> {
 
@@ -35,15 +38,20 @@ class GraphViewModel(
                 session.products,
                 session.connections,
                 session.positions,
-            ) { ids, connections, positions ->
-                Triple(ids, connections, positions)
-            }.collectLatest { (ids, connections, positions) ->
+                profileSettings.settings,
+            ) { ids, connections, positions, settings ->
+                GraphSource(ids, connections, positions, settings)
+            }.collectLatest { source ->
+                val (ids, connections, positions, settings) = source
                 val products = getProducts(ids)
                 _uiState.update { state ->
                     state.copy(
                         products = products,
                         connections = connections,
                         positions = positions,
+                        profileInitials = settings.initials,
+                        reduceMotion = settings.reduceGraphMotion,
+                        showProductScores = settings.showProductScores,
                         // Keep the sheet open only while its product is still on the graph.
                         selectedId = state.selectedId?.takeIf { id -> products.any { it.id == id } },
                         pendingConnectionId = state.pendingConnectionId?.takeIf { id ->
@@ -97,10 +105,7 @@ class GraphViewModel(
             GraphAction.SavedClicked -> router.openSavedRecipes()
             GraphAction.BackClicked -> router.goBack()
             GraphAction.SheetDismissed -> _uiState.update { it.copy(selectedId = null) }
-            GraphAction.ProfileClicked -> _uiState.update { it.copy(showProfileHint = true) }
-            GraphAction.MessageShown -> _uiState.update {
-                it.copy(showProfileHint = false)
-            }
+            GraphAction.ProfileClicked -> router.openProfile()
         }
     }
 
@@ -122,4 +127,11 @@ class GraphViewModel(
             }
         }
     }
+
+    private data class GraphSource(
+        val ids: List<ProductId>,
+        val connections: Set<ProductConnection>,
+        val positions: Map<ProductId, ProductGraphPosition>,
+        val settings: com.d1onix.dishlab.domain.model.ProfileSettings,
+    )
 }

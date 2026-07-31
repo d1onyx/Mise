@@ -2,15 +2,59 @@
     <string name="home_wordmark">MISE</string>
     <string name="home_tagline">Scan · Understand · Cook</string>
     <string name="home_headline">Know what you\'re buying, before you buy it.</string>
-    <string name="home_profile_initials">AK</string>
     <string name="home_profile_action">Open profile</string>
-    <string name="home_profile_coming_soon">Profile — coming soon</string>
     <string name="home_scan_title">Scan a product</string>
     <string name="home_scan_subtitle">Barcode → nutrients → recipes</string>
+    <string name="home_compare_title">Compare</string>
+    <string name="home_compare_subtitle">Up to 5 products</string>
+    <string name="home_discover_title">Recipes</string>
+    <string name="home_discover_subtitle">Browse &amp; filter</string>
     <string name="home_saved_title">Saved recipes</string>
     <string name="home_saved_empty">Nothing saved yet</string>
     <string name="home_saved_one">1 recipe ready</string>
     <string name="home_saved_many">%1$d recipes ready</string>
     <string name="home_history_title">Recent scans</string>
     <string name="home_history_count">%1$d →</string>
+
+    <string name="profile_title">Profile &amp; settings</string>
+    <string name="profile_graph_count">%1$d of %2$d products on graph</string>
+    <string name="profile_personal">Personal</string>
+    <string name="profile_name">Display name</string>
+    <string name="profile_name_placeholder">Your name</string>
+    <string name="profile_save">save</string>
+    <string name="profile_graph_settings">Graph settings</string>
+    <string name="profile_auto_connect">Auto-connect new products</string>
+    <string name="profile_auto_connect_body">Create links to existing products after adding a scan.</string>
+    <string name="profile_reduce_motion">Reduce graph motion</string>
+    <string name="profile_reduce_motion_body">Keep product nodes and connection lines still.</string>
+    <string name="profile_show_scores">Show product scores</string>
+    <string name="profile_show_scores_body">Display score badges directly on graph nodes.</string>
+
+    <string name="auth_title">Your account</string>
+    <string name="auth_sign_in">Sign in</string>
+    <string name="auth_register">Create account</string>
+    <string name="auth_name">Display name</string>
+    <string name="auth_name_error">Enter at least 2 characters.</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_email_error">Enter a valid email address.</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_password_error">Use at least 6 characters.</string>
+    <string name="auth_continue">Continue</string>
+
+    <string name="onboarding_intro_title">Make recipes fit your kitchen</string>
+    <string name="onboarding_intro_body">Choose dietary needs, allergens, tastes and available equipment.</string>
+    <string name="onboarding_start">Set up preferences</string>
+    <string name="onboarding_not_now">Not now</string>
+    <string name="onboarding_optional">Select any that apply</string>
+    <string name="onboarding_diets">Diet</string>
+    <string name="onboarding_allergens">Allergens to avoid</string>
+    <string name="onboarding_tastes">Favourite tastes</string>
+    <string name="onboarding_equipment">Kitchen equipment</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_done">Save preferences</string>
+    <string name="onboarding_skip">Skip setup</string>
+
+    <string name="profile_recipe_preferences">Recipe preferences</string>
+    <string name="profile_recipe_preferences_body">Diet, allergens, tastes and kitchen equipment</string>
+    <string name="profile_sign_out">Sign out</string>
 </resources>

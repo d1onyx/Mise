@@ -3,6 +3,11 @@ package com.d1onix.dishlab.feature.home.presentation
 import androidx.compose.runtime.Composable
 import com.d1onix.dishlab.designsystem.preview.MiseScreenPreviews
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
+import com.d1onix.dishlab.feature.home.presentation.profile.ProfileContent
+import com.d1onix.dishlab.feature.home.presentation.auth.AuthContent
+import com.d1onix.dishlab.feature.home.presentation.auth.AuthUiState
+import com.d1onix.dishlab.feature.home.presentation.onboarding.OnboardingContent
+import com.d1onix.dishlab.feature.home.presentation.onboarding.OnboardingUiState
 
 /**
  * Android previews for the home screen.
@@ -30,8 +35,24 @@ private fun HomeContentEmptyPreview() {
 
 @MiseScreenPreviews
 @Composable
-private fun HomeContentToastPreview() {
+private fun ProfileContentPreview() {
     MiseTheme {
-        HomeContent(state = HomePreviewStates.Toast, onAction = {})
+        ProfileContent(state = ProfilePreviewStates.Default, onAction = {})
+    }
+}
+
+@MiseScreenPreviews
+@Composable
+private fun AuthContentPreview() {
+    MiseTheme {
+        AuthContent(state = AuthUiState(), onAction = {})
+    }
+}
+
+@MiseScreenPreviews
+@Composable
+private fun OnboardingContentPreview() {
+    MiseTheme {
+        OnboardingContent(state = OnboardingUiState(showIntro = false), onAction = {})
     }
 }

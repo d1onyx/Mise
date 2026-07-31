@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,17 +33,18 @@ import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.AmbientConstellation
 import com.d1onix.dishlab.designsystem.component.MiseCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePanel
-import com.d1onix.dishlab.designsystem.component.MiseToast
 import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.feature.home.resources.Res
 import com.d1onix.dishlab.feature.home.resources.home_headline
+import com.d1onix.dishlab.feature.home.resources.home_compare_subtitle
+import com.d1onix.dishlab.feature.home.resources.home_compare_title
+import com.d1onix.dishlab.feature.home.resources.home_discover_subtitle
+import com.d1onix.dishlab.feature.home.resources.home_discover_title
 import com.d1onix.dishlab.feature.home.resources.home_history_count
 import com.d1onix.dishlab.feature.home.resources.home_history_title
 import com.d1onix.dishlab.feature.home.resources.home_profile_action
-import com.d1onix.dishlab.feature.home.resources.home_profile_coming_soon
-import com.d1onix.dishlab.feature.home.resources.home_profile_initials
 import com.d1onix.dishlab.feature.home.resources.home_saved_empty
 import com.d1onix.dishlab.feature.home.resources.home_saved_many
 import com.d1onix.dishlab.feature.home.resources.home_saved_one
@@ -73,6 +76,7 @@ internal fun HomeContent(
             Modifier
                 .fillMaxSize()
                 .safeDrawingPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp, vertical = 20.dp)
                 .screenIn(),
         ) {
@@ -95,7 +99,7 @@ internal fun HomeContent(
                     size = 40,
                 ) {
                     Text(
-                        text = stringResource(Res.string.home_profile_initials),
+                        text = state.profileInitials,
                         style = MiseTheme.typography.mono,
                         color = colors.textMuted,
                     )
@@ -111,12 +115,34 @@ internal fun HomeContent(
                 color = colors.text,
             )
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(38.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 ScanCard(onClick = { onAction(HomeAction.ScanClicked) })
 
-                MisePanel(
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    HomeFeatureCard(
+                        title = stringResource(Res.string.home_compare_title),
+                        subtitle = stringResource(Res.string.home_compare_subtitle),
+                        icon = MiseIcons.Barcode,
+                        tint = colors.amber,
+                        onClick = { onAction(HomeAction.CompareClicked) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    HomeFeatureCard(
+                        title = stringResource(Res.string.home_discover_title),
+                        subtitle = stringResource(Res.string.home_discover_subtitle),
+                        icon = MiseIcons.Search,
+                        tint = colors.violet,
+                        onClick = { onAction(HomeAction.DiscoverRecipesClicked) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
+                if (state.isAuthenticated) MisePanel(
                     modifier = Modifier.fillMaxWidth(),
                     cornerRadius = 26,
                     onClick = { onAction(HomeAction.SavedClicked) },
@@ -131,7 +157,7 @@ internal fun HomeContent(
                     )
                 }
 
-                MisePanel(
+                if (state.isAuthenticated) MisePanel(
                     modifier = Modifier.fillMaxWidth(),
                     background = Color.Transparent,
                     borderColor = colors.border,
@@ -157,16 +183,29 @@ internal fun HomeContent(
                 }
             }
         }
+    }
+}
 
-        if (state.showProfileHint) {
-            MiseToast(
-                text = stringResource(Res.string.home_profile_coming_soon),
-                onShown = { onAction(HomeAction.MessageShown) },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .safeDrawingPadding()
-                    .padding(top = 16.dp),
-            )
+@Composable
+private fun HomeFeatureCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    tint: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MiseTheme.colors
+    MisePanel(
+        modifier = modifier,
+        cornerRadius = 8,
+        onClick = onClick,
+        contentPadding = PaddingValues(14.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Icon(icon, null, Modifier.size(20.dp), tint = tint)
+            Text(title, style = MiseTheme.typography.titleSmall, color = colors.text)
+            Text(subtitle, style = MiseTheme.typography.monoTiny, color = colors.textMuted)
         }
     }
 }

@@ -46,6 +46,7 @@ private val ProductNodeCircleSize = 66.dp
 fun ProductNode(
     product: Product,
     scoreColor: Color,
+    showScore: Boolean,
     selected: Boolean,
     position: () -> Offset,
     onDrag: (Offset) -> Unit,
@@ -116,11 +117,13 @@ fun ProductNode(
                     color = accent,
                 )
             }
-            ScoreBadge(
-                score = product.score,
-                color = scoreColor,
-                modifier = Modifier.align(Alignment.BottomEnd).offset(x = 5.dp, y = 5.dp),
-            )
+            if (showScore) {
+                ScoreBadge(
+                    score = product.score,
+                    color = scoreColor,
+                    modifier = Modifier.align(Alignment.BottomEnd).offset(x = 5.dp, y = 5.dp),
+                )
+            }
         }
         Text(
             text = product.name,

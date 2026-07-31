@@ -12,7 +12,7 @@ into a graph, and cook the recipes that come out of it.
 | `navigation` | Vendored — `AppRouter`, `Route`, Compose dialogs |
 | `design-system` | Mise theme (dark only), Space Grotesk / IBM Plex Mono, components, icons, animations |
 | `domain` | Models, repository interfaces, use cases — no UI, no networking |
-| `data` | The bundled demo catalogue (`composeResources/files/*.json`) and the repositories over it |
+| `data` | Ktor product repository, local product cache, persistence, and temporary recipe data |
 | `feature/home` | Home |
 | `feature/scanner` | Camera viewfinder (CameraK + barcode plugin), manual entry, "not found" |
 | `feature/products` | Combination graph, product sheet, scan history |
@@ -20,6 +20,7 @@ into a graph, and cook the recipes that come out of it.
 | `shared` | App host: `AppNavHost`, `AppGraph`, feature router implementations, platform graphs |
 | `androidApp` | `Application` (composition root), `MainActivity`, manifest |
 | `iosApp` | Xcode wrapper around `MainViewController` |
+| `backend` | Independent Ktor/JVM service for products, taxonomy, recipes, pantry, and user data |
 
 Dependency rules: a feature never depends on another feature — anything shared
 lives in `domain`; the router implementations live in `shared`, the only module
@@ -31,25 +32,13 @@ is a plain folder copy. Everything else takes its versions from
 
 ## Data
 
-The product and recipe data is a bundled demo catalogue, read from
-`data/src/commonMain/composeResources/files/`. Replacing it with OpenFoodFacts
-means implementing `ProductRepository` in `data` — no feature changes.
-
-### Demo mode
-
-While `DemoMode.ALWAYS_RESOLVE_SCANS` is on (`data/.../demo/DemoMode.kt`), the
-app is walkable end to end without a product API:
-
-- any barcode resolves — an unknown one is mapped deterministically onto a
-  catalogue product instead of failing;
-- barcode `000000000000` still reports «not found», so that screen stays
-  reachable — the Scan screen's `simulate "not found"` action uses it;
-- «Capture scan» adds the next catalogue product without touching the camera,
-  so an emulator or a denied permission is not a dead end;
-- Saved and History are seeded once per installation by `DemoDataSeeder`, so no
-  screen opens empty.
-
-Turn the flag off and delete `demo/` when the real client lands.
+Products are resolved through the local Ktor backend, which queries Open Food
+Facts and returns the normalised DishLab product contract. The client keeps a
+small local snapshot cache so products already added to the graph and scan
+history remain available offline. There is no bundled product catalogue or
+simulated scan flow. The first launch after this change removes legacy demo
+products from the graph and scan history. Bundled recipes are temporary until
+the recipe API is connected.
 
 ## Running
 
@@ -64,7 +53,37 @@ export JAVA_HOME=/home/denis/work/IDE/android-studio/jbr
 ./gradlew :androidApp:installDebug # needs a device or emulator
 ```
 
+Start the product API before scanning real barcodes:
+
+```bash
+cd backend
+DEV_AUTH=true ./gradlew :app:run
+```
+
+The debug Android build defaults to `http://10.0.2.2:8080/`, which is the host
+machine from an Android emulator. For a physical device, expose the Ktor server
+on your LAN and install with its address:
+
+```bash
+./gradlew :androidApp:installDebug -PdishLabApiUrl=http://192.168.1.20:8080/
+```
+
+`DEV_AUTH=true` is local development only. Release builds do not include the
+development token and must provide a real Firebase authentication token.
+
 iOS: open [`/iosApp`](./iosApp) in Xcode and run from there (needs a Mac).
+
+The backend has its own Gradle wrapper and JDK 21 toolchain:
+
+```bash
+cd backend
+cp .env.example .env
+docker compose up -d postgres
+set -a && source .env && set +a
+./gradlew flywayMigrate :app:run
+```
+
+See [`backend/README.md`](./backend/README.md) for API and configuration details.
 
 ## Requirements
 
