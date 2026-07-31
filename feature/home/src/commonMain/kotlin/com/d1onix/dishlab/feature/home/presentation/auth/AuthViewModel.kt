@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlin.coroutines.cancellation.CancellationException
 
 enum class AuthMode { SignIn, Register }
 
@@ -25,6 +26,7 @@ data class AuthUiState(
     val displayName: String = "",
     val password: String = "",
     val submitted: Boolean = false,
+    val authenticationFailed: Boolean = false,
 ) {
     val emailValid: Boolean get() = email.substringAfterLast('@', "").contains('.')
     val canContinue: Boolean
@@ -55,16 +57,16 @@ class AuthViewModel(
     fun onAction(action: AuthAction) {
         when (action) {
             is AuthAction.ModeChanged -> mutableState.update {
-                it.copy(mode = action.mode, submitted = false)
+                it.copy(mode = action.mode, submitted = false, authenticationFailed = false)
             }
             is AuthAction.EmailChanged -> mutableState.update {
-                it.copy(email = action.value.trim().take(120), submitted = false)
+                it.copy(email = action.value.trim().take(120), submitted = false, authenticationFailed = false)
             }
             is AuthAction.DisplayNameChanged -> mutableState.update {
-                it.copy(displayName = action.value.take(40), submitted = false)
+                it.copy(displayName = action.value.take(40), submitted = false, authenticationFailed = false)
             }
             is AuthAction.PasswordChanged -> mutableState.update {
-                it.copy(password = action.value.take(72), submitted = false)
+                it.copy(password = action.value.take(72), submitted = false, authenticationFailed = false)
             }
             AuthAction.ContinueClicked -> submit()
             AuthAction.BackClicked -> router.goBack()
@@ -76,16 +78,22 @@ class AuthViewModel(
         val state = mutableState.value
         if (!state.canContinue) return
         launch("authenticate") {
-            when (state.mode) {
-                AuthMode.SignIn -> {
-                    sessions.signIn(state.email, state.password)
-                    router.completeProtectedNavigation(destination)
+            try {
+                when (state.mode) {
+                    AuthMode.SignIn -> {
+                        sessions.signIn(state.email, state.password)
+                        router.completeProtectedNavigation(destination)
+                    }
+                    AuthMode.Register -> {
+                        sessions.register(state.email, state.password)
+                        profileSettings.setDisplayName(state.displayName)
+                        router.openPostRegistrationOnboarding(destination)
+                    }
                 }
-                AuthMode.Register -> {
-                    sessions.register(state.email, state.password)
-                    profileSettings.setDisplayName(state.displayName)
-                    router.openPostRegistrationOnboarding(destination)
-                }
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (_: Throwable) {
+                mutableState.update { it.copy(authenticationFailed = true) }
             }
         }
     }

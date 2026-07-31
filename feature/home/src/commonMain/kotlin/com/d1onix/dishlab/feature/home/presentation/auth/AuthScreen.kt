@@ -36,6 +36,7 @@ import com.d1onix.dishlab.feature.home.resources.Res
 import com.d1onix.dishlab.feature.home.resources.auth_continue
 import com.d1onix.dishlab.feature.home.resources.auth_email
 import com.d1onix.dishlab.feature.home.resources.auth_email_error
+import com.d1onix.dishlab.feature.home.resources.auth_failed
 import com.d1onix.dishlab.feature.home.resources.auth_name
 import com.d1onix.dishlab.feature.home.resources.auth_name_error
 import com.d1onix.dishlab.feature.home.resources.auth_password
@@ -97,6 +98,14 @@ internal fun AuthContent(
             errorText = stringResource(Res.string.auth_password_error),
             secure = true,
         )
+        if (state.authenticationFailed) {
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = stringResource(Res.string.auth_failed),
+                style = MiseTheme.typography.bodySmall,
+                color = MiseTheme.colors.red,
+            )
+        }
         Spacer(Modifier.weight(1f))
         MisePrimaryButton(
             text = stringResource(Res.string.auth_continue),

@@ -32,12 +32,16 @@ private object DishLabKeys {
     val AutoConnectProducts = PreferenceKey.BooleanKey("auto_connect_products")
     val ReduceGraphMotion = PreferenceKey.BooleanKey("reduce_graph_motion")
     val ShowProductScores = PreferenceKey.BooleanKey("show_product_scores")
-    val Authenticated = PreferenceKey.BooleanKey("user_authenticated")
-    val OnboardingCompleted = PreferenceKey.BooleanKey("onboarding_completed")
     val Diets = PreferenceKey.StringSetKey("cooking_diets")
     val Allergens = PreferenceKey.StringSetKey("cooking_allergens")
     val Tastes = PreferenceKey.StringSetKey("cooking_tastes")
     val Equipment = PreferenceKey.StringSetKey("cooking_equipment")
+}
+
+/** Preference keys shared by the platform-specific account implementations. */
+object UserSessionPreferenceKeys {
+    val Authenticated = PreferenceKey.BooleanKey("user_authenticated")
+    val OnboardingCompleted = PreferenceKey.BooleanKey("onboarding_completed")
 }
 
 private const val HISTORY_SEPARATOR = ","
@@ -131,15 +135,14 @@ class StoredProfileSettingsRepository(
     }
 }
 
-@ContributesBinding(AppScope::class)
 @Inject
 class StoredUserSessionRepository(
     private val storage: KeyValueStorage,
 ) : UserSessionRepository {
 
     override val session: Flow<UserSession> = combine(
-        storage.observe(DishLabKeys.Authenticated),
-        storage.observe(DishLabKeys.OnboardingCompleted),
+        storage.observe(UserSessionPreferenceKeys.Authenticated),
+        storage.observe(UserSessionPreferenceKeys.OnboardingCompleted),
     ) { authenticated, onboardingCompleted ->
         UserSession(
             isAuthenticated = authenticated ?: false,
@@ -148,20 +151,20 @@ class StoredUserSessionRepository(
     }
 
     override suspend fun signIn(email: String, password: String) {
-        storage.put(DishLabKeys.Authenticated, true)
+        storage.put(UserSessionPreferenceKeys.Authenticated, true)
     }
 
     override suspend fun register(email: String, password: String) {
-        storage.put(DishLabKeys.Authenticated, true)
-        storage.put(DishLabKeys.OnboardingCompleted, false)
+        storage.put(UserSessionPreferenceKeys.Authenticated, true)
+        storage.put(UserSessionPreferenceKeys.OnboardingCompleted, false)
     }
 
     override suspend fun signOut() {
-        storage.put(DishLabKeys.Authenticated, false)
+        storage.put(UserSessionPreferenceKeys.Authenticated, false)
     }
 
     override suspend fun markOnboardingCompleted() {
-        storage.put(DishLabKeys.OnboardingCompleted, true)
+        storage.put(UserSessionPreferenceKeys.OnboardingCompleted, true)
     }
 }
 

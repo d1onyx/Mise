@@ -8,6 +8,7 @@ import com.d1onyx.core.datastore.preferencesDataStorePath
 import com.d1onix.dishlab.data.session.GraphDatabase
 import com.d1onix.dishlab.data.session.buildGraphDatabase
 import com.d1onix.dishlab.data.session.graphDatabaseBuilder
+import com.google.firebase.auth.FirebaseAuth
 import com.d1onyx.core.essentials.di.AppScope
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
 import com.d1onyx.core.essentials.logger.LogLevel
@@ -18,6 +19,7 @@ import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraphFactory
+import kotlinx.coroutines.tasks.await
 
 /**
  * The Android object graph. Declared here, not in `commonMain`, because a common
@@ -45,6 +47,10 @@ interface AndroidAppGraph : AppGraph {
         buildGraphDatabase(graphDatabaseBuilder(context))
 
     @Provides
+    @SingleIn(AppScope::class)
+    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
     fun provideLogger(): Logger = Logger
 
     @Provides
@@ -56,8 +62,12 @@ interface AndroidAppGraph : AppGraph {
 
     @Provides
     @SingleIn(AppScope::class)
-    fun provideAuthTokenProvider(config: BackendRuntimeConfig): AuthTokenProvider =
-        AuthTokenProvider { config.developmentToken }
+    fun provideAuthTokenProvider(
+        firebaseAuth: FirebaseAuth,
+        config: BackendRuntimeConfig,
+    ): AuthTokenProvider = AuthTokenProvider {
+        firebaseAuth.currentUser?.getIdToken(false)?.await()?.token ?: config.developmentToken
+    }
 
     /**
      * Failures that reach the user have no UI of their own yet, so they are
