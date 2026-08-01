@@ -11,6 +11,7 @@ import com.d1onix.dishlab.feature.recipes.presentation.recipeListPreviewControll
 import com.d1onix.dishlab.feature.scanner.presentation.scanManualEntryPreviewController
 import com.d1onix.dishlab.feature.scanner.presentation.scanNotFoundPreviewController
 import com.d1onix.dishlab.feature.scanner.presentation.scanPreviewController
+import com.d1onix.dishlab.feature.scanner.presentation.scanResolvingPreviewController
 import platform.UIKit.UIViewController
 
 /**
@@ -32,6 +33,8 @@ object DishLabPreviews {
     fun scan(): UIViewController = scanPreviewController()
 
     fun scanManualEntry(): UIViewController = scanManualEntryPreviewController()
+
+    fun scanResolving(): UIViewController = scanResolvingPreviewController()
 
     fun scanNotFound(): UIViewController = scanNotFoundPreviewController()
 

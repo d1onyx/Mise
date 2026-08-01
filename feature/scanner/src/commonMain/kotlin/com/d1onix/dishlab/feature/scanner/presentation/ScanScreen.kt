@@ -1,5 +1,8 @@
 package com.d1onix.dishlab.feature.scanner.presentation
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,13 +29,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.d1onix.dishlab.designsystem.anim.MiseEasing
 import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.anim.screenIn
@@ -51,8 +59,17 @@ import com.d1onix.dishlab.feature.scanner.resources.Res
 import com.d1onix.dishlab.feature.scanner.resources.scan_back
 import com.d1onix.dishlab.feature.scanner.resources.scan_camera_denied
 import com.d1onix.dishlab.feature.scanner.resources.scan_camera_starting
-import com.d1onix.dishlab.feature.scanner.resources.scan_hint_primary
+import com.d1onix.dishlab.feature.scanner.resources.scan_front_camera_note
 import com.d1onix.dishlab.feature.scanner.resources.scan_hint_secondary
+import com.d1onix.dishlab.feature.scanner.resources.scan_phase_failed
+import com.d1onix.dishlab.feature.scanner.resources.scan_phase_resolving
+import com.d1onix.dishlab.feature.scanner.resources.scan_phase_searching
+import com.d1onix.dishlab.feature.scanner.resources.scan_step_lookup
+import com.d1onix.dishlab.feature.scanner.resources.scan_step_read
+import com.d1onix.dishlab.feature.scanner.resources.scan_step_result
+import com.d1onix.dishlab.feature.scanner.resources.scan_switch_camera
+import com.d1onix.dishlab.feature.scanner.resources.scan_torch_off
+import com.d1onix.dishlab.feature.scanner.resources.scan_torch_on
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_cancel
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_entry
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_placeholder
@@ -85,7 +102,7 @@ fun ScanScreen(viewModel: ScanViewModel) {
         onAction = viewModel::onAction,
         // The camera is a platform concern, injected as a slot so the content
         // itself stays renderable in a preview.
-        cameraPreview = { onBarcode -> CameraLayer(onBarcode) },
+        cameraPreview = { controls, dispatch -> CameraLayer(controls, dispatch) },
     )
 }
 
@@ -94,7 +111,7 @@ internal fun ScanContent(
     state: ScanUiState,
     onAction: (ScanAction) -> Unit,
     modifier: Modifier = Modifier,
-    cameraPreview: @Composable (onBarcode: (String) -> Unit) -> Unit = {},
+    cameraPreview: @Composable (CameraControls, (ScanAction) -> Unit) -> Unit = { _, _ -> },
 ) {
     val colors = MiseTheme.colors
 
@@ -111,7 +128,10 @@ internal fun ScanContent(
     }
 
     Box(modifier.fillMaxSize().background(colors.backgroundDeep)) {
-        cameraPreview { barcode -> onAction(ScanAction.BarcodeDetected(barcode)) }
+        cameraPreview(state.camera, onAction)
+
+        // The chrome sits on live video, so it needs its own contrast floor.
+        Box(Modifier.fillMaxSize().background(viewfinderScrim()))
 
         Column(
             Modifier
@@ -143,38 +163,20 @@ internal fun ScanContent(
 
             Spacer(Modifier.weight(1f))
 
-            ScanFrame()
+            ScanReticle(phase = state.phase)
 
-            Spacer(Modifier.height(34.dp))
-            Text(
-                text = stringResource(Res.string.scan_hint_primary),
-                style = MiseTheme.typography.bodyLarge,
-                color = colors.text.copy(alpha = 0.75f),
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = stringResource(Res.string.scan_hint_secondary),
-                style = MiseTheme.typography.monoSmall,
-                color = colors.textFaint,
-            )
-            if (state.resolutionFailed) {
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = stringResource(Res.string.scan_server_unavailable),
-                    style = MiseTheme.typography.bodySmall,
-                    color = colors.red,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(10.dp))
-                MiseGhostButton(
-                    text = stringResource(Res.string.scan_server_retry),
-                    onClick = { onAction(ScanAction.RetryResolutionClicked) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            Spacer(Modifier.height(26.dp))
+            ScanProgressTrail(phase = state.phase, modifier = Modifier.fillMaxWidth())
+
+            Spacer(Modifier.height(18.dp))
+            ScanStatus(state = state, onAction = onAction)
 
             Spacer(Modifier.weight(1f))
+
+            if (state.camera.canToggleTorch || state.camera.canSwitchFacing) {
+                CameraControlBar(controls = state.camera, onAction = onAction)
+                Spacer(Modifier.height(16.dp))
+            }
 
             if (state.manualEntryVisible) {
                 MiseSearchField(
@@ -443,7 +445,7 @@ private fun ScannedProductReview(
  * barcode entry work even when a camera is unavailable.
  */
 @Composable
-private fun CameraLayer(onBarcodeDetected: (String) -> Unit) {
+private fun CameraLayer(controls: CameraControls, onAction: (ScanAction) -> Unit) {
     val permissions = providePermissions()
     var granted by remember { mutableStateOf(permissions.hasCameraPermission()) }
     var denied by remember { mutableStateOf(false) }
@@ -461,7 +463,10 @@ private fun CameraLayer(onBarcodeDetected: (String) -> Unit) {
     }
 
     ProductBarcodeCamera(
-        onBarcodeDetected = onBarcodeDetected,
+        facing = controls.facing,
+        torchOn = controls.torchOn,
+        onBarcodeDetected = { onAction(ScanAction.BarcodeDetected(it)) },
+        onCapabilitiesChanged = { onAction(ScanAction.CameraCapabilitiesChanged(it)) },
         modifier = Modifier.fillMaxSize(),
     )
 }
@@ -483,15 +488,51 @@ private fun CameraUnavailable(permissionDenied: Boolean) {
     }
 }
 
-/** The 250dp reticle: four lime corners, a sweeping line and a pulsing barcode. */
+/** Darkens the top and bottom of the video so the chrome keeps its contrast. */
 @Composable
-private fun ScanFrame() {
+private fun viewfinderScrim(): Brush = Brush.verticalGradient(
+    0f to Color.Black.copy(alpha = 0.55f),
+    0.30f to Color.Transparent,
+    0.66f to Color.Transparent,
+    1f to Color.Black.copy(alpha = 0.72f),
+)
+
+/**
+ * The 250dp reticle. Everything about it is derived from [phase], so the frame
+ * itself reports what the scanner is doing: lime and sweeping while it hunts,
+ * snapped wide and still the moment a code is locked, cyan with a spinner while
+ * the lookup runs, red when it failed.
+ */
+@Composable
+private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier) {
     val colors = MiseTheme.colors
+    val accent by animateColorAsState(
+        targetValue = when (phase) {
+            ScanPhase.Searching -> colors.lime
+            ScanPhase.Resolving -> colors.cyan
+            ScanPhase.Failed -> colors.red
+        },
+        animationSpec = tween(durationMillis = 320, easing = MiseEasing),
+        label = "reticleAccent",
+    )
+    // Corners stretch on lock — the cheapest way to make «got it» feel physical.
+    val cornerFraction by animateFloatAsState(
+        targetValue = if (phase == ScanPhase.Searching) 0.14f else 0.28f,
+        animationSpec = tween(durationMillis = 340, easing = MiseEasing),
+        label = "reticleCorner",
+    )
+    val barAlpha by animateFloatAsState(
+        targetValue = if (phase == ScanPhase.Searching) 1f else 0.25f,
+        animationSpec = tween(durationMillis = 340, easing = MiseEasing),
+        label = "reticleBars",
+    )
+
     val sweep = rememberSweep(durationMillis = 2400, label = "scanLine")
     val pulse = rememberPulse(durationMillis = 2400, from = 0.25f, to = 0.6f, label = "scanPulse")
+    val spin = rememberSweep(durationMillis = 1100, label = "scanSpin")
 
-    Canvas(Modifier.size(250.dp)) {
-        val corner = 34.dp.toPx()
+    Canvas(modifier.size(250.dp)) {
+        val corner = size.minDimension * cornerFraction
         val stroke = 3.dp.toPx()
         val inset = 24.dp.toPx()
 
@@ -505,33 +546,213 @@ private fun ScanFrame() {
             ),
         ).forEach { (origin, ends) ->
             ends.forEach { end ->
-                drawLine(colors.lime, origin, end, strokeWidth = stroke)
+                drawLine(accent, origin, end, strokeWidth = stroke, cap = StrokeCap.Round)
             }
         }
 
-        // The decorative barcode behind the line.
+        // The decorative barcode behind the line, faded out once a real code won.
         val bars = listOf(8, 3, 5, 2, 7, 3, 9, 2, 4, 6, 3, 8, 2, 5, 3, 7)
         var x = inset + 20.dp.toPx()
         bars.forEach { width ->
             drawRect(
-                color = colors.lime,
+                color = accent,
                 topLeft = Offset(x, size.height / 2 - 45.dp.toPx()),
                 size = Size(width.dp.toPx() * 0.7f, 90.dp.toPx()),
-                alpha = pulse.value,
+                alpha = pulse.value * barAlpha,
             )
             x += (width + 3).dp.toPx() * 0.7f
         }
 
-        // `sin` turns the linear sweep into the prototype's back-and-forth line.
-        val travel = sin(sweep.value * 2f * PI.toFloat()) * (size.height / 2 - inset)
-        val y = size.height / 2 + travel
-        drawLine(
-            brush = Brush.horizontalGradient(
-                listOf(Color.Transparent, colors.lime, Color.Transparent),
-            ),
-            start = Offset(inset, y),
-            end = Offset(size.width - inset, y),
-            strokeWidth = 2.dp.toPx(),
+        if (phase == ScanPhase.Searching) {
+            // `sin` turns the linear sweep into the prototype's back-and-forth line.
+            val travel = sin(sweep.value * 2f * PI.toFloat()) * (size.height / 2 - inset)
+            val y = size.height / 2 + travel
+            drawLine(
+                brush = Brush.horizontalGradient(
+                    listOf(Color.Transparent, accent, Color.Transparent),
+                ),
+                start = Offset(inset, y),
+                end = Offset(size.width - inset, y),
+                strokeWidth = 2.dp.toPx(),
+            )
+        }
+
+        if (phase == ScanPhase.Resolving) {
+            val radius = size.minDimension * 0.17f
+            drawArc(
+                color = accent,
+                startAngle = spin.value * 360f,
+                sweepAngle = 96f,
+                useCenter = false,
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = Size(radius * 2, radius * 2),
+                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+            )
+        }
+    }
+}
+
+/**
+ * Read → Look up → Result. The scan used to jump from an idle animation straight
+ * to a product sheet; this is the part that says which of those steps is running.
+ */
+@Composable
+private fun ScanProgressTrail(phase: ScanPhase, modifier: Modifier = Modifier) {
+    val colors = MiseTheme.colors
+    val steps = listOf(
+        stringResource(Res.string.scan_step_read),
+        stringResource(Res.string.scan_step_lookup),
+        stringResource(Res.string.scan_step_result),
+    )
+    val activeIndex = when (phase) {
+        ScanPhase.Searching -> -1
+        ScanPhase.Resolving, ScanPhase.Failed -> 1
+    }
+    val accent = if (phase == ScanPhase.Failed) colors.red else colors.lime
+
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        steps.forEachIndexed { index, label ->
+            if (index > 0) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .padding(horizontal = 6.dp)
+                        .height(1.dp)
+                        .background(if (index <= activeIndex) accent else colors.border),
+                )
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val done = index < activeIndex
+                val active = index == activeIndex
+                Box(
+                    Modifier
+                        .size(if (active) 9.dp else 7.dp)
+                        .clip(CircleShape)
+                        .background(if (done || active) accent else colors.borderStrong),
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = label,
+                    style = MiseTheme.typography.monoTiny,
+                    color = when {
+                        active -> accent
+                        done -> colors.textMuted
+                        else -> colors.textDim
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** The line of text under the trail: what is happening, and the digits it read. */
+@Composable
+private fun ScanStatus(
+    state: ScanUiState,
+    onAction: (ScanAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MiseTheme.colors
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = when (state.phase) {
+                ScanPhase.Searching -> stringResource(Res.string.scan_phase_searching)
+                ScanPhase.Resolving -> stringResource(Res.string.scan_phase_resolving)
+                ScanPhase.Failed -> stringResource(Res.string.scan_phase_failed)
+            },
+            style = MiseTheme.typography.bodyLarge,
+            color = if (state.phase == ScanPhase.Failed) colors.red else colors.text.copy(alpha = 0.85f),
+            textAlign = TextAlign.Center,
         )
+
+        // Showing the digits is the proof that the camera actually read something.
+        state.visibleBarcode?.let { barcode ->
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = barcode,
+                style = MiseTheme.typography.mono,
+                color = colors.text,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(colors.panelStrong)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
+
+        if (state.phase == ScanPhase.Searching) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = stringResource(Res.string.scan_hint_secondary),
+                style = MiseTheme.typography.monoSmall,
+                color = colors.textFaint,
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        if (state.camera.facing == CameraFacing.Front) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(Res.string.scan_front_camera_note),
+                style = MiseTheme.typography.monoSmall,
+                color = colors.amber,
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        if (state.resolutionFailed) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = stringResource(Res.string.scan_server_unavailable),
+                style = MiseTheme.typography.bodySmall,
+                color = colors.red,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(10.dp))
+            MiseGhostButton(
+                text = stringResource(Res.string.scan_server_retry),
+                onClick = { onAction(ScanAction.RetryResolutionClicked) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+/** Torch and lens, shown only once the camera has confirmed it supports them. */
+@Composable
+private fun CameraControlBar(
+    controls: CameraControls,
+    onAction: (ScanAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MiseTheme.colors
+    Row(
+        modifier,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (controls.canToggleTorch) {
+            MiseIconCircleButton(
+                icon = if (controls.torchOn) MiseIcons.Flash else MiseIcons.FlashOff,
+                contentDescription = stringResource(
+                    if (controls.torchOn) Res.string.scan_torch_off else Res.string.scan_torch_on,
+                ),
+                onClick = { onAction(ScanAction.TorchToggled) },
+                size = 48,
+                iconSize = 19,
+                tint = if (controls.torchOn) colors.onLime else colors.text,
+                borderColor = if (controls.torchOn) colors.lime else colors.borderStrong,
+                background = if (controls.torchOn) colors.lime else colors.panel,
+            )
+        }
+        if (controls.canSwitchFacing) {
+            MiseIconCircleButton(
+                icon = MiseIcons.CameraFlip,
+                contentDescription = stringResource(Res.string.scan_switch_camera),
+                onClick = { onAction(ScanAction.CameraFacingToggled) },
+                size = 48,
+                iconSize = 19,
+                background = colors.panel,
+            )
+        }
     }
 }

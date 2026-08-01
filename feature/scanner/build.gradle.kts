@@ -37,6 +37,11 @@ kotlin {
             implementation(libs.compose.uiTooling)
             implementation(libs.mlkit.barcodeScanning)
         }
+        iosMain.dependencies {
+            // The decoder for ProductBarcodeCamera.ios.kt. Android decodes with
+            // ML Kit instead, so this never needs to reach commonMain.
+            implementation(libs.camerak.qrScanner)
+        }
         commonMain.dependencies {
             implementation(project(":core"))
             implementation(project(":navigation"))

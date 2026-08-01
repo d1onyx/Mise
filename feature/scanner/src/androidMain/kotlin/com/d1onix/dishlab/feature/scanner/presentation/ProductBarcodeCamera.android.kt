@@ -1,5 +1,6 @@
 package com.d1onix.dishlab.feature.scanner.presentation
 
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -8,9 +9,12 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -29,12 +33,16 @@ import java.util.concurrent.Executors
  */
 @Composable
 actual fun ProductBarcodeCamera(
+    facing: CameraFacing,
+    torchOn: Boolean,
     onBarcodeDetected: (String) -> Unit,
+    onCapabilitiesChanged: (CameraCapabilities) -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val callbackState = rememberUpdatedState(onBarcodeDetected)
+    val capabilitiesState = rememberUpdatedState(onCapabilitiesChanged)
     val previewView = remember {
         PreviewView(context).apply {
             scaleType = PreviewView.ScaleType.FILL_CENTER
@@ -46,7 +54,11 @@ actual fun ProductBarcodeCamera(
         MlKitProductBarcodeAnalyzer(scanner) { callbackState.value(it) }
     }
 
-    DisposableEffect(lifecycleOwner, previewView, analyzer, executor) {
+    // Held so the torch effect below can reach the camera CameraX handed back.
+    var camera by remember { mutableStateOf<Camera?>(null) }
+
+    // Re-binds on a lens change: CameraX has no way to swap the selector in place.
+    DisposableEffect(lifecycleOwner, previewView, analyzer, executor, facing) {
         val providerFuture = ProcessCameraProvider.getInstance(context)
         var provider: ProcessCameraProvider? = null
         val bindCamera = Runnable {
@@ -61,27 +73,64 @@ actual fun ProductBarcodeCamera(
                     .also { it.setAnalyzer(executor, analyzer) }
 
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
+                val bound = cameraProvider.bindToLifecycle(
                     lifecycleOwner,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    facing.toSelector(),
                     preview,
                     analysis,
+                )
+                camera = bound
+                capabilitiesState.value(
+                    CameraCapabilities(
+                        torchAvailable = bound.cameraInfo.hasFlashUnit(),
+                        // Reported from the provider rather than assumed: tablets and
+                        // emulators regularly ship only one of the two lenses.
+                        lensSwitchAvailable = cameraProvider.hasCameraSafely(CameraSelector.DEFAULT_BACK_CAMERA) &&
+                            cameraProvider.hasCameraSafely(CameraSelector.DEFAULT_FRONT_CAMERA),
+                    ),
                 )
             }
         }
         providerFuture.addListener(bindCamera, context.mainExecutor)
 
         onDispose {
+            camera = null
             provider?.unbindAll()
+        }
+    }
+
+    // The scanner and executor outlive lens changes — only the binding is redone.
+    DisposableEffect(scanner, executor) {
+        onDispose {
             scanner.close()
             executor.shutdown()
         }
+    }
+
+    LaunchedEffect(camera, torchOn) {
+        val control = camera ?: return@LaunchedEffect
+        if (control.cameraInfo.hasFlashUnit()) control.cameraControl.enableTorch(torchOn)
     }
 
     AndroidView(
         factory = { previewView },
         modifier = modifier,
     )
+}
+
+private fun CameraFacing.toSelector(): CameraSelector = when (this) {
+    CameraFacing.Back -> CameraSelector.DEFAULT_BACK_CAMERA
+    CameraFacing.Front -> CameraSelector.DEFAULT_FRONT_CAMERA
+}
+
+/**
+ * `hasCamera` throws instead of returning false when the selector cannot be
+ * resolved at all, which is exactly the case we are asking about.
+ */
+private fun ProcessCameraProvider.hasCameraSafely(selector: CameraSelector): Boolean = try {
+    hasCamera(selector)
+} catch (_: IllegalArgumentException) {
+    false
 }
 
 private class MlKitProductBarcodeAnalyzer(

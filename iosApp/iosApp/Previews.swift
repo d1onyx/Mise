@@ -33,6 +33,10 @@ private struct ComposePreview: UIViewControllerRepresentable {
     ComposePreview { DishLabPreviews.shared.scanManualEntry() }.ignoresSafeArea()
 }
 
+#Preview("Scan · resolving") {
+    ComposePreview { DishLabPreviews.shared.scanResolving() }.ignoresSafeArea()
+}
+
 #Preview("Scan · not found") {
     ComposePreview { DishLabPreviews.shared.scanNotFound() }.ignoresSafeArea()
 }

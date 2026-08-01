@@ -39,6 +39,26 @@ class ScanViewModel(
     fun onAction(action: ScanAction) {
         when (action) {
             is ScanAction.BarcodeDetected -> onBarcodeDetected(action.barcode)
+            is ScanAction.CameraCapabilitiesChanged -> _uiState.update {
+                it.copy(camera = it.camera.copy(capabilities = action.capabilities))
+            }
+
+            ScanAction.TorchToggled -> _uiState.update {
+                if (!it.camera.canToggleTorch) it
+                else it.copy(camera = it.camera.copy(torchOn = !it.camera.torchOn))
+            }
+
+            ScanAction.CameraFacingToggled -> _uiState.update {
+                if (!it.camera.canSwitchFacing) return@update it
+                val facing = when (it.camera.facing) {
+                    CameraFacing.Back -> CameraFacing.Front
+                    CameraFacing.Front -> CameraFacing.Back
+                }
+                // The front camera has no torch, so leaving the flag on would show
+                // a lit button over a lens that cannot light anything.
+                it.copy(camera = it.camera.copy(facing = facing, torchOn = false))
+            }
+
             ScanAction.ManualEntryToggled ->
                 _uiState.update { it.copy(manualEntryVisible = !it.manualEntryVisible) }
 
@@ -55,7 +75,11 @@ class ScanViewModel(
             ScanAction.AddReviewedProductClicked -> addReviewedProduct()
             ScanAction.ReviewedProductSkipped -> skipReviewedProduct()
             ScanAction.ReviewBackClicked -> _uiState.update {
-                it.copy(reviewedProduct = null, reviewedProductAlreadyAdded = false)
+                it.copy(
+                    reviewedProduct = null,
+                    reviewedProductAlreadyAdded = false,
+                    detectedBarcode = null,
+                )
             }
             ScanAction.BackClicked -> router.goBack()
         }
@@ -67,29 +91,41 @@ class ScanViewModel(
      */
     private fun onBarcodeDetected(barcode: String) {
         if (_uiState.value.isResolving || _uiState.value.reviewedProduct != null) return
-        _uiState.update { it.copy(isResolving = true, resolutionFailed = false, failedBarcode = null) }
+        startResolving(barcode)
         resolve(barcode)
     }
 
     private fun submitManualBarcode() {
         val barcode = _uiState.value.manualBarcode
         if (barcode.isBlank() || _uiState.value.isResolving) return
-        _uiState.update { it.copy(isResolving = true, resolutionFailed = false, failedBarcode = null) }
+        startResolving(barcode)
         resolve(barcode)
     }
 
     private fun retryResolution() {
         val barcode = _uiState.value.failedBarcode ?: return
         if (_uiState.value.isResolving) return
-        _uiState.update { it.copy(isResolving = true, resolutionFailed = false) }
+        startResolving(barcode)
         resolve(barcode)
+    }
+
+    /** Publishes the digits before the lookup starts, so the viewfinder can show them. */
+    private fun startResolving(barcode: String) {
+        _uiState.update {
+            it.copy(
+                isResolving = true,
+                resolutionFailed = false,
+                failedBarcode = null,
+                detectedBarcode = barcode,
+            )
+        }
     }
 
     private fun resolve(barcode: String) = launch("resolveBarcode") {
         try {
             val product = getProductByBarcode(barcode)
             if (product == null) {
-                _uiState.update { it.copy(isResolving = false) }
+                _uiState.update { it.copy(isResolving = false, detectedBarcode = null) }
                 router.openNotFound(barcode, target)
             } else {
                 present(product)
@@ -103,7 +139,12 @@ class ScanViewModel(
                 throwable = exception,
             ) { "Barcode resolution failed" }
             _uiState.update {
-                it.copy(isResolving = false, resolutionFailed = true, failedBarcode = barcode)
+                it.copy(
+                    isResolving = false,
+                    resolutionFailed = true,
+                    failedBarcode = barcode,
+                    detectedBarcode = null,
+                )
             }
         }
     }
@@ -117,6 +158,7 @@ class ScanViewModel(
                 failedBarcode = null,
                 manualEntryVisible = false,
                 manualBarcode = "",
+                detectedBarcode = null,
                 reviewedProduct = product,
                 reviewedProductAlreadyAdded = product.id in if (target == ScanTarget.Comparison) {
                     comparison.products.value
@@ -153,7 +195,11 @@ class ScanViewModel(
 
     private fun clearReview() {
         _uiState.update {
-            it.copy(reviewedProduct = null, reviewedProductAlreadyAdded = false)
+            it.copy(
+                reviewedProduct = null,
+                reviewedProductAlreadyAdded = false,
+                detectedBarcode = null,
+            )
         }
     }
 

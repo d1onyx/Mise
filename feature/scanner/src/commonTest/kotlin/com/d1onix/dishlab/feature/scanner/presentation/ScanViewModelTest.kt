@@ -188,6 +188,86 @@ class ScanViewModelTest {
         assertEquals(1, router.comparisonOpened)
     }
 
+    @Test
+    fun `camera controls stay inert until the camera reports what it supports`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel(FakeSessionStore(), FakeRouter())
+
+            viewModel.onAction(ScanAction.TorchToggled)
+            viewModel.onAction(ScanAction.CameraFacingToggled)
+
+            val camera = viewModel.uiState.value.camera
+            assertEquals(false, camera.torchOn)
+            assertEquals(CameraFacing.Back, camera.facing)
+            assertEquals(false, camera.canToggleTorch)
+            assertEquals(false, camera.canSwitchFacing)
+        }
+
+    @Test
+    fun `the torch toggles once the camera reports a flash unit`() = runTest(dispatcher) {
+        val viewModel = viewModel(FakeSessionStore(), FakeRouter())
+        viewModel.onAction(
+            ScanAction.CameraCapabilitiesChanged(CameraCapabilities(torchAvailable = true)),
+        )
+
+        viewModel.onAction(ScanAction.TorchToggled)
+        assertTrue(viewModel.uiState.value.camera.torchOn)
+
+        viewModel.onAction(ScanAction.TorchToggled)
+        assertEquals(false, viewModel.uiState.value.camera.torchOn)
+    }
+
+    @Test
+    fun `switching to the front camera puts the torch out`() = runTest(dispatcher) {
+        val viewModel = viewModel(FakeSessionStore(), FakeRouter())
+        viewModel.onAction(
+            ScanAction.CameraCapabilitiesChanged(
+                CameraCapabilities(torchAvailable = true, lensSwitchAvailable = true),
+            ),
+        )
+        viewModel.onAction(ScanAction.TorchToggled)
+
+        viewModel.onAction(ScanAction.CameraFacingToggled)
+
+        val camera = viewModel.uiState.value.camera
+        assertEquals(CameraFacing.Front, camera.facing)
+        // The front lens has no torch, so a lit button there would be a lie.
+        assertEquals(false, camera.torchOn)
+        assertEquals(false, camera.canToggleTorch)
+    }
+
+    @Test
+    fun `the phase walks from searching to resolving and back on failure`() = runTest(dispatcher) {
+        val viewModel = viewModel(
+            session = FakeSessionStore(),
+            router = FakeRouter(),
+            productLookup = { throw ConnectionException() },
+        )
+        assertEquals(ScanPhase.Searching, viewModel.uiState.value.phase)
+
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
+        // The digits are published as the lookup starts, so the viewfinder can
+        // show what the camera read instead of an anonymous spinner.
+        assertEquals(ScanPhase.Resolving, viewModel.uiState.value.phase)
+        assertEquals("111", viewModel.uiState.value.visibleBarcode)
+
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(ScanPhase.Failed, viewModel.uiState.value.phase)
+        assertEquals("111", viewModel.uiState.value.visibleBarcode)
+    }
+
+    @Test
+    fun `a reviewed product clears the read digits`() = runTest(dispatcher) {
+        val viewModel = viewModel(FakeSessionStore(), FakeRouter())
+
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
+        testScheduler.advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.detectedBarcode)
+        assertEquals(ScanPhase.Searching, viewModel.uiState.value.phase)
+    }
+
     private fun viewModel(
         session: ScanSessionStore,
         router: ScannerRouter,

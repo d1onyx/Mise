@@ -8,12 +8,32 @@ import com.d1onix.dishlab.domain.model.ProductId
 /** See `HomePreviewStates` for why the fixtures are common and the previews are not. */
 internal object ScanPreviewStates {
 
-    val Idle = ScanUiState()
+    /** Every control the hardware can offer, so previews show the full chrome. */
+    private val FullCamera = CameraControls(
+        capabilities = CameraCapabilities(torchAvailable = true, lensSwitchAvailable = true),
+    )
+
+    val Idle = ScanUiState(camera = FullCamera)
 
     val ManualEntry = ScanUiState(manualEntryVisible = true, manualBarcode = "4011200296908")
 
     /** A barcode is in flight — the overlay stops accepting new detections. */
-    val Resolving = ScanUiState(isResolving = true)
+    val Resolving = ScanUiState(
+        camera = FullCamera,
+        isResolving = true,
+        detectedBarcode = "4011200296908",
+    )
+
+    val Failed = ScanUiState(
+        camera = FullCamera,
+        resolutionFailed = true,
+        failedBarcode = "4011200296908",
+    )
+
+    val TorchOn = ScanUiState(camera = FullCamera.copy(torchOn = true))
+
+    /** Front lens selected — the torch button hides and the warning appears. */
+    val FrontCamera = ScanUiState(camera = FullCamera.copy(facing = CameraFacing.Front))
 
     val ProductReview = ScanUiState(
         reviewedProduct = Product(

@@ -64,6 +64,32 @@ object MiseIcons {
         strokeIcon("timer", 24f, "M12 4a8 8 0 108 8M12 7v5l3 2", strokeWidth = 1.6f)
     }
 
+    /** Torch on — the bolt is closed so it reads as a solid shape when tinted lime. */
+    val Flash: ImageVector by lazy {
+        strokeIcon("flash", 20f, "M11.6 1.8L4.8 11.4h4.1l-.5 6.8 6.8-9.6h-4.1l.5-6.8z", strokeWidth = 1.6f)
+    }
+
+    /** Torch off — the same bolt struck through, so the two states share a silhouette. */
+    val FlashOff: ImageVector by lazy {
+        strokeIcon(
+            "flash_off",
+            20f,
+            "M11.6 1.8L4.8 11.4h4.1l-.5 6.8 6.8-9.6h-4.1l.5-6.8z M2.6 2.6l14.8 14.8",
+            strokeWidth = 1.6f,
+        )
+    }
+
+    /** Swap between the back and front lens. */
+    val CameraFlip: ImageVector by lazy {
+        strokeIcon(
+            "camera_flip",
+            20f,
+            "M3.4 10a6.6 6.6 0 0111.1-4.8M16.6 10a6.6 6.6 0 01-11.1 4.8" +
+                "M14.6 2.1v3.4h-3.4M5.4 17.9v-3.4h3.4",
+            strokeWidth = 1.6f,
+        )
+    }
+
     /** The barcode glyph on the home screen — filled bars, not a stroke. */
     val Barcode: ImageVector by lazy {
         val bars = listOf(3f to 1.6f, 6f to 1f, 8.5f to 2f, 12f to 1f, 14.5f to 2.4f, 18.5f to 1.2f)
