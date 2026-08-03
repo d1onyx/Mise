@@ -5,6 +5,9 @@
     <string name="saved_title">Saved</string>
     <string name="saved_search_placeholder">Search saved</string>
     <string name="saved_empty">Nothing saved matches those filters.</string>
+    <string name="discover_title">Discover recipes</string>
+    <string name="discover_search_placeholder">Search all recipes</string>
+    <string name="discover_empty">No recipes match the selected filters.</string>
     <string name="recipes_minutes">%1$d min</string>
 
     <string name="filter_group_difficulty">Difficulty</string>

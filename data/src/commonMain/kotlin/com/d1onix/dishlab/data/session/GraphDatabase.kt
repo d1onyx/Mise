@@ -78,16 +78,18 @@ abstract class GraphDao {
     abstract suspend fun clearProducts()
 
     @Transaction
-    open suspend fun add(productId: String) {
+    open suspend fun add(productId: String, autoConnect: Boolean) {
         val current = products()
         if (current.any { it.productId == productId }) return
         upsertProduct(GraphProductEntity(productId, current.size))
-        upsertConnections(
-            current.map { existing ->
-                val (first, second) = listOf(existing.productId, productId).sorted()
-                GraphConnectionEntity(first, second)
-            }
-        )
+        if (autoConnect) {
+            upsertConnections(
+                current.map { existing ->
+                    val (first, second) = listOf(existing.productId, productId).sorted()
+                    GraphConnectionEntity(first, second)
+                }
+            )
+        }
     }
 
     @Transaction

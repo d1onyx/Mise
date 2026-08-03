@@ -52,6 +52,8 @@ kotlin {
             // iosMain (see Previews.kt) that Xcode hosts instead.
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
+            implementation(libs.firebase.auth)
+            implementation(libs.kotlinx.coroutines.play.services)
         }
         commonMain.dependencies {
             // The app host wires every module together — it is the only place
@@ -84,5 +86,6 @@ kotlin {
 }
 
 dependencies {
+    add("androidMainImplementation", platform(libs.firebase.bom))
     androidRuntimeClasspath(libs.compose.uiTooling)
 }

@@ -29,6 +29,9 @@ import com.d1onix.dishlab.feature.recipes.resources.Res
 import com.d1onix.dishlab.feature.recipes.resources.filter_group_category
 import com.d1onix.dishlab.feature.recipes.resources.filter_group_difficulty
 import com.d1onix.dishlab.feature.recipes.resources.filter_group_time
+import com.d1onix.dishlab.feature.recipes.resources.discover_empty
+import com.d1onix.dishlab.feature.recipes.resources.discover_search_placeholder
+import com.d1onix.dishlab.feature.recipes.resources.discover_title
 import com.d1onix.dishlab.feature.recipes.resources.recipes_empty
 import com.d1onix.dishlab.feature.recipes.resources.recipes_search_placeholder
 import com.d1onix.dishlab.feature.recipes.resources.recipes_title
@@ -58,6 +61,18 @@ fun SavedRecipesScreen(viewModel: SavedRecipesViewModel) {
         title = Res.string.saved_title,
         searchPlaceholder = Res.string.saved_search_placeholder,
         emptyText = Res.string.saved_empty,
+        state = state,
+        onAction = viewModel::onAction,
+    )
+}
+
+@Composable
+fun DiscoverRecipesScreen(viewModel: DiscoverRecipesViewModel) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    RecipeListContent(
+        title = Res.string.discover_title,
+        searchPlaceholder = Res.string.discover_search_placeholder,
+        emptyText = Res.string.discover_empty,
         state = state,
         onAction = viewModel::onAction,
     )

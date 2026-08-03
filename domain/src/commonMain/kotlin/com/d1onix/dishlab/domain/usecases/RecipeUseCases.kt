@@ -3,6 +3,7 @@ package com.d1onix.dishlab.domain.usecases
 import com.d1onix.dishlab.domain.FilterRecipesUseCase
 import com.d1onix.dishlab.domain.FilterRecipesByConnectionsUseCase
 import com.d1onix.dishlab.domain.GetRecipeUseCase
+import com.d1onix.dishlab.domain.GetAllRecipesUseCase
 import com.d1onix.dishlab.domain.GetRecipesForProductsUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipeIdsUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipesUseCase
@@ -27,6 +28,14 @@ class GetRecipesForProductsUseCaseImpl(
 ) : GetRecipesForProductsUseCase {
     override suspend fun invoke(productIds: List<ProductId>): List<Recipe> =
         recipes.forProducts(productIds)
+}
+
+@ContributesBinding(AppScope::class)
+@Inject
+class GetAllRecipesUseCaseImpl(
+    private val recipes: RecipeRepository,
+) : GetAllRecipesUseCase {
+    override suspend fun invoke(): List<Recipe> = recipes.all()
 }
 
 @ContributesBinding(AppScope::class)

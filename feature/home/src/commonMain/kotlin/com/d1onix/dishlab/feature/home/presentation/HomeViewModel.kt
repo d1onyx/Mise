@@ -3,7 +3,10 @@ package com.d1onix.dishlab.feature.home.presentation
 import androidx.lifecycle.viewModelScope
 import com.d1onix.dishlab.domain.ObserveSavedRecipeIdsUseCase
 import com.d1onix.dishlab.domain.ObserveScanHistoryUseCase
+import com.d1onix.dishlab.domain.repository.ProfileSettingsRepository
+import com.d1onix.dishlab.domain.repository.UserSessionRepository
 import com.d1onix.dishlab.feature.home.navigation.HomeRouter
+import com.d1onix.dishlab.feature.home.navigation.ProtectedDestination
 import com.d1onyx.core.presentation.CommonDependencies
 import com.d1onyx.core.presentation.WithMviState
 import com.d1onyx.core.presentation.base.AbstractViewModel
@@ -21,6 +24,8 @@ class HomeViewModel(
     private val router: HomeRouter,
     observeSaved: ObserveSavedRecipeIdsUseCase,
     observeHistory: ObserveScanHistoryUseCase,
+    profileSettings: ProfileSettingsRepository,
+    userSession: UserSessionRepository,
 ) : AbstractViewModel(dependencies), WithMviState<HomeUiState> {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -30,10 +35,22 @@ class HomeViewModel(
         // Long-lived collection, so it runs on the view-model scope directly
         // rather than through `launch`, which drives the progress indicator.
         viewModelScope.launch {
-            combine(observeSaved(), observeHistory()) { saved, history ->
-                saved.size to history.size
-            }.collect { (savedCount, historyCount) ->
-                _uiState.update { it.copy(savedCount = savedCount, historyCount = historyCount) }
+            combine(
+                observeSaved(),
+                observeHistory(),
+                profileSettings.settings,
+                userSession.session,
+            ) { saved, history, profile, session ->
+                HomeUiState(
+                    savedCount = saved.size,
+                    historyCount = history.size,
+                    profileInitials = if (session.isAuthenticated) profile.initials else "?",
+                    isAuthenticated = session.isAuthenticated,
+                )
+            }.collect { homeState ->
+                _uiState.update {
+                    homeState
+                }
             }
         }
     }
@@ -41,10 +58,17 @@ class HomeViewModel(
     fun onAction(action: HomeAction) {
         when (action) {
             HomeAction.ScanClicked -> router.openScanner()
-            HomeAction.SavedClicked -> router.openSavedRecipes()
-            HomeAction.HistoryClicked -> router.openHistory()
-            HomeAction.ProfileClicked -> _uiState.update { it.copy(showProfileHint = true) }
-            HomeAction.MessageShown -> _uiState.update { it.copy(showProfileHint = false) }
+            HomeAction.SavedClicked -> authenticated(ProtectedDestination.Saved) { router.openSavedRecipes() }
+            HomeAction.HistoryClicked -> authenticated(ProtectedDestination.History) { router.openHistory() }
+            HomeAction.ProfileClicked -> authenticated(ProtectedDestination.Profile) { router.openProfile() }
+            HomeAction.CompareClicked -> authenticated(ProtectedDestination.Comparison) { router.openComparison() }
+            HomeAction.DiscoverRecipesClicked -> authenticated(ProtectedDestination.RecipeDiscovery) {
+                router.openRecipeDiscovery()
+            }
         }
+    }
+
+    private fun authenticated(destination: ProtectedDestination, action: () -> Unit) {
+        if (_uiState.value.isAuthenticated) action() else router.openAuth(destination)
     }
 }

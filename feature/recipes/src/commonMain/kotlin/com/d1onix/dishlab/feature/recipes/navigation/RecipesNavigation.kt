@@ -9,6 +9,9 @@ import kotlinx.serialization.Serializable
 data object RecipesRoute : Route
 
 @Serializable
+data object DiscoverRecipesRoute : Route
+
+@Serializable
 data object SavedRoute : Route
 
 @Serializable

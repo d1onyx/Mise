@@ -11,6 +11,8 @@ import com.d1onyx.core.essentials.di.AppScope
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
 import com.d1onyx.core.essentials.logger.LogLevel
 import com.d1onyx.core.essentials.logger.Logger
+import com.d1onyx.core.network.NetworkConfig
+import com.d1onyx.core.network.auth.AuthTokenProvider
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
@@ -21,7 +23,7 @@ interface IosAppGraph : AppGraph {
 
     @DependencyGraph.Factory
     fun interface Factory {
-        fun create(): IosAppGraph
+        fun create(@Provides backendConfig: BackendRuntimeConfig): IosAppGraph
     }
 
     @Provides
@@ -36,6 +38,18 @@ interface IosAppGraph : AppGraph {
 
     @Provides
     fun provideLogger(): Logger = Logger
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideNetworkConfig(config: BackendRuntimeConfig): NetworkConfig = NetworkConfig(
+        baseUrl = config.baseUrl,
+        isDebug = config.isDebug,
+    )
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAuthTokenProvider(config: BackendRuntimeConfig): AuthTokenProvider =
+        AuthTokenProvider { config.developmentToken }
 
     @Provides
     fun provideExceptionHandler(logger: Logger): ExceptionHandler =

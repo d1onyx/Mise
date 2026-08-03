@@ -4,6 +4,7 @@ import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductGraphPosition
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
+import com.d1onix.dishlab.domain.repository.ProfileSettingsRepository
 import com.d1onyx.core.essentials.di.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -14,6 +15,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 
 @ContributesBinding(AppScope::class)
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.stateIn
 @Inject
 class RoomScanSessionStore(
     database: GraphDatabase,
+    private val profileSettings: ProfileSettingsRepository,
 ) : ScanSessionStore {
     private val dao = database.graphDao()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -57,7 +60,10 @@ class RoomScanSessionStore(
         .stateIn(scope, SharingStarted.Eagerly, emptySet())
 
     override suspend fun add(id: ProductId) {
-        dao.add(id.value)
+        dao.add(
+            productId = id.value,
+            autoConnect = profileSettings.settings.first().autoConnectNewProducts,
+        )
     }
 
     override suspend fun remove(id: ProductId) = dao.remove(id.value)

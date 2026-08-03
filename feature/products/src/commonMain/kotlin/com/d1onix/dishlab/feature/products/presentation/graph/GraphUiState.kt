@@ -18,7 +18,9 @@ data class GraphUiState(
     val selectedId: ProductId? = null,
     val isEditingConnections: Boolean = false,
     val pendingConnectionId: ProductId? = null,
-    val showProfileHint: Boolean = false,
+    val profileInitials: String = "AK",
+    val reduceMotion: Boolean = false,
+    val showProductScores: Boolean = true,
 ) {
     val selected: Product? get() = products.firstOrNull { it.id == selectedId }
 }
@@ -41,5 +43,4 @@ sealed interface GraphAction {
     data object ProfileClicked : GraphAction
     data object BackClicked : GraphAction
     data object SheetDismissed : GraphAction
-    data object MessageShown : GraphAction
 }

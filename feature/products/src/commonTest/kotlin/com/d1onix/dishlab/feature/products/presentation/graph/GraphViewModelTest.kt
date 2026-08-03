@@ -5,6 +5,8 @@ import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.ProductGraphPosition
+import com.d1onix.dishlab.domain.model.ProfileSettings
+import com.d1onix.dishlab.domain.repository.ProfileSettingsRepository
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
 import com.d1onix.dishlab.feature.products.navigation.ProductsRouter
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
@@ -15,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -162,6 +165,7 @@ class GraphViewModelTest {
         dependencies = CommonDependencies(DefaultLogger(RecordingLogSink()), ExceptionHandler { }),
         session = session,
         getProducts = GetProductsUseCase { ids -> catalogue.filter { it.id in ids } },
+        profileSettings = FakeProfileSettingsRepository(),
         router = router,
     )
 
@@ -239,6 +243,16 @@ class GraphViewModelTest {
         override fun openSavedRecipes() = Unit
         override fun openCombinationGraph() = Unit
         override fun openConnectionOverview() = Unit
+        override fun openProfile() = Unit
+        override fun openComparisonScanner() = Unit
         override fun goBack() = Unit
+    }
+
+    private class FakeProfileSettingsRepository : ProfileSettingsRepository {
+        override val settings: Flow<ProfileSettings> = MutableStateFlow(ProfileSettings())
+        override suspend fun setDisplayName(value: String) = Unit
+        override suspend fun setAutoConnectNewProducts(enabled: Boolean) = Unit
+        override suspend fun setReduceGraphMotion(enabled: Boolean) = Unit
+        override suspend fun setShowProductScores(enabled: Boolean) = Unit
     }
 }

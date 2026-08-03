@@ -2,6 +2,7 @@ package com.d1onix.dishlab.feature.home.presentation
 
 import androidx.compose.ui.window.ComposeUIViewController
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
+import com.d1onix.dishlab.feature.home.presentation.profile.ProfileContent
 import platform.UIKit.UIViewController
 
 /**
@@ -17,5 +18,11 @@ import platform.UIKit.UIViewController
 fun homePreviewController(): UIViewController = ComposeUIViewController {
     MiseTheme {
         HomeContent(state = HomePreviewStates.Default, onAction = {})
+    }
+}
+
+fun profilePreviewController(): UIViewController = ComposeUIViewController {
+    MiseTheme {
+        ProfileContent(state = ProfilePreviewStates.Default, onAction = {})
     }
 }

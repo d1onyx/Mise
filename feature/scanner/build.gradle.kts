@@ -35,6 +35,12 @@ kotlin {
             // Without the renderer the preview panel has nothing to draw with.
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
+            implementation(libs.mlkit.barcodeScanning)
+        }
+        iosMain.dependencies {
+            // The decoder for ProductBarcodeCamera.ios.kt. Android decodes with
+            // ML Kit instead, so this never needs to reach commonMain.
+            implementation(libs.camerak.qrScanner)
         }
         commonMain.dependencies {
             implementation(project(":core"))
@@ -45,11 +51,9 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.compose.components.resources)
 
-            // Camera + barcode scanning. The QR plugin's Android analyzer is
-            // ZXing with EAN-13/EAN-8/UPC/CODE-128 enabled, so it reads product
-            // barcodes, not just QR codes.
+            // Camera permissions are handled through CameraK; barcode decoding
+            // is Android-native ML Kit in ProductBarcodeCamera.android.kt.
             implementation(libs.camerak)
-            implementation(libs.camerak.qrScanner)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

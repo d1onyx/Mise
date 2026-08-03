@@ -21,6 +21,16 @@ fun scanManualEntryPreviewController(): UIViewController = ComposeUIViewControll
     }
 }
 
+/**
+ * The busy phase carries the torch button and the spinner — the two bits of
+ * chrome whose contrast over live video only a device can settle.
+ */
+fun scanResolvingPreviewController(): UIViewController = ComposeUIViewController {
+    MiseTheme {
+        ScanContent(state = ScanPreviewStates.Resolving, onAction = {})
+    }
+}
+
 fun scanProductReviewPreviewController(): UIViewController = ComposeUIViewController {
     MiseTheme {
         ScanContent(state = ScanPreviewStates.ProductReview, onAction = {})

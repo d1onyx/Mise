@@ -1,5 +1,6 @@
 package com.d1onix.dishlab.feature.home.presentation
 
+import com.d1onix.dishlab.feature.home.presentation.profile.ProfileUiState
 /**
  * The states every platform's previews render.
  *
@@ -11,10 +12,13 @@ package com.d1onix.dishlab.feature.home.presentation
  */
 internal object HomePreviewStates {
 
-    val Default = HomeUiState(savedCount = 3, historyCount = 5)
+    val Default = HomeUiState(savedCount = 3, historyCount = 5, isAuthenticated = true)
 
     /** First launch: nothing saved, nothing scanned. */
     val Empty = HomeUiState()
 
-    val Toast = HomeUiState(savedCount = 1, historyCount = 1, showProfileHint = true)
+}
+
+internal object ProfilePreviewStates {
+    val Default = ProfileUiState(graphProductCount = 6)
 }

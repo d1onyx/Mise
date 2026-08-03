@@ -25,11 +25,40 @@ private fun ScanContentManualEntryPreview() {
     }
 }
 
+/**
+ * The scan phases are separate previews because the reticle, the trail and the
+ * status line all key off `state.phase` — a regression in any one of them is
+ * only visible per phase.
+ */
 @MiseScreenPreviews
 @Composable
 private fun ScanContentResolvingPreview() {
     MiseTheme {
         ScanContent(state = ScanPreviewStates.Resolving, onAction = {})
+    }
+}
+
+@MiseScreenPreviews
+@Composable
+private fun ScanContentFailedPreview() {
+    MiseTheme {
+        ScanContent(state = ScanPreviewStates.Failed, onAction = {})
+    }
+}
+
+@MiseScreenPreviews
+@Composable
+private fun ScanContentTorchOnPreview() {
+    MiseTheme {
+        ScanContent(state = ScanPreviewStates.TorchOn, onAction = {})
+    }
+}
+
+@MiseScreenPreviews
+@Composable
+private fun ScanContentFrontCameraPreview() {
+    MiseTheme {
+        ScanContent(state = ScanPreviewStates.FrontCamera, onAction = {})
     }
 }
 

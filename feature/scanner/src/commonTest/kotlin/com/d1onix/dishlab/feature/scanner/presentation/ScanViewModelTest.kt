@@ -1,16 +1,17 @@
 package com.d1onix.dishlab.feature.scanner.presentation
 
-import com.d1onix.dishlab.domain.GetAllProductsUseCase
 import com.d1onix.dishlab.domain.GetProductByBarcodeUseCase
 import com.d1onix.dishlab.domain.RecordScanUseCase
-import com.d1onix.dishlab.domain.SuggestNextProductUseCase
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.ProductGraphPosition
+import com.d1onix.dishlab.domain.repository.ProductComparisonStore
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
+import com.d1onix.dishlab.feature.scanner.navigation.ScanTarget
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
+import com.d1onyx.core.essentials.exceptions.ConnectionException
 import com.d1onyx.core.essentials.logger.DefaultLogger
 import com.d1onyx.core.essentials.logger.RecordingLogSink
 import com.d1onyx.core.presentation.CommonDependencies
@@ -51,15 +52,15 @@ class ScanViewModelTest {
         testScheduler.advanceUntilIdle()
 
         assertTrue(session.products.value.isEmpty())
-        assertEquals(listOf(ProductId("oats")), recorded)
-        assertEquals(ProductId("oats"), viewModel.uiState.value.reviewedProduct?.id)
+        assertEquals(listOf(ProductId("barcode:111")), recorded)
+        assertEquals(ProductId("barcode:111"), viewModel.uiState.value.reviewedProduct?.id)
         assertEquals(0, router.graphOpened)
         assertTrue(router.notFoundBarcodes.isEmpty())
 
         viewModel.onAction(ScanAction.AddReviewedProductClicked)
         testScheduler.advanceUntilIdle()
 
-        assertEquals(listOf(ProductId("oats")), session.products.value)
+        assertEquals(listOf(ProductId("barcode:111")), session.products.value)
         assertEquals(1, router.graphOpened)
         assertNull(viewModel.uiState.value.reviewedProduct)
     }
@@ -89,7 +90,7 @@ class ScanViewModelTest {
         viewModel.onAction(ScanAction.BarcodeDetected("111"))
         testScheduler.advanceUntilIdle()
 
-        assertEquals(ProductId("oats"), viewModel.uiState.value.reviewedProduct?.id)
+        assertEquals(ProductId("barcode:111"), viewModel.uiState.value.reviewedProduct?.id)
         assertEquals(0, router.graphOpened)
     }
 
@@ -106,24 +107,28 @@ class ScanViewModelTest {
     }
 
     @Test
-    fun `capture reviews each demo product before adding it`() = runTest(dispatcher) {
-        val session = FakeSessionStore()
-        val router = FakeRouter()
-        val recorded = mutableListOf<ProductId>()
-        val viewModel = viewModel(session, router, recorded)
+    fun `a connection failure stays on the scanner and can be retried`() = runTest(dispatcher) {
+        var attempts = 0
+        val viewModel = viewModel(
+            session = FakeSessionStore(),
+            router = FakeRouter(),
+            productLookup = {
+                attempts++
+                throw ConnectionException()
+            },
+        )
 
-        viewModel.onAction(ScanAction.CaptureClicked)
-        testScheduler.advanceUntilIdle()
-        viewModel.onAction(ScanAction.AddReviewedProductClicked)
-        testScheduler.advanceUntilIdle()
-        viewModel.onAction(ScanAction.CaptureClicked)
-        testScheduler.advanceUntilIdle()
-        viewModel.onAction(ScanAction.AddReviewedProductClicked)
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
         testScheduler.advanceUntilIdle()
 
-        assertEquals(listOf(ProductId("oats"), ProductId("banana")), session.products.value)
-        assertEquals(2, recorded.size)
-        assertEquals(2, router.graphOpened)
+        assertTrue(viewModel.uiState.value.resolutionFailed)
+        assertEquals("111", viewModel.uiState.value.failedBarcode)
+
+        viewModel.onAction(ScanAction.RetryResolutionClicked)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(2, attempts)
+        assertTrue(viewModel.uiState.value.resolutionFailed)
     }
 
     @Test
@@ -138,65 +143,155 @@ class ScanViewModelTest {
         viewModel.onAction(ScanAction.ReviewedProductSkipped)
 
         assertTrue(session.products.value.isEmpty())
-        assertEquals(listOf(ProductId("oats")), recorded)
+        assertEquals(listOf(ProductId("barcode:111")), recorded)
         assertEquals(1, router.backCount)
     }
 
     @Test
-    fun `the not-found screen stays reachable on demand`() = runTest(dispatcher) {
+    fun `guest can add a reviewed product to the graph`() = runTest(dispatcher) {
         val session = FakeSessionStore()
         val router = FakeRouter()
         val viewModel = viewModel(session, router)
 
-        viewModel.onAction(ScanAction.SimulateNotFoundClicked)
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
+        testScheduler.advanceUntilIdle()
+        viewModel.onAction(ScanAction.AddReviewedProductClicked)
         testScheduler.advanceUntilIdle()
 
-        assertEquals(1, router.notFoundBarcodes.size)
+        assertEquals(listOf(ProductId("barcode:111")), session.products.value)
+        assertEquals(1, router.graphOpened)
+        assertNull(viewModel.uiState.value.reviewedProduct)
+    }
+
+    @Test
+    fun `comparison scan adds product without changing graph`() = runTest(dispatcher) {
+        val session = FakeSessionStore()
+        val router = FakeRouter()
+        val comparison = FakeComparisonStore()
+        val viewModel = viewModel(
+            session = session,
+            router = router,
+            target = ScanTarget.Comparison,
+            comparison = comparison,
+        )
+
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
+        testScheduler.advanceUntilIdle()
+        viewModel.onAction(ScanAction.AddReviewedProductClicked)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(listOf(ProductId("barcode:111")), comparison.products.value)
         assertTrue(session.products.value.isEmpty())
+        assertEquals(1, router.comparisonOpened)
+    }
+
+    @Test
+    fun `camera controls stay inert until the camera reports what it supports`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel(FakeSessionStore(), FakeRouter())
+
+            viewModel.onAction(ScanAction.TorchToggled)
+            viewModel.onAction(ScanAction.CameraFacingToggled)
+
+            val camera = viewModel.uiState.value.camera
+            assertEquals(false, camera.torchOn)
+            assertEquals(CameraFacing.Back, camera.facing)
+            assertEquals(false, camera.canToggleTorch)
+            assertEquals(false, camera.canSwitchFacing)
+        }
+
+    @Test
+    fun `the torch toggles once the camera reports a flash unit`() = runTest(dispatcher) {
+        val viewModel = viewModel(FakeSessionStore(), FakeRouter())
+        viewModel.onAction(
+            ScanAction.CameraCapabilitiesChanged(CameraCapabilities(torchAvailable = true)),
+        )
+
+        viewModel.onAction(ScanAction.TorchToggled)
+        assertTrue(viewModel.uiState.value.camera.torchOn)
+
+        viewModel.onAction(ScanAction.TorchToggled)
+        assertEquals(false, viewModel.uiState.value.camera.torchOn)
+    }
+
+    @Test
+    fun `switching to the front camera puts the torch out`() = runTest(dispatcher) {
+        val viewModel = viewModel(FakeSessionStore(), FakeRouter())
+        viewModel.onAction(
+            ScanAction.CameraCapabilitiesChanged(
+                CameraCapabilities(torchAvailable = true, lensSwitchAvailable = true),
+            ),
+        )
+        viewModel.onAction(ScanAction.TorchToggled)
+
+        viewModel.onAction(ScanAction.CameraFacingToggled)
+
+        val camera = viewModel.uiState.value.camera
+        assertEquals(CameraFacing.Front, camera.facing)
+        // The front lens has no torch, so a lit button there would be a lie.
+        assertEquals(false, camera.torchOn)
+        assertEquals(false, camera.canToggleTorch)
+    }
+
+    @Test
+    fun `the phase walks from searching to resolving and back on failure`() = runTest(dispatcher) {
+        val viewModel = viewModel(
+            session = FakeSessionStore(),
+            router = FakeRouter(),
+            productLookup = { throw ConnectionException() },
+        )
+        assertEquals(ScanPhase.Searching, viewModel.uiState.value.phase)
+
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
+        // The digits are published as the lookup starts, so the viewfinder can
+        // show what the camera read instead of an anonymous spinner.
+        assertEquals(ScanPhase.Resolving, viewModel.uiState.value.phase)
+        assertEquals("111", viewModel.uiState.value.visibleBarcode)
+
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(ScanPhase.Failed, viewModel.uiState.value.phase)
+        assertEquals("111", viewModel.uiState.value.visibleBarcode)
+    }
+
+    @Test
+    fun `a reviewed product clears the read digits`() = runTest(dispatcher) {
+        val viewModel = viewModel(FakeSessionStore(), FakeRouter())
+
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
+        testScheduler.advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.detectedBarcode)
+        assertEquals(ScanPhase.Searching, viewModel.uiState.value.phase)
     }
 
     private fun viewModel(
         session: ScanSessionStore,
         router: ScannerRouter,
         recorded: MutableList<ProductId> = mutableListOf(),
+        target: ScanTarget = ScanTarget.Graph,
+        comparison: ProductComparisonStore = FakeComparisonStore(),
+        productLookup: suspend (String) -> Product? = { barcode ->
+            if (barcode == "111") product else null
+        },
     ) = ScanViewModel(
         dependencies = CommonDependencies(DefaultLogger(RecordingLogSink()), ExceptionHandler { }),
-        getProductByBarcode = GetProductByBarcodeUseCase { barcode ->
-            if (barcode == "111") oats else null
-        },
-        suggestNextProduct = SuggestNextProductUseCase { current ->
-            catalogue.firstOrNull { it.id !in current }
-        },
-        getAllProducts = GetAllProductsUseCase { catalogue },
+        getProductByBarcode = GetProductByBarcodeUseCase(productLookup),
         recordScan = RecordScanUseCase { id -> recorded += id },
+        target = target,
         session = session,
+        comparison = comparison,
         router = router,
     )
 
-    private val catalogue get() = listOf(oats, banana)
-
-    private val oats = Product(
-        id = ProductId("oats"),
+    private val product = Product(
+        id = ProductId("barcode:111"),
         barcode = "111",
         name = "Rolled Oats",
         category = "Grains",
         score = 82,
         accentColor = 0xFFC8FF4D,
         initial = "O",
-        nutrients = emptyList(),
-        summary = "",
-        hasCompleteData = true,
-        alternatives = emptyList(),
-    )
-
-    private val banana = Product(
-        id = ProductId("banana"),
-        barcode = "222",
-        name = "Banana",
-        category = "Fruit",
-        score = 76,
-        accentColor = 0xFFFFE24E,
-        initial = "B",
         nutrients = emptyList(),
         summary = "",
         hasCompleteData = true,
@@ -246,20 +341,44 @@ class ScanViewModelTest {
 
     private class FakeRouter : ScannerRouter {
         var graphOpened = 0
+        var comparisonOpened = 0
+        var authOpened = 0
         var backCount = 0
         val notFoundBarcodes = mutableListOf<String>()
         override fun openCombinationGraph() {
             graphOpened++
         }
 
-        override fun openNotFound(barcode: String) {
+        override fun openNotFound(barcode: String, target: ScanTarget) {
             notFoundBarcodes += barcode
         }
 
-        override fun openScanner() = Unit
+        override fun openScanner(target: ScanTarget) = Unit
+        override fun openComparison() {
+            comparisonOpened++
+        }
+        override fun openAuth() {
+            authOpened++
+        }
         override fun openHome() = Unit
         override fun goBack() {
             backCount++
         }
     }
+
+    private class FakeComparisonStore : ProductComparisonStore {
+        private val state = MutableStateFlow<List<ProductId>>(emptyList())
+        override val products: StateFlow<List<ProductId>> = state
+        override suspend fun add(id: ProductId): Boolean {
+            state.value += id
+            return true
+        }
+        override suspend fun remove(id: ProductId) {
+            state.value -= id
+        }
+        override suspend fun clear() {
+            state.value = emptyList()
+        }
+    }
+
 }

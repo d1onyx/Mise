@@ -17,6 +17,13 @@ class DishLabApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Logger.install(DefaultLogger(platformLogSink()))
-        graph = createAndroidAppGraph(this)
+        graph = createAndroidAppGraph(
+            context = this,
+            backendConfig = BackendRuntimeConfig(
+                baseUrl = BuildConfig.DISH_LAB_API_URL,
+                isDebug = BuildConfig.DEBUG,
+                developmentToken = if (BuildConfig.DEBUG) BuildConfig.DISH_LAB_DEV_TOKEN else null,
+            ),
+        )
     }
 }

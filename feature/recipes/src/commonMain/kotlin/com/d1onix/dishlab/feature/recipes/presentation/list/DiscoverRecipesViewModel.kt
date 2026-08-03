@@ -1,0 +1,56 @@
+package com.d1onix.dishlab.feature.recipes.presentation.list
+
+import com.d1onix.dishlab.domain.FilterRecipesUseCase
+import com.d1onix.dishlab.domain.GetAllRecipesUseCase
+import com.d1onix.dishlab.domain.GetProductsUseCase
+import com.d1onix.dishlab.feature.recipes.navigation.RecipesRouter
+import com.d1onyx.core.presentation.CommonDependencies
+import com.d1onyx.core.presentation.WithMviState
+import com.d1onyx.core.presentation.base.AbstractViewModel
+import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+
+@Inject
+class DiscoverRecipesViewModel(
+    dependencies: CommonDependencies,
+    private val getAllRecipes: GetAllRecipesUseCase,
+    private val filterRecipes: FilterRecipesUseCase,
+    private val getProducts: GetProductsUseCase,
+    private val router: RecipesRouter,
+) : AbstractViewModel(dependencies), WithMviState<RecipeListUiState> {
+    private val mutableState = MutableStateFlow(RecipeListUiState())
+    val uiState: StateFlow<RecipeListUiState> = mutableState.asStateFlow()
+
+    init {
+        launch("loadRecipeCatalogue") {
+            val recipes = getAllRecipes()
+            val products = getProducts(recipes.flatMap { it.productIds }.distinct())
+            mutableState.update {
+                it.copy(all = recipes, products = products.associateBy { product -> product.id })
+                    .refiltered()
+            }
+        }
+    }
+
+    fun onAction(action: RecipeListAction) {
+        when (action) {
+            is RecipeListAction.QueryChanged -> mutableState.update {
+                it.copy(filters = it.filters.copy(query = action.value)).refiltered()
+            }
+            is RecipeListAction.GroupClicked -> mutableState.update {
+                it.copy(expandedGroup = if (it.expandedGroup == action.group) null else action.group)
+            }
+            is RecipeListAction.OptionClicked -> mutableState.update {
+                it.copy(filters = it.filters.toggle(action.group, action.option)).refiltered()
+            }
+            is RecipeListAction.RecipeClicked -> router.openRecipe(action.id)
+            RecipeListAction.BackClicked -> router.goBack()
+        }
+    }
+
+    private fun RecipeListUiState.refiltered(): RecipeListUiState =
+        copy(visible = filterRecipes(all, filters))
+}

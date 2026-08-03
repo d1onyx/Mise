@@ -1,13 +1,18 @@
 package com.d1onix.dishlab
 
-import com.d1onix.dishlab.data.demo.DemoDataSeeder
+import com.d1onix.dishlab.data.demo.LegacyDemoProductsCleaner
 import com.d1onix.dishlab.feature.home.presentation.HomeViewModel
+import com.d1onix.dishlab.feature.home.presentation.auth.AuthViewModel
+import com.d1onix.dishlab.feature.home.presentation.onboarding.OnboardingViewModel
+import com.d1onix.dishlab.feature.home.presentation.profile.ProfileViewModel
+import com.d1onix.dishlab.feature.products.presentation.comparison.ComparisonViewModel
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphViewModel
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryViewModel
 import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.cooking.CookingViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.detail.RecipeDetailViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.list.RecipesViewModel
+import com.d1onix.dishlab.feature.recipes.presentation.list.DiscoverRecipesViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.list.SavedRecipesViewModel
 import com.d1onix.dishlab.feature.scanner.presentation.ScanNotFoundViewModel
 import com.d1onix.dishlab.feature.scanner.presentation.ScanViewModel
@@ -28,15 +33,20 @@ interface AppGraph {
     val routerHolder: AppRouterHolder
     val dialogs: ComposeDialogs
 
-    /** Fills Saved and History on first launch. Goes away with the demo data. */
-    val demoDataSeeder: DemoDataSeeder
+    /** Removes legacy bundled product IDs after the app switches to the API. */
+    val legacyDemoProductsCleaner: LegacyDemoProductsCleaner
 
     val homeViewModel: HomeViewModel
-    val scanViewModel: ScanViewModel
+    val profileViewModel: ProfileViewModel
+    val authViewModelFactory: AuthViewModel.Factory
+    val onboardingViewModelFactory: OnboardingViewModel.Factory
+    val scanViewModelFactory: ScanViewModel.Factory
     val graphViewModel: GraphViewModel
+    val comparisonViewModel: ComparisonViewModel
     val connectionOverviewViewModel: ConnectionOverviewViewModel
     val historyViewModel: HistoryViewModel
     val recipesViewModel: RecipesViewModel
+    val discoverRecipesViewModel: DiscoverRecipesViewModel
     val savedRecipesViewModel: SavedRecipesViewModel
 
     // Screens with an argument build their view-model through an assisted factory.

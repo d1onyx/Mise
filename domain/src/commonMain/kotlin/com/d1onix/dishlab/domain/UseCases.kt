@@ -17,13 +17,12 @@ fun interface GetProductsUseCase {
     suspend operator fun invoke(ids: List<ProductId>): List<Product>
 }
 
-/** The whole catalogue — used by the demo scan to pick something to show. */
-fun interface GetAllProductsUseCase {
-    suspend operator fun invoke(): List<Product>
-}
-
 fun interface GetRecipesForProductsUseCase {
     suspend operator fun invoke(productIds: List<ProductId>): List<Recipe>
+}
+
+fun interface GetAllRecipesUseCase {
+    suspend operator fun invoke(): List<Recipe>
 }
 
 fun interface FilterRecipesByConnectionsUseCase {
@@ -41,11 +40,6 @@ fun interface GetRecipeUseCase {
 /** Pure — search and the three filter groups applied to a list of recipes. */
 fun interface FilterRecipesUseCase {
     operator fun invoke(recipes: List<Recipe>, filters: RecipeFilters): List<Recipe>
-}
-
-/** The next catalogue product not yet on the graph, for the «tap to add» gesture. */
-fun interface SuggestNextProductUseCase {
-    suspend operator fun invoke(current: List<ProductId>): Product?
 }
 
 fun interface ObserveSavedRecipesUseCase {
