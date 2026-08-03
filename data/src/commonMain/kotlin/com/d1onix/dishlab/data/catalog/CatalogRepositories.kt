@@ -111,6 +111,7 @@ private data class CachedRemoteProductDto(
     val nutrients: List<CachedNutrientDto>,
     val summary: String,
     val hasCompleteData: Boolean,
+    val canonicalTags: List<String> = emptyList(),
     val dataOrigin: ProductDataOrigin = ProductDataOrigin.Canonical,
 )
 
@@ -243,6 +244,7 @@ internal fun BackendProductDto.toDomain(): Product {
         },
         hasCompleteData = listOf(calories, protein, fat, carbs).all { it != null },
         alternatives = emptyList<ProductAlternative>(),
+        canonicalTags = canonicalTags,
     )
 }
 
@@ -257,6 +259,7 @@ private fun Product.toCached(): CachedRemoteProductDto = CachedRemoteProductDto(
     nutrients = nutrients.map { CachedNutrientDto(it.name, it.amount, it.unit) },
     summary = summary,
     hasCompleteData = hasCompleteData,
+    canonicalTags = canonicalTags,
     dataOrigin = dataOrigin,
 )
 
@@ -271,6 +274,7 @@ private fun CachedRemoteProductDto.toDomain(): Product = Product(
     nutrients = nutrients.map { Nutrient(it.name, it.amount, it.unit) },
     summary = summary,
     hasCompleteData = hasCompleteData,
+    canonicalTags = canonicalTags,
     dataOrigin = dataOrigin,
     alternatives = emptyList(),
 )

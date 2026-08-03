@@ -28,6 +28,7 @@ fun ProductDto.toDomain(): Product = Product(
     summary = summary,
     hasCompleteData = hasCompleteData,
     alternatives = alternatives.map(AlternativeDto::toDomain),
+    canonicalTags = canonicalTags,
 )
 
 fun NutrientDto.toDomain(): Nutrient = Nutrient(name = name, amount = amount, unit = unit)

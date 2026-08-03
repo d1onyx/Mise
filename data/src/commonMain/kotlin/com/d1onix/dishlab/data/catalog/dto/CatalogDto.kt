@@ -15,6 +15,7 @@ data class ProductDto(
     val hasCompleteData: Boolean,
     val nutrients: List<NutrientDto>,
     val alternatives: List<AlternativeDto> = emptyList(),
+    val canonicalTags: List<String> = emptyList(),
 )
 
 @Serializable
