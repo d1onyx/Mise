@@ -118,6 +118,12 @@ git push origin master
 what makes local-only branches safe. **`--squash` and rebase-merge are
 forbidden**: both collapse the history this setup exists to preserve.
 
+**No pull requests.** `origin` holds exactly one branch: `master`. Never
+`git push -u origin <branch>`, never open a PR, never use the GitHub merge
+button. This is not a style preference — the owner chose local merges over the
+PR flow deliberately. It went the other way once, before the rule existed
+(PR #1), and the stray remote branch had to be deleted by hand afterwards.
+
 **Never `git add -A`.** Stage explicit paths — this tree carries ~4 GB of
 untracked data (`FoodData_Central_csv_2026-04-30/`, `backend/data/`) plus
 `androidApp/google-services.json`.
