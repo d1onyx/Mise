@@ -53,6 +53,12 @@ export JAVA_HOME=/home/denis/work/IDE/android-studio/jbr
 ./gradlew :androidApp:installDebug # needs a device or emulator
 ```
 
+Android builds also require a local Firebase configuration. Copy
+[`androidApp/google-services.json.example`](./androidApp/google-services.json.example)
+to `androidApp/google-services.json`, then replace the placeholders with the
+file downloaded for `com.d1onix.dishlab` from Firebase. The real file is
+intentionally ignored by Git.
+
 Start the product API before scanning real barcodes:
 
 ```bash
