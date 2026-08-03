@@ -21,7 +21,7 @@ import kotlinx.serialization.json.Json
  */
 @SingleIn(AppScope::class)
 @Inject
-class OpenFoodFactsProductDataSource(
+open class OpenFoodFactsProductDataSource(
     config: NetworkConfig,
     logger: Logger,
     json: Json,
@@ -33,7 +33,7 @@ class OpenFoodFactsProductDataSource(
         json = json,
     )
 
-    suspend fun findByBarcode(barcode: String): ClientProductSnapshotDto? {
+    open suspend fun findByBarcode(barcode: String): ClientProductSnapshotDto? {
         val normalizedBarcode = barcode.filter(Char::isDigit)
         return try {
             client.get("api/v3.6/product/$normalizedBarcode.json") {

@@ -29,13 +29,18 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlin.math.roundToInt
 
-/** Sends device-fetched product snapshots to the Ktor API for canonicalization. */
+/**
+ * Sends device-fetched product snapshots to the Ktor API for canonicalization.
+ *
+ * `open` so a test can stand in for the network without an HTTP round trip;
+ * nothing in the app overrides it.
+ */
 @SingleIn(AppScope::class)
 @Inject
-class BackendProductDataSource(
+open class BackendProductDataSource(
     private val client: HttpClient,
 ) {
-    suspend fun resolveClientProduct(snapshot: ClientProductSnapshotDto): BackendProductDto =
+    open suspend fun resolveClientProduct(snapshot: ClientProductSnapshotDto): BackendProductDto =
         client.post("api/v1/products/resolve") { setBody(snapshot) }.body()
 }
 
@@ -127,14 +132,21 @@ class BackendProductRepository(
 
     override suspend fun byBarcode(barcode: String): Product? {
         val normalizedBarcode = barcode.filter(Char::isDigit)
-        remoteCache.byBarcode(normalizedBarcode)?.let { return it }
+        val cached = remoteCache.byBarcode(normalizedBarcode)
+
+        // A canonical product is final and answers from the cache. A device
+        // fallback is only a stand-in for an outage, so it never satisfies a
+        // fresh scan: canonicalization is retried, and the stand-in is kept as
+        // the fallback for that retry. Otherwise one outage would pin a product
+        // to Open Food Facts data for as long as the install lives.
+        if (cached != null && cached.dataOrigin == ProductDataOrigin.Canonical) return cached
 
         val snapshot = try {
             openFoodFacts.findByBarcode(normalizedBarcode)
         } catch (exception: Throwable) {
             if (exception is CancellationException) throw exception
-            return remoteCache.byBarcode(normalizedBarcode) ?: throw exception
-        } ?: return null
+            return cached ?: throw exception
+        } ?: return cached
 
         return try {
             backend.resolveClientProduct(snapshot).toDomain().let { product ->
