@@ -48,6 +48,9 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+            // BackendProductDataSource needs an HttpClient it never calls in
+            // these tests; MockEngine supplies one without a platform engine.
+            implementation(libs.ktor.client.mock)
         }
     }
 }

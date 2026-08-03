@@ -19,6 +19,8 @@ junit = "4.13.2"
 kotlin = "2.4.10"
 ksp = "2.3.9"
 kotlinx-serialization = "1.11.0"
+# Must match the version the vendored `core` template pins in its own build file.
+ktor = "3.5.1"
 material3 = "1.11.0-alpha07"
 mlkitBarcode = "17.3.0"
 metro = "1.3.2"
@@ -52,6 +54,7 @@ compose-components-resources = { module = "org.jetbrains.compose.components:comp
 compose-uiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
 # Multiplatform: ships androidx.compose.ui.tooling.preview.Preview to commonMain too.
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }

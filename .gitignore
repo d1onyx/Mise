@@ -17,3 +17,9 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Local credentials and downloaded/generated datasets
+androidApp/google-services.json
+backend/data/
+FoodData_Central_csv_2026-04-30/
+samples/

@@ -37,10 +37,74 @@ Use Kotlin 2.4.10, Compose Multiplatform, Metro DI, and Kotlin serialization ver
 
 Tests use `kotlin.test`, JUnit where needed, and `kotlinx-coroutines-test`. Place common tests in `src/commonTest/kotlin`; platform tests belong in source sets such as `androidHostTest` or `iosTest`. Name test classes after the subject, for example `FilterRecipesUseCaseTest` or `ScanViewModelTest`. Run `./gradlew allTests` before submitting behavior changes.
 
-## Commit & Pull Request Guidelines
+## Git Workflow
 
-The visible Git history currently contains only `Initial commit`, so there is no established convention. Use short imperative subjects, for example `Add recipe filtering tests`, and keep unrelated changes separate. Pull requests should describe the user-visible change, mention affected modules, link issues when available, include screenshots or recordings for UI changes, and list the Gradle/Xcode checks performed.
+Several agents work here at once, each in its own worktree. **`master` is the
+only branch on the remote** — feature branches stay local, and their commits
+reach GitHub through the merge, not through a push.
+
+**One task, one branch, one worktree.**
+
+```bash
+git worktree add /tmp/dishlab-t13 -b feat/t-13-remove-startup-auth
+```
+
+Name is `<type>/t-<id>-<slug>`, where `t-<id>` is the Herdr task ID. Types:
+`feat`, `fix`, `chore`, `docs`. The branch lives exactly as long as the task.
+A worktree is not optional — a checkout is global to the clone, so two agents
+cannot sit on different branches in the same directory.
+
+**Commits** follow Conventional Commits, with the task as a trailer:
+
+```
+feat(scanner): add torch toggle to the viewfinder
+
+Task: t-13
+```
+
+Types: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`. Scope is a Gradle
+module name, and only these — do not invent new ones:
+
+```
+androidApp  iosApp  shared  domain  data  design-system  core  navigation
+home  scanner  products  recipes        (feature modules, without the prefix)
+backend                                 (the whole separate build)
+```
+
+A change spanning several modules drops the scope: `feat: …`.
+
+Every commit must leave the build green on its own: history is preserved through
+merges, and one broken intermediate commit poisons `git bisect` for everyone
+after it.
+
+Conventional Commits are not decoration here — the Play Store "What's new" text
+is generated from `feat:` and `fix:` subjects since the previous tag.
+
+**Only the `merger` role merges.** Developer agents stop after committing. They
+do not merge, do not push, do not touch `master`. The merge is always:
+
+```bash
+git merge --no-ff feat/t-13-remove-startup-auth -m "Merge t-13: remove startup auth"
+git push origin master
+```
+
+`--no-ff` keeps every commit of the branch inside `master`'s history — that is
+what makes local-only branches safe. **`--squash` and rebase-merge are
+forbidden**: both collapse the history this setup exists to preserve.
+
+**Never run `git add -A`.** Stage explicit paths. This tree carries roughly 4 GB
+of untracked data (`FoodData_Central_csv_2026-04-30/`, `backend/data/`) plus
+`androidApp/google-services.json`.
+
+**Do not edit the planning documents** — `PRD-MVP.md`, `MVP-PLAN.md`,
+`DECISIONS-MVP.md`. They belong to the owner and the `product-manager` role.
+
+**Never** `git push --force`, `git reset --hard`, or rebase a pushed branch
+unless explicitly asked.
+
+Releases are **tags** on `master` (`v0.1.0`, SemVer) plus a GitHub Release
+carrying the APK. There is no long-lived release branch.
 
 ## Security & Configuration Tips
 
-Do not commit local SDK paths, secrets, generated build outputs, or machine-specific IDE files. Keep demo-mode changes explicit in `data/.../demo/DemoMode.kt`, and document when a branch depends on `DemoMode.ALWAYS_RESOLVE_SCANS`.
+Do not commit local SDK paths, secrets, generated build outputs, or machine-specific IDE files. `androidApp/google-services.json` and `backend/.env` hold real credentials and stay out of the history; the build reads them from disk, so a fresh clone needs them supplied locally.
