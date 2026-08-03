@@ -58,6 +58,8 @@ data class Product(
     /** `false` when some nutrients were estimated — the UI warns about it. */
     val hasCompleteData: Boolean,
     val alternatives: List<ProductAlternative>,
+    /** Backend-canonical ingredient tags used to match this product to recipes. */
+    val canonicalTags: List<String> = emptyList(),
     /** Whether DishLab could apply its own canonicalization to this product. */
     val dataOrigin: ProductDataOrigin = ProductDataOrigin.Canonical,
 ) {

@@ -29,7 +29,8 @@ class CatalogMappersTest {
               "summary": "Almost pure sugar.",
               "hasCompleteData": false,
               "nutrients": [{ "name": "Sugar", "amount": "82", "unit": "g" }],
-              "alternatives": [{ "name": "Date syrup", "score": 60 }]
+              "alternatives": [{ "name": "Date syrup", "score": 60 }],
+              "canonicalTags": ["en:honey"]
             }
             """.trimIndent()
         )
@@ -41,6 +42,7 @@ class CatalogMappersTest {
         assertEquals(false, product.hasCompleteData)
         assertEquals(1, product.nutrients.size)
         assertEquals(ScoreVerdict.Maybe, product.alternatives.single().verdict)
+        assertEquals(listOf("en:honey"), product.canonicalTags)
     }
 
     @Test

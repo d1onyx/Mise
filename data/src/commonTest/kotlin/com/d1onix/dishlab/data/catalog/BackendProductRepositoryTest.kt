@@ -40,6 +40,16 @@ class BackendProductRepositoryTest {
     }
 
     @Test
+    fun `canonical tags survive reconstructing the durable product cache`() = runTest {
+        val storage = InMemoryKeyValueStorage()
+        RemoteProductCache(storage, Json).put(canonicalDto.toDomain())
+
+        val cachedProduct = RemoteProductCache(storage, Json).byBarcode(BARCODE)
+
+        assertEquals(listOf("en:oats", "en:cereals"), cachedProduct?.canonicalTags)
+    }
+
+    @Test
     fun `a cached device fallback is retried and replaced once the service returns`() = runTest {
         val cache = cache()
         cache.put(fallbackProduct)
@@ -126,6 +136,7 @@ class BackendProductRepositoryTest {
         fat = "7",
         carbs = "60",
         nutritionGrade = "a",
+        canonicalTags = listOf("en:oats", "en:cereals"),
     )
 
     private val fallbackProduct = BackendProductDto(barcode = BARCODE, name = "Oats (device)")
