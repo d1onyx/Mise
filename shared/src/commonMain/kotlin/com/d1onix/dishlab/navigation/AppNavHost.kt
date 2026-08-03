@@ -60,7 +60,7 @@ fun AppNavHost(graph: AppGraph) {
     }
 
     CompositionLocalProvider(LocalAppRouter provides router) {
-        NavHost(navController = navController, startDestination = HomeRoute) {
+        NavHost(navController = navController, startDestination = ScanRoute()) {
 
             composable<HomeRoute> {
                 HomeScreen(viewModel { graph.homeViewModel })

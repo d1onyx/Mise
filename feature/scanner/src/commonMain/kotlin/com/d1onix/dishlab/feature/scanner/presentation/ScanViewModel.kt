@@ -5,7 +5,6 @@ import com.d1onix.dishlab.domain.RecordScanUseCase
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.repository.ProductComparisonStore
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
-import com.d1onix.dishlab.domain.repository.UserSessionRepository
 import com.d1onix.dishlab.feature.scanner.navigation.ScanTarget
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
 import com.d1onyx.core.presentation.CommonDependencies
@@ -18,7 +17,6 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 
 @AssistedInject
@@ -29,7 +27,6 @@ class ScanViewModel(
     private val recordScan: RecordScanUseCase,
     private val session: ScanSessionStore,
     private val comparison: ProductComparisonStore,
-    private val userSession: UserSessionRepository,
     private val router: ScannerRouter,
 ) : AbstractViewModel(dependencies), WithMviState<ScanUiState> {
 
@@ -176,9 +173,6 @@ class ScanViewModel(
             if (target == ScanTarget.Comparison) {
                 comparison.add(product.id)
                 router.openComparison()
-            } else if (!userSession.session.first().isAuthenticated) {
-                router.openAuth()
-                return@launch
             } else {
                 if (!state.reviewedProductAlreadyAdded) session.add(product.id)
                 router.openCombinationGraph()

@@ -6,10 +6,8 @@ import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.ProductGraphPosition
-import com.d1onix.dishlab.domain.model.UserSession
 import com.d1onix.dishlab.domain.repository.ProductComparisonStore
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
-import com.d1onix.dishlab.domain.repository.UserSessionRepository
 import com.d1onix.dishlab.feature.scanner.navigation.ScanTarget
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
@@ -21,7 +19,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -151,19 +148,19 @@ class ScanViewModelTest {
     }
 
     @Test
-    fun `guest is asked to authenticate before adding to graph`() = runTest(dispatcher) {
+    fun `guest can add a reviewed product to the graph`() = runTest(dispatcher) {
         val session = FakeSessionStore()
         val router = FakeRouter()
-        val viewModel = viewModel(session, router, authenticated = false)
+        val viewModel = viewModel(session, router)
 
         viewModel.onAction(ScanAction.BarcodeDetected("111"))
         testScheduler.advanceUntilIdle()
         viewModel.onAction(ScanAction.AddReviewedProductClicked)
         testScheduler.advanceUntilIdle()
 
-        assertEquals(1, router.authOpened)
-        assertTrue(session.products.value.isEmpty())
-        assertEquals(ProductId("barcode:111"), viewModel.uiState.value.reviewedProduct?.id)
+        assertEquals(listOf(ProductId("barcode:111")), session.products.value)
+        assertEquals(1, router.graphOpened)
+        assertNull(viewModel.uiState.value.reviewedProduct)
     }
 
     @Test
@@ -274,7 +271,6 @@ class ScanViewModelTest {
         recorded: MutableList<ProductId> = mutableListOf(),
         target: ScanTarget = ScanTarget.Graph,
         comparison: ProductComparisonStore = FakeComparisonStore(),
-        authenticated: Boolean = true,
         productLookup: suspend (String) -> Product? = { barcode ->
             if (barcode == "111") product else null
         },
@@ -285,7 +281,6 @@ class ScanViewModelTest {
         target = target,
         session = session,
         comparison = comparison,
-        userSession = FakeUserSessionRepository(authenticated),
         router = router,
     )
 
@@ -386,12 +381,4 @@ class ScanViewModelTest {
         }
     }
 
-    private class FakeUserSessionRepository(authenticated: Boolean) : UserSessionRepository {
-        private val state = MutableStateFlow(UserSession(isAuthenticated = authenticated))
-        override val session: Flow<UserSession> = state
-        override suspend fun signIn(email: String, password: String) = Unit
-        override suspend fun register(email: String, password: String) = Unit
-        override suspend fun signOut() = Unit
-        override suspend fun markOnboardingCompleted() = Unit
-    }
 }
