@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dishlab-postgres
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-dishlab}
+      POSTGRES_USER: ${DATABASE_USER:-dishlab}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-dishlab}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-dishlab} -d ${DATABASE_NAME:-dishlab}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dishlab-app
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-dishlab}
+      DATABASE_USER: ${DATABASE_USER:-dishlab}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-dishlab}
+      DEV_AUTH: ${DEV_AUTH:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      RECIPE_CATALOG_DB: /data/recipe-catalog.db
+      INGREDIENT_CATALOG_JSON: /data/ingredients_by_category.json
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_INGREDIENT_VALIDATION_MODEL: ${OPENROUTER_INGREDIENT_VALIDATION_MODEL:-}
+      OPENROUTER_RECIPE_VALIDATION_MODEL: ${OPENROUTER_RECIPE_VALIDATION_MODEL:-}
+      OPENROUTER_TAG_VALIDATION_MODEL: ${OPENROUTER_TAG_VALIDATION_MODEL:-}
+      OPENROUTER_TAG_CATEGORIZATION_MODEL: ${OPENROUTER_TAG_CATEGORIZATION_MODEL:-}
+      OPENROUTER_PRODUCT_MODEL: ${OPENROUTER_PRODUCT_MODEL:-}
+      OPENROUTER_PRODUCT_PRESET: ${OPENROUTER_PRODUCT_PRESET:-}
+      OPENROUTER_PRODUCT_VALIDATION_MODEL: ${OPENROUTER_PRODUCT_VALIDATION_MODEL:-}
+    volumes:
+      - ./data:/data
+      - ./data/ingredients_by_category.json:/data/ingredients_by_category.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - default

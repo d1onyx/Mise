@@ -1,0 +1,4 @@
+ALTER TABLE recipes
+    ADD COLUMN IF NOT EXISTS moderation_status TEXT NOT NULL DEFAULT 'NOT_REQUIRED'
+        CHECK (moderation_status IN ('NOT_REQUIRED', 'PENDING', 'APPROVED', 'REJECTED')),
+    ADD COLUMN IF NOT EXISTS moderation_note TEXT;

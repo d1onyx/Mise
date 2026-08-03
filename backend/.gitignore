@@ -1,0 +1,10 @@
+# Project exclude paths
+/.gradle/
+/build/
+**/build/
+/.kotlin/
+.env
+data/*.db
+data/*.db-*
+data/postgres/
+uploads/
