@@ -71,3 +71,70 @@ where it was needed.
 | `adb shell input keyevent 4` | Does system Back on fresh `ScanRoute` exit the activity? |
 | `adb shell input tap 116 203` | Does the screen's UI-hierarchy node `content-desc="Back"` trigger the hang on this 1080×2400 device? |
 | `adb shell input tap 523 1460` | Does the `Look up` control remain interactive after the screen Back arrow was tapped? |
+
+## t-46 evidence
+
+These are the literal `adb` commands used to establish
+`DEVICE-ENTRY-POINT-MAP.md`; repeated hierarchy dumps are intentionally kept
+as separate rows so a later run can reproduce each observed transition.
+
+| Command | Question answered |
+| --- | --- |
+| `adb devices -l` | Is the physical device required for the entry-point map connected? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-current.xml` | What Scanner/manual-entry UI is currently rendered before continuing the run? |
+| `adb -s 37705998 pull /sdcard/t46-current.xml /tmp/t46-current.xml` | How can that current hierarchy be inspected locally? |
+| `adb -s 37705998 shell input keyevent 4` | Does Back dismiss the manual-entry keyboard before pressing its action? |
+| `adb -s 37705998 shell sleep 1` | Has the UI settled after the Back input? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-manual-ready.xml` | Which bounds identify the enabled `Look up barcode` action? |
+| `adb -s 37705998 pull /sdcard/t46-manual-ready.xml /tmp/t46-manual-ready.xml` | How can the manual-entry action be inspected locally? |
+| `adb -s 37705998 shell input tap 540 2105` | Does the manually entered unknown barcode lead to a route with a Home entry? |
+| `adb -s 37705998 shell sleep 5` | Has barcode lookup had time to return its result UI? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-lookup-result.xml` | Does the unknown-barcode result expose a Home entry? |
+| `adb -s 37705998 pull /sdcard/t46-lookup-result.xml /tmp/t46-lookup-result.xml` | How can the unknown-barcode result be inspected locally? |
+| `adb -s 37705998 shell input tap 540 2270` | Does `back to home` navigate to Home? |
+| `adb -s 37705998 shell sleep 2` | Has Home had time to render? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-home.xml` | What selectable controls does Home expose? |
+| `adb -s 37705998 pull /sdcard/t46-home.xml /tmp/t46-home.xml` | How can Home controls and their bounds be inspected locally? |
+| `adb -s 37705998 shell input tap 280 1285` | What destination does Home's `Compare` tile actually open? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-compare.xml` | Which screen followed the Compare-tile tap? |
+| `adb -s 37705998 pull /sdcard/t46-compare.xml /tmp/t46-compare.xml` | How can the Compare-tile destination be inspected locally? |
+| `adb -s 37705998 shell input keyevent 4` | Does system Back return from the wrongly reached account screen to Home? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-home-return.xml` | Is Home restored before testing its Recipes tile? |
+| `adb -s 37705998 pull /sdcard/t46-home-return.xml /tmp/t46-home-return.xml` | How can the restored Home hierarchy be inspected locally? |
+| `adb -s 37705998 shell input tap 780 1285` | What destination does Home's `Recipes` tile actually open? |
+| `adb -s 37705998 shell sleep 3` | Has the Recipes-tile destination had time to render? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-recipes.xml` | Which screen followed the Recipes-tile tap? |
+| `adb -s 37705998 pull /sdcard/t46-recipes.xml /tmp/t46-recipes.xml` | How can the Recipes-tile destination be inspected locally? |
+| `adb -s 37705998 shell input tap 965 205` | What destination does Home's `?` control actually open? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-help.xml` | Which screen followed the question-mark tap? |
+| `adb -s 37705998 pull /sdcard/t46-help.xml /tmp/t46-help.xml` | How can the question-mark destination be inspected locally? |
+| `adb -s 37705998 shell input tap 300 970` | Does Home's `Scan a product` tile return to Scanner? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-scan-from-home.xml` | Which exact Scanner element starts manual barcode entry? |
+| `adb -s 37705998 pull /sdcard/t46-scan-from-home.xml /tmp/t46-scan-from-home.xml` | How can the Scanner entry element be inspected locally? |
+| `adb -s 37705998 shell input tap 540 2275` | Does `Enter barcode manually` open the barcode field? |
+| `adb -s 37705998 shell input tap 540 1930` | Does the barcode field receive focus for a known code? |
+| `adb -s 37705998 shell input text 3017620422003` | Can the known barcode be entered without guessing a product-screen route? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-known-barcode-ready.xml` | Does the manual form contain the known barcode and `Look up barcode` action? |
+| `adb -s 37705998 pull /sdcard/t46-known-barcode-ready.xml /tmp/t46-known-barcode-ready.xml` | How can the known-barcode form be inspected locally? |
+| `adb -s 37705998 shell sleep 8` | Has the known-barcode lookup had time to resolve? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-known-barcode-result.xml` | Is lookup still resolving after eight seconds? |
+| `adb -s 37705998 pull /sdcard/t46-known-barcode-result.xml /tmp/t46-known-barcode-result.xml` | How can the intermediate lookup state be inspected locally? |
+| `adb -s 37705998 shell sleep 15` | Has the device-fetched product result had sufficient time to render? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-known-barcode-final.xml` | Does product result expose `Add to combination graph`? |
+| `adb -s 37705998 pull /sdcard/t46-known-barcode-final.xml /tmp/t46-known-barcode-final.xml` | How can the product-result entry element be inspected locally? |
+| `adb -s 37705998 shell input tap 540 2125` | Does `Add to combination graph` open the Combination graph screen? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-graph.xml` | Which exact graph controls open recipes, Saved, and Profile? |
+| `adb -s 37705998 pull /sdcard/t46-graph.xml /tmp/t46-graph.xml` | How can graph entry controls be inspected locally? |
+| `adb -s 37705998 shell input tap 350 2265` | Does `Find recipes (1)` open the recipes screen? |
+| `adb -s 37705998 shell sleep 4` | Has the recipes screen had time to render its filters? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-recipe-results.xml` | Which recipe filters and cooking entries are currently rendered? |
+| `adb -s 37705998 pull /sdcard/t46-recipe-results.xml /tmp/t46-recipe-results.xml` | How can the recipe-result hierarchy be inspected locally? |
+| `adb -s 37705998 shell input tap 777 2270` | Does graph's `Saved recipes` icon open Saved? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-saved.xml` | Which screen followed the Saved-recipes icon? |
+| `adb -s 37705998 pull /sdcard/t46-saved.xml /tmp/t46-saved.xml` | How can the Saved hierarchy be inspected locally? |
+| `adb -s 37705998 shell input tap 960 2270` | Does graph's bottom-right `AK` control open Profile? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-profile.xml` | Does the `AK` control render Profile and any History entry? |
+| `adb -s 37705998 pull /sdcard/t46-profile.xml /tmp/t46-profile.xml` | How can the Profile hierarchy be inspected locally? |
+| `adb -s 37705998 shell input swipe 540 1900 540 500 400` | Does Profile reveal a lower History entry after an upward swipe? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t46-profile-lower.xml` | Is a History entry rendered after inspecting the lower Profile area? |
+| `adb -s 37705998 pull /sdcard/t46-profile-lower.xml /tmp/t46-profile-lower.xml` | How can the lower Profile hierarchy be inspected locally? |
