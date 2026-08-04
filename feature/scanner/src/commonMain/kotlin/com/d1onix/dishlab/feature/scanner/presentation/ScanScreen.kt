@@ -142,13 +142,7 @@ internal fun ScanContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                MiseIconCircleButton(
-                    icon = MiseIcons.ChevronLeft,
-                    contentDescription = stringResource(Res.string.scan_back),
-                    onClick = { onAction(ScanAction.BackClicked) },
-                    size = 40,
-                )
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     SectionLabel(
                         text = if (state.isResolving) {
                             stringResource(Res.string.scan_title_resolving)
@@ -158,7 +152,6 @@ internal fun ScanContent(
                         color = colors.textMuted,
                     )
                 }
-                Spacer(Modifier.size(40.dp))
             }
 
             Spacer(Modifier.weight(1f))
