@@ -4,6 +4,15 @@ Replace only explicitly marked `<PLACEHOLDER>` values. This file is append-only:
 the next agent who derives a new device command adds it here in the same task
 where it was needed.
 
+## 0. Worktree preparation
+
+Before an Android build in a new worktree, copy the machine-local Firebase
+configuration but never stage it or change its existing `.gitignore` rule.
+
+| Command | Question answered |
+| --- | --- |
+| `cp /home/denis/work/Projects/DishLab/androidApp/google-services.json /tmp/dishlab-<ROLE>/androidApp/` | Does this worktree have the untracked configuration required by the `googleServices` plugin, so an Android build tests code rather than fail on missing local configuration? |
+
 ## 1. Connection and device state
 
 | Command | Question answered |
@@ -71,6 +80,32 @@ where it was needed.
 | `adb shell input keyevent 4` | Does system Back on fresh `ScanRoute` exit the activity? |
 | `adb shell input tap 116 203` | Does the screen's UI-hierarchy node `content-desc="Back"` trigger the hang on this 1080×2400 device? |
 | `adb shell input tap 523 1460` | Does the `Look up` control remain interactive after the screen Back arrow was tapped? |
+
+## t-44 device verification
+
+| Command | Question answered |
+| --- | --- |
+| `adb -s 37705998 shell am force-stop com.d1onix.dishlab` | Has the installed t-44 APK been stopped before a root-Scanner launch? |
+| `adb -s 37705998 shell am start -W -n com.d1onix.dishlab/.MainActivity` | Does the t-44 APK launch into its root activity? |
+| `adb -s 37705998 shell sleep 2` | Has the Scanner UI had time to render before its hierarchy is inspected? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t44-root.xml` | Does the root Scanner hierarchy contain a `content-desc="Back"` node? |
+| `adb -s 37705998 pull /sdcard/t44-root.xml /tmp/t44-root.xml` | How can the root-Scanner hierarchy be inspected locally? |
+| `adb -s 37705998 shell input keyevent 4` | Does system Back from root Scanner exit to the launcher? |
+| `adb -s 37705998 shell sleep 1` | Has Android settled after system Back? |
+| `adb -s 37705998 shell dumpsys activity activities | rg 'topResumedActivity|mResumedActivity'` | Is the launcher, rather than DishLab, top-resumed after system Back? |
+| `adb -s 37705998 shell am start -W -n com.d1onix.dishlab/.MainActivity` | Can DishLab be returned to after the root system-Back exit? |
+| `adb -s 37705998 shell input tap 540 2275` | Does `Enter barcode manually` still react after returning to the app? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t44-returned-interactive.xml` | Does the returned Scanner render the manual-entry controls? |
+| `adb -s 37705998 pull /sdcard/t44-returned-interactive.xml /tmp/t44-returned-interactive.xml` | How can the post-return interactive hierarchy be inspected locally? |
+| `adb -s 37705998 shell am force-stop com.d1onix.dishlab` | Has the final t-44 APK been stopped before its final root-Scanner verification? |
+| `adb -s 37705998 shell am start -W -n com.d1onix.dishlab/.MainActivity` | Does the final t-44 APK cold-launch its root Scanner? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t44-final-root.xml` | Does the final root Scanner hierarchy omit `content-desc="Back"`? |
+| `adb -s 37705998 pull /sdcard/t44-final-root.xml /tmp/t44-final-root.xml` | How can the final root hierarchy be inspected locally? |
+| `adb -s 37705998 shell input keyevent 4` | Does system Back from the final root Scanner still exit to the launcher? |
+| `adb -s 37705998 shell dumpsys activity activities | rg 'topResumedActivity|mResumedActivity'` | Is the launcher top-resumed after final-root system Back? |
+| `adb -s 37705998 shell input tap 540 2275` | Does the final returned Scanner still accept the manual-entry action? |
+| `adb -s 37705998 shell uiautomator dump /sdcard/t44-final-returned.xml` | Does the final returned Scanner show interactive manual-entry controls? |
+| `adb -s 37705998 pull /sdcard/t44-final-returned.xml /tmp/t44-final-returned.xml` | How can final post-return interactivity be inspected locally? |
 
 ## t-46 evidence
 

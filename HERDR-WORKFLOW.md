@@ -89,7 +89,13 @@ herdr task next --claim                  # взяти наступну гото�
 ```bash
 git worktree add /tmp/dishlab-<роль> -b <type>/t-<id>-<slug>
 cd /tmp/dishlab-<роль>
+cp /home/denis/work/Projects/DishLab/androidApp/google-services.json /tmp/dishlab-<роль>/androidApp/
 ```
+
+`androidApp/google-services.json` untracked (і вже виключений кореневим
+`.gitignore`), але `androidApp` застосовує `googleServices`: без локальної
+копії Android-збірка падає, і це не помилка коду. Файл не комітити та не
+змінювати для нього `.gitignore`.
 
 Виняток — `merger`, `product-manager` і `ceo-advisor`: коду не пишуть, worktree
 не потрібен.
