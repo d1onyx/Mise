@@ -7,12 +7,12 @@ import com.d1onix.dishlab.navigation.AppNavHost
 
 /** Root of the shared UI. Both platforms enter here with their own graph. */
 @Composable
-fun App(graph: AppGraph) {
+fun App(graph: AppGraph, onExit: () -> Unit = {}) {
     LaunchedEffect(graph) {
         graph.legacyDemoProductsCleaner.removeIfNeeded()
     }
 
     MiseTheme {
-        AppNavHost(graph)
+        AppNavHost(graph, onExit)
     }
 }

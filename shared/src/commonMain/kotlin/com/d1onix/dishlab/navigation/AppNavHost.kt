@@ -49,7 +49,7 @@ import com.d1onyx.navigation.rememberAppRouter
  * entry and cleared when that entry is popped.
  */
 @Composable
-fun AppNavHost(graph: AppGraph) {
+fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
     val navController = rememberNavController()
     val router = rememberAppRouter(navController)
 
@@ -137,6 +137,14 @@ fun AppNavHost(graph: AppGraph) {
             }
         }
 
+        PlatformBackHandler {
+            handleAppBack(navController::popBackStack, onExit)
+        }
+
         graph.dialogs.Render()
     }
+}
+
+internal fun handleAppBack(popBackStack: () -> Boolean, onExit: () -> Unit) {
+    if (!popBackStack()) onExit()
 }

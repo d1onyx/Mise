@@ -12,7 +12,7 @@ class MainActivity : ComponentActivity() {
 
         val graph = (application as DishLabApplication).graph
         setContent {
-            App(graph)
+            App(graph, onExit = ::finish)
         }
     }
 }

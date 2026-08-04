@@ -54,6 +54,7 @@ kotlin {
             implementation(libs.compose.uiTooling)
             implementation(libs.firebase.auth)
             implementation(libs.kotlinx.coroutines.play.services)
+            implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
             // The app host wires every module together — it is the only place
