@@ -78,7 +78,6 @@ class ScanViewModel(
                     detectedBarcode = null,
                 )
             }
-            ScanAction.BackClicked -> router.goBack()
         }
     }
 

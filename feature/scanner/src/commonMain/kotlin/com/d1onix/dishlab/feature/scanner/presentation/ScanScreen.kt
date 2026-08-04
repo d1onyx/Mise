@@ -202,6 +202,8 @@ internal fun ScanContent(
     }
 }
 
+internal const val ROOT_SCANNER_HAS_NAVIGATION_ICON = false
+
 @Composable
 private fun ScannedProductReview(
     product: Product,

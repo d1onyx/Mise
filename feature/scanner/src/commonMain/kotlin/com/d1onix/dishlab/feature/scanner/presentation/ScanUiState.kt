@@ -83,5 +83,4 @@ sealed interface ScanAction {
     data object AddReviewedProductClicked : ScanAction
     data object ReviewedProductSkipped : ScanAction
     data object ReviewBackClicked : ScanAction
-    data object BackClicked : ScanAction
 }
