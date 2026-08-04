@@ -141,25 +141,7 @@ internal fun ScanContent(
                 .screenIn(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                MiseIconCircleButton(
-                    icon = MiseIcons.ChevronLeft,
-                    contentDescription = stringResource(Res.string.scan_back),
-                    onClick = { onAction(ScanAction.BackClicked) },
-                    size = 40,
-                )
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    SectionLabel(
-                        text = if (state.isResolving) {
-                            stringResource(Res.string.scan_title_resolving)
-                        } else {
-                            stringResource(Res.string.scan_title)
-                        },
-                        color = colors.textMuted,
-                    )
-                }
-                Spacer(Modifier.size(40.dp))
-            }
+            RootScannerTopBar(isResolving = state.isResolving)
 
             Spacer(Modifier.weight(1f))
 
@@ -205,6 +187,26 @@ internal fun ScanContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+        }
+    }
+}
+
+internal data class ScannerTopBarModel(val navigationIcon: Nothing? = null)
+
+internal fun rootScannerTopBarModel() = ScannerTopBarModel()
+
+@Composable
+private fun RootScannerTopBar(isResolving: Boolean) {
+    val colors = MiseTheme.colors
+    val model = rootScannerTopBarModel()
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        model.navigationIcon?.let { error("Root Scanner must not render a navigation icon") }
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            SectionLabel(
+                text = if (isResolving) stringResource(Res.string.scan_title_resolving)
+                else stringResource(Res.string.scan_title),
+                color = colors.textMuted,
+            )
         }
     }
 }
