@@ -141,18 +141,7 @@ internal fun ScanContent(
                 .screenIn(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    SectionLabel(
-                        text = if (state.isResolving) {
-                            stringResource(Res.string.scan_title_resolving)
-                        } else {
-                            stringResource(Res.string.scan_title)
-                        },
-                        color = colors.textMuted,
-                    )
-                }
-            }
+            RootScannerTopBar(isResolving = state.isResolving)
 
             Spacer(Modifier.weight(1f))
 
@@ -202,7 +191,25 @@ internal fun ScanContent(
     }
 }
 
-internal const val ROOT_SCANNER_HAS_NAVIGATION_ICON = false
+internal data class ScannerTopBarModel(val navigationIcon: Nothing? = null)
+
+internal fun rootScannerTopBarModel() = ScannerTopBarModel()
+
+@Composable
+private fun RootScannerTopBar(isResolving: Boolean) {
+    val colors = MiseTheme.colors
+    val model = rootScannerTopBarModel()
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        model.navigationIcon?.let { error("Root Scanner must not render a navigation icon") }
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            SectionLabel(
+                text = if (isResolving) stringResource(Res.string.scan_title_resolving)
+                else stringResource(Res.string.scan_title),
+                color = colors.textMuted,
+            )
+        }
+    }
+}
 
 @Composable
 private fun ScannedProductReview(
