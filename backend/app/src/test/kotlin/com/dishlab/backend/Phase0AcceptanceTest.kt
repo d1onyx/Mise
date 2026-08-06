@@ -35,7 +35,7 @@ class Phase0AcceptanceTest {
         assertEquals(HttpStatusCode.Unauthorized, response.status)
         assertNotNull(response.headers["X-Request-Id"])
         assertTrue(body.contains("\"code\":\"UNAUTHORIZED\""), body)
-        assertTrue(body.contains("\"traceId\":"), body)
+        assertTrue(body.contains("\"trace_id\":"), body)
     }
 
     @Test
@@ -43,7 +43,7 @@ class Phase0AcceptanceTest {
         application { testModule() }
 
         val response = client.get("/api/v1/auth/debug") {
-            header(HttpHeaders.Authorization, "Bearer user-123")
+            header(HttpHeaders.Authorization, "Bearer :user-123")
         }
 
         assertEquals(HttpStatusCode.OK, response.status)

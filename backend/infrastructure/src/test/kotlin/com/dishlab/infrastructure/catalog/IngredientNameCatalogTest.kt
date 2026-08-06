@@ -9,15 +9,7 @@ import kotlin.test.assertTrue
 
 class IngredientNameCatalogTest {
     private val catalog = IngredientNameCatalog.load(
-        generateSequence(File(System.getProperty("user.dir"))) { it.parentFile }
-            .flatMap { directory ->
-                sequenceOf(
-                    File(directory, "data/ingredients_by_category.json"),
-                    File(directory, "ingredients_by_category.json"),
-                )
-            }
-            .first(File::isFile)
-            .toPath(),
+        File(requireNotNull(javaClass.classLoader.getResource("ingredients_by_category.json")).toURI()).toPath(),
     )
 
     @Test

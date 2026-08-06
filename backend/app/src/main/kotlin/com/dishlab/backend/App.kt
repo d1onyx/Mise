@@ -35,6 +35,7 @@ import com.dishlab.infrastructure.firebase.FirebaseInitializer
 import com.dishlab.application.service.PantryService
 import com.dishlab.application.service.RecipeService
 import com.dishlab.application.service.RecipeCatalogService
+import com.dishlab.application.service.RecipeCatalogRepository
 import com.dishlab.application.service.ProductCatalogService
 import com.dishlab.application.service.ProductCanonicalizationService
 import com.dishlab.application.service.InMemoryFoodTaxonomyRepository
@@ -91,7 +92,10 @@ fun Application.module() {
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-fun Application.appModule(authVerifier: FirebaseAuthVerifier) {
+fun Application.appModule(
+    authVerifier: FirebaseAuthVerifier,
+    testRecipeCatalogRepository: RecipeCatalogRepository? = null,
+) {
     install(ContentNegotiation) {
         json(
             Json {
@@ -131,7 +135,8 @@ fun Application.appModule(authVerifier: FirebaseAuthVerifier) {
     val recipeRepo = dbDataSource
         ?.let { PostgresRecipeRepository(it) }
         ?: InMemoryRecipeRepository()
-    val recipeCatalogService = env("RECIPE_CATALOG_DB")
+    val recipeCatalogService = testRecipeCatalogRepository?.let(::RecipeCatalogService)
+        ?: env("RECIPE_CATALOG_DB")
         ?.let(::resolvePath)
         ?.takeIf { it.toFile().isFile }
         ?.let(::SqliteRecipeCatalogRepository)
