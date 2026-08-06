@@ -3,6 +3,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 val backendUrl = providers.gradleProperty("dishLabApiUrl")
     .orElse("http://10.0.2.2:8080/")
     .get()
+val admobAppId = providers.gradleProperty("dishLabAdmobAppId")
+    .orElse("ca-app-pub-3940256099942544~3347511713")
+    .get()
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -39,6 +42,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        manifestPlaceholders["admobAppId"] = admobAppId
         buildConfigField("String", "DISH_LAB_API_URL", "\"$backendUrl\"")
         buildConfigField("String", "DISH_LAB_DEV_TOKEN", "\"\"")
     }
