@@ -174,4 +174,19 @@ class RecipeCatalogAcceptanceTest {
                 "grouped exact match must find recipes that contain one tag from every product group",
             )
         }
+
+    @Test
+    fun `exact groups are AND clauses while plain ingredients are OR clauses`() = testApplication {
+        application { testModule() }
+
+        val body = client.get(
+            "/api/v1/recipe-catalog/pantry-match?" +
+                "exactGroup=en:flour,en:wheat-flour&exactGroup=en:water,en:mineral-water" +
+                "&ingredient=en:egg&pageSize=100",
+        ).bodyAsText()
+
+        assertTrue(body.contains("Low-Fat Berry Blue Frozen Dessert"), body)
+        assertTrue(body.contains("Egg-only omelette"), body)
+        assertTrue(!body.contains("Flour-only flatbread"), body)
+    }
 }

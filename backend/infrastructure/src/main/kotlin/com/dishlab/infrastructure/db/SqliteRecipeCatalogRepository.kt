@@ -202,13 +202,26 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         val canonicalGroups = exactProductGroups
             .map { group -> group.map { IngredientNameNormalizer.canonicalize(it) }.filter(String::isNotBlank).distinct() }
             .filter { it.isNotEmpty() }
-        if (exactMatch && canonicalGroups.isNotEmpty()) {
-            canonicalGroups.forEach { group ->
+        if (canonicalGroups.isNotEmpty()) {
+            val groupConditions = canonicalGroups.map { group ->
                 val placeholders = group.joinToString(",") { "?" }
-                conditions += "EXISTS(SELECT 1 FROM recipe_ingredients ri_g" +
+                condParams.addAll(group)
+                "EXISTS(SELECT 1 FROM recipe_ingredients ri_g" +
                     " JOIN ingredients i_g ON i_g.id = ri_g.ingredient_id" +
                     " WHERE ri_g.recipe_id = r.id AND LOWER(i_g.canonical_name) IN ($placeholders))"
-                condParams.addAll(group)
+            }
+            val allGroupsMatch = groupConditions.joinToString(" AND ")
+            val anyPlainIngredientMatches = "EXISTS(SELECT 1 FROM recipe_ingredients ri_p" +
+                " JOIN ingredients i_p ON i_p.id = ri_p.ingredient_id" +
+                " WHERE ri_p.recipe_id = r.id" +
+                " AND EXISTS(SELECT 1 FROM pantry_names p WHERE LOWER(i_p.canonical_name) = LOWER(p.norm)))"
+            // Graph components are AND clauses; isolated products are OR clauses. `exactMatch`
+            // preserves the legacy grouped-exact endpoint, where plain ingredient tags are only
+            // used for scoring and every group must match.
+            conditions += if (exactMatch || normalizedNames.isEmpty()) {
+                "($allGroupsMatch)"
+            } else {
+                "(($allGroupsMatch) OR $anyPlainIngredientMatches)"
             }
         } else if (exactMatch && normalizedNames.isNotEmpty()) {
             // Fallback without group info: every selected tag must be present in the recipe.
