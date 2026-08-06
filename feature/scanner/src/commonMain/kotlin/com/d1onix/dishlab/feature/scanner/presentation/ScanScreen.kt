@@ -47,6 +47,7 @@ import com.d1onix.dishlab.designsystem.component.MiseGhostButton
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.MiseSearchField
+import com.d1onix.dishlab.designsystem.component.MiseTextAction
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.component.VerdictBadge
@@ -73,7 +74,7 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_torch_on
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_cancel
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_entry
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_placeholder
-import com.d1onix.dishlab.feature.scanner.resources.scan_open_recipes
+import com.d1onix.dishlab.feature.scanner.resources.scan_browse_recipes
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_submit
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add_comparison
@@ -188,16 +189,18 @@ internal fun ScanContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             } else {
-                MisePrimaryButton(
-                    text = stringResource(Res.string.scan_open_recipes),
-                    onClick = { onAction(ScanAction.RecipesClicked) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(10.dp))
                 MiseGhostButton(
                     text = stringResource(Res.string.scan_manual_entry),
                     onClick = { onAction(ScanAction.ManualEntryToggled) },
                     modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                // This is navigation, not an alternative way to scan. Keep it
+                // thumb-reachable but visually quieter than scan controls.
+                MiseTextAction(
+                    text = stringResource(Res.string.scan_browse_recipes),
+                    onClick = { onAction(ScanAction.RecipesClicked) },
+                    modifier = Modifier.align(Alignment.End),
                 )
             }
         }
