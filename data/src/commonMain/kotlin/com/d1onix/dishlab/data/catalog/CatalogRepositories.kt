@@ -225,13 +225,19 @@ internal fun ClientProductSnapshotDto.toBackendProduct(): BackendProductDto {
 class CatalogRecipeRepository(
     private val catalog: RecipeCatalogDataSource,
     private val pantryMatch: PantryMatchDataSource,
+    private val remoteCatalog: RecipeCatalogRemoteDataSource,
     private val products: ProductRepository,
 ) : RecipeRepository {
 
     override suspend fun all(): List<Recipe> = catalog.recipes()
 
-    override suspend fun byId(id: RecipeId): Recipe? =
+    override suspend fun byId(id: RecipeId): Recipe? = try {
+        remoteCatalog.recipe(id).toDomain()
+    } catch (error: ConnectionException) {
         catalog.recipes().firstOrNull { it.id == id }
+    } catch (error: BackendException) {
+        catalog.recipes().firstOrNull { it.id == id }
+    }
 
     override suspend fun forProducts(productIds: List<ProductId>): List<Recipe> {
         if (productIds.isEmpty()) return all()
