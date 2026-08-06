@@ -51,6 +51,7 @@ fun RecipesScreen(viewModel: RecipesViewModel) {
         emptyText = Res.string.recipes_empty,
         state = state,
         onAction = viewModel::onAction,
+        showBanner = true,
     )
 }
 
@@ -89,6 +90,7 @@ internal fun RecipeListContent(
     emptyText: StringResource,
     state: RecipeListUiState,
     onAction: (RecipeListAction) -> Unit,
+    showBanner: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -102,6 +104,10 @@ internal fun RecipeListContent(
             onBackClick = { onAction(RecipeListAction.BackClicked) },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
         )
+
+        if (showBanner) {
+            RecipeBannerAd(Modifier.fillMaxWidth())
+        }
 
         MiseSearchField(
             value = state.filters.query,

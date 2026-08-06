@@ -1,0 +1,4 @@
+<resources>
+    <!-- Google demo banner: replace with the production unit before publishing. -->
+    <string name="admob_recipe_banner_unit_id" translatable="false">ca-app-pub-3940256099942544/9214589741</string>
+</resources>

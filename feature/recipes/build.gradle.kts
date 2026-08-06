@@ -35,6 +35,8 @@ kotlin {
             // Without the renderer the preview panel has nothing to draw with.
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
+            implementation(libs.google.mobile.ads)
+            implementation(libs.user.messaging.platform)
         }
         commonMain.dependencies {
             implementation(project(":core"))
