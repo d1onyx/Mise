@@ -102,3 +102,11 @@ private fun ProductDetailSheetIncompletePreview() {
         ProductDetailSheet(product = previewHoney, onAction = {})
     }
 }
+
+@MiseComponentPreview
+@Composable
+private fun ProductDetailSheetNotInDatabasePreview() {
+    MiseTheme {
+        ProductDetailSheet(product = previewUnknownProduct, onAction = {})
+    }
+}

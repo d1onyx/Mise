@@ -7,6 +7,7 @@ import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductAlternative
 import com.d1onix.dishlab.domain.model.ProductDataOrigin
 import com.d1onix.dishlab.domain.model.ProductId
+import com.d1onix.dishlab.domain.model.ProductDetails
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.domain.repository.ProductRepository
@@ -113,6 +114,7 @@ private data class CachedRemoteProductDto(
     val hasCompleteData: Boolean,
     val canonicalTags: List<String> = emptyList(),
     val dataOrigin: ProductDataOrigin = ProductDataOrigin.Canonical,
+    val details: CachedProductDetailsDto = CachedProductDetailsDto(),
 )
 
 @Serializable
@@ -120,6 +122,21 @@ private data class CachedNutrientDto(
     val name: String,
     val amount: String,
     val unit: String,
+)
+
+@Serializable
+private data class CachedProductDetailsDto(
+    val brand: String = "",
+    val quantity: String = "",
+    val servingSize: String = "",
+    val ingredientsText: String = "",
+    val allergens: List<String> = emptyList(),
+    val categories: List<String> = emptyList(),
+    val labels: List<String> = emptyList(),
+    val nutriScore: String = "",
+    val novaGroup: Int? = null,
+    val ecoScore: String = "",
+    val imageUrl: String = "",
 )
 
 /** Product repository backed by device-side OFF lookup, DishLab canonicalization and a local cache. */
@@ -150,14 +167,14 @@ class BackendProductRepository(
         } ?: return cached
 
         return try {
-            backend.resolveClientProduct(snapshot).toDomain().let { product ->
+            backend.resolveClientProduct(snapshot).toDomain().copy(details = snapshot.toDetails()).let { product ->
                 remoteCache.put(product)
                 product
             }
         } catch (exception: Throwable) {
             if (exception is CancellationException) throw exception
             if (!exception.isBackendUnavailable()) throw exception
-            snapshot.toBackendProduct().toDomain()
+            snapshot.toBackendProduct().toDomain().copy(details = snapshot.toDetails())
                 .copy(dataOrigin = ProductDataOrigin.DeviceFallback)
                 .also { remoteCache.put(it) }
         }
@@ -174,7 +191,14 @@ class BackendProductRepository(
     override suspend fun all(): List<Product> = remoteCache.all()
 }
 
-private fun ClientProductSnapshotDto.toBackendProduct(): BackendProductDto {
+internal fun ClientProductSnapshotDto.toDetails() = ProductDetails(
+    brand = brand, quantity = quantity, servingSize = servingSize,
+    ingredientsText = ingredientsText, allergens = allergens, categories = categories,
+    labels = labels, nutriScore = nutritionGrade, novaGroup = novaGroup,
+    ecoScore = environmentalScoreGrade, imageUrl = imageFrontSmallUrl.ifBlank { imageFrontUrl },
+)
+
+internal fun ClientProductSnapshotDto.toBackendProduct(): BackendProductDto {
     val nutrientValues = nutrition?.nutrients.orEmpty()
     val categoryNames = categories
         .filter { it.startsWith("en:") }
@@ -273,6 +297,7 @@ private fun Product.toCached(): CachedRemoteProductDto = CachedRemoteProductDto(
     hasCompleteData = hasCompleteData,
     canonicalTags = canonicalTags,
     dataOrigin = dataOrigin,
+    details = details.toCached(),
 )
 
 private fun CachedRemoteProductDto.toDomain(): Product = Product(
@@ -288,7 +313,36 @@ private fun CachedRemoteProductDto.toDomain(): Product = Product(
     hasCompleteData = hasCompleteData,
     canonicalTags = canonicalTags,
     dataOrigin = dataOrigin,
+    details = details.toDomain(),
     alternatives = emptyList(),
+)
+
+private fun ProductDetails.toCached() = CachedProductDetailsDto(
+    brand = brand,
+    quantity = quantity,
+    servingSize = servingSize,
+    ingredientsText = ingredientsText,
+    allergens = allergens,
+    categories = categories,
+    labels = labels,
+    nutriScore = nutriScore,
+    novaGroup = novaGroup,
+    ecoScore = ecoScore,
+    imageUrl = imageUrl,
+)
+
+private fun CachedProductDetailsDto.toDomain() = ProductDetails(
+    brand = brand,
+    quantity = quantity,
+    servingSize = servingSize,
+    ingredientsText = ingredientsText,
+    allergens = allergens,
+    categories = categories,
+    labels = labels,
+    nutriScore = nutriScore,
+    novaGroup = novaGroup,
+    ecoScore = ecoScore,
+    imageUrl = imageUrl,
 )
 
 private fun Throwable.isBackendUnavailable(): Boolean =

@@ -62,9 +62,24 @@ data class Product(
     val canonicalTags: List<String> = emptyList(),
     /** Whether DishLab could apply its own canonicalization to this product. */
     val dataOrigin: ProductDataOrigin = ProductDataOrigin.Canonical,
+    val details: ProductDetails = ProductDetails(),
 ) {
     val verdict: ScoreVerdict get() = ScoreVerdict.of(score)
 }
+
+data class ProductDetails(
+    val brand: String = "",
+    val quantity: String = "",
+    val servingSize: String = "",
+    val ingredientsText: String = "",
+    val allergens: List<String> = emptyList(),
+    val categories: List<String> = emptyList(),
+    val labels: List<String> = emptyList(),
+    val nutriScore: String = "",
+    val novaGroup: Int? = null,
+    val ecoScore: String = "",
+    val imageUrl: String = "",
+)
 
 enum class ProductDataOrigin {
     Canonical,
