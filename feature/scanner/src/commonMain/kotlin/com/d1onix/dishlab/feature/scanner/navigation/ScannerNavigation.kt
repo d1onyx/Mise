@@ -21,5 +21,6 @@ interface ScannerRouter {
     fun openComparison()
     fun openAuth()
     fun openHome()
+    fun openRecipes()
     fun goBack()
 }

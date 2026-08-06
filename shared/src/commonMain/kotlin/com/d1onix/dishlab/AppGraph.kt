@@ -16,6 +16,7 @@ import com.d1onix.dishlab.feature.recipes.presentation.list.DiscoverRecipesViewM
 import com.d1onix.dishlab.feature.recipes.presentation.list.SavedRecipesViewModel
 import com.d1onix.dishlab.feature.scanner.presentation.ScanNotFoundViewModel
 import com.d1onix.dishlab.feature.scanner.presentation.ScanViewModel
+import com.d1onix.dishlab.domain.repository.ScanSessionStore
 import com.d1onyx.navigation.AppRouterHolder
 import com.d1onyx.navigation.dialogs.ComposeDialogs
 
@@ -32,6 +33,7 @@ interface AppGraph {
 
     val routerHolder: AppRouterHolder
     val dialogs: ComposeDialogs
+    val scanSessionStore: ScanSessionStore
 
     /** Removes legacy bundled product IDs after the app switches to the API. */
     val legacyDemoProductsCleaner: LegacyDemoProductsCleaner

@@ -361,6 +361,7 @@ class ScanViewModelTest {
             authOpened++
         }
         override fun openHome() = Unit
+        override fun openRecipes() = Unit
         override fun goBack() {
             backCount++
         }

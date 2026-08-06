@@ -91,11 +91,6 @@ internal fun GraphContent(
                 Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MiseIconCircleButton(
-                    icon = MiseIcons.ChevronLeft,
-                    contentDescription = stringResource(Res.string.graph_back),
-                    onClick = { onAction(GraphAction.BackClicked) },
-                )
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     GraphTitleButton(
                         onClick = { onAction(GraphAction.ConnectionOverviewClicked) },
@@ -150,7 +145,6 @@ internal fun GraphContent(
                     text = stringResource(Res.string.graph_find_recipes, state.products.size),
                     onClick = { onAction(GraphAction.FindRecipesClicked) },
                     modifier = Modifier.weight(1f),
-                    enabled = state.products.isNotEmpty(),
                 )
                 MiseIconCircleButton(
                     icon = MiseIcons.Bookmark,
