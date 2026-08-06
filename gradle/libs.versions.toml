@@ -10,6 +10,7 @@ androidx-activity = "1.13.0"
 androidx-lifecycle = "2.11.0"
 # CameraK: camera + barcode scanning for Compose Multiplatform.
 camerak = "1.1"
+coil = "3.4.0"
 composeMultiplatform = "1.11.1"
 coroutines = "1.11.0"
 firebaseBom = "34.16.0"
@@ -45,6 +46,8 @@ androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle
 androidx-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 camerak = { module = "io.github.kashif-mehmood-km:camerak", version.ref = "camerak" }
 camerak-qrScanner = { module = "io.github.kashif-mehmood-km:qr_scanner_plugin", version.ref = "camerak" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 google-mobile-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "googleMobileAds" }

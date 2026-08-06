@@ -3,6 +3,7 @@ package com.d1onix.dishlab.feature.products.presentation
 import com.d1onix.dishlab.domain.model.Nutrient
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductAlternative
+import com.d1onix.dishlab.domain.model.ProductDetails
 import com.d1onix.dishlab.domain.model.ProductId
 
 /**
@@ -30,6 +31,19 @@ internal val previewOats = Product(
     summary = "High in fiber and plant protein, almost no sugar. A great slow-energy base.",
     hasCompleteData = true,
     alternatives = emptyList(),
+    details = ProductDetails(
+        brand = "Morning Mill",
+        quantity = "500 g",
+        servingSize = "50 g",
+        ingredientsText = "Whole grain oats",
+        allergens = listOf("Gluten"),
+        categories = listOf("Cereals", "Oats"),
+        labels = listOf("Whole grain", "Vegan"),
+        nutriScore = "a",
+        novaGroup = 1,
+        ecoScore = "a",
+        imageUrl = "https://images.openfoodfacts.org/images/products/501/002/655/1017/front_en.3.200.jpg",
+    ),
 )
 
 internal val previewHoney = Product(
@@ -51,4 +65,17 @@ internal val previewHoney = Product(
         ProductAlternative("Date syrup", 60),
         ProductAlternative("Mashed banana", 76),
     ),
+    details = ProductDetails(brand = "Golden Hive", quantity = "340 g"),
+)
+
+internal val previewUnknownProduct = previewHoney.copy(
+    id = ProductId("unknown"),
+    name = "Newly scanned product",
+    nutrients = listOf(
+        Nutrient("Energy", "0", "kcal"),
+        Nutrient("Carbs", "0", "g"),
+    ),
+    summary = "",
+    alternatives = emptyList(),
+    details = ProductDetails(brand = "Local producer"),
 )

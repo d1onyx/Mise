@@ -24,6 +24,12 @@ internal object GraphPreviewStates {
         selectedId = previewProducts().last().id,
     )
 
+    val SheetFullData = GraphUiState(products = listOf(previewOats), selectedId = previewOats.id)
+
+    val SheetMinimumFields = GraphUiState(products = listOf(previewHoney), selectedId = previewHoney.id)
+
+    val SheetNotInDatabase = GraphUiState(products = listOf(previewUnknownProduct), selectedId = previewUnknownProduct.id)
+
     val EditingConnections = GraphUiState(
         products = previewProducts(),
         connections = emptySet(),
