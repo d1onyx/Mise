@@ -41,13 +41,22 @@ Tests use `kotlin.test`, JUnit where needed, and `kotlinx-coroutines-test`. Plac
 
 Several agents work here at once, each in its own worktree. **`master` is the
 only branch on the remote** — feature branches stay local, and their commits
-reach GitHub through the merge, not through a push.
+reach GitHub through the merge, not through a push. Roles and task routing
+(now four: `ceo-advisor`, `product-manager`, `backender`, `mobile-dev` — no
+dedicated `tester`/`merger`) are detailed in
+[HERDR-WORKFLOW.md](HERDR-WORKFLOW.md).
 
 **One task, one branch, one worktree.**
 
 ```bash
-git worktree add /tmp/dishlab-t13 -b feat/t-13-remove-startup-auth
+herdr task claim t-13 --worktree
 ```
+
+herdr creates the checkout itself, at `~/.herdr/worktrees/DishLab/task-t-13`,
+and records it on the task — no manual `git worktree add`. This only picks up
+the branch name `product-manager` set on the task at creation
+(`--branch <type>/t-<id>-<slug>`); an unset `--branch` makes herdr invent its
+own `task/t-<id>`, which breaks the naming convention below.
 
 Name is `<type>/t-<id>-<slug>`, where `t-<id>` is the Herdr task ID. Types:
 `feat`, `fix`, `chore`, `docs`. The branch lives exactly as long as the task.
@@ -61,6 +70,10 @@ feat(scanner): add torch toggle to the viewfinder
 
 Task: t-13
 ```
+
+Commit messages are English going forward (owner's rule, 2026-08-06). Existing
+Ukrainian-language commits in history stay as they are — do not rewrite past
+commits to comply.
 
 Types: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`. Scope is a Gradle
 module name, and only these — do not invent new ones:
@@ -80,8 +93,11 @@ after it.
 Conventional Commits are not decoration here — the Play Store "What's new" text
 is generated from `feat:` and `fix:` subjects since the previous tag.
 
-**Only the `merger` role merges.** Developer agents stop after committing. They
-do not merge, do not push, do not touch `master`. The merge is always:
+**Only `product-manager` merges.** `backender` and `mobile-dev` stop after
+committing — they do not merge, do not push, do not touch `master`.
+`product-manager` runs the mechanical gates from
+[HERDR-WORKFLOW.md](HERDR-WORKFLOW.md) (build green, test-file count did not
+drop) and merges:
 
 ```bash
 git merge --no-ff feat/t-13-remove-startup-auth -m "Merge t-13: remove startup auth"
