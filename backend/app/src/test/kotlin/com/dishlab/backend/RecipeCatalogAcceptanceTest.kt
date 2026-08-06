@@ -19,24 +19,29 @@ class RecipeCatalogAcceptanceTest {
     private val token = "Bearer :catalog-test-user"
 
     @Test
-    fun `core catalog routes accept anonymous requests`() = testApplication {
+    fun `core catalog routes accept anonymous and bearer requests`() = testApplication {
         application { testModule() }
 
-        assertEquals(
-            HttpStatusCode.OK,
+        suspend fun resolve(headers: io.ktor.client.request.HttpRequestBuilder.() -> Unit = {}) =
             client.post("/api/v1/products/resolve") {
                 contentType(ContentType.Application.Json)
                 setBody("""{"barcode":"8594001234567","name":"Test tea"}""")
-            }.status,
-        )
-        assertEquals(
-            HttpStatusCode.OK,
-            client.get("/api/v1/recipe-catalog/pantry-match?ingredient=en:flour").status,
-        )
-        assertEquals(
-            HttpStatusCode.OK,
-            client.get("/api/v1/recipe-catalog/catalog:38").status,
-        )
+                headers()
+            }
+        suspend fun pantryMatch(headers: io.ktor.client.request.HttpRequestBuilder.() -> Unit = {}) =
+            client.get("/api/v1/recipe-catalog/pantry-match?ingredient=en:flour", headers)
+        suspend fun details(headers: io.ktor.client.request.HttpRequestBuilder.() -> Unit = {}) =
+            client.get("/api/v1/recipe-catalog/catalog:38", headers)
+
+        listOf(
+            resolve(), pantryMatch(), details(),
+            resolve { header(HttpHeaders.Authorization, token) },
+            pantryMatch { header(HttpHeaders.Authorization, token) },
+            details { header(HttpHeaders.Authorization, token) },
+        ).forEach { response ->
+            assertEquals(HttpStatusCode.OK, response.status, response.bodyAsText())
+            assertTrue(response.bodyAsText().isNotBlank())
+        }
     }
 
     @Test
@@ -59,7 +64,7 @@ class RecipeCatalogAcceptanceTest {
     }
 
     @Test
-    fun `catalog search details and bookmarks are served by the backend`() = testApplication {
+    fun `public catalog details never expose another users bookmark`() = testApplication {
         application { testModule() }
 
         val search = client.get("/api/v1/recipe-catalog?q=berry&pageSize=2") {
@@ -86,10 +91,8 @@ class RecipeCatalogAcceptanceTest {
                 header(HttpHeaders.Authorization, token)
             }.status,
         )
-        val bookmarked = client.get("/api/v1/recipe-catalog/catalog:38") {
-            header(HttpHeaders.Authorization, token)
-        }.bodyAsText()
-        assertTrue(bookmarked.contains("\"bookmarked\":true"), bookmarked)
+        val publicDetails = client.get("/api/v1/recipe-catalog/catalog:38").bodyAsText()
+        assertTrue(publicDetails.contains("\"bookmarked\":false"), publicDetails)
 
         assertEquals(
             HttpStatusCode.OK,
