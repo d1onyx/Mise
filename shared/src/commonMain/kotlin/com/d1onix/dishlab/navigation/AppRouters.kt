@@ -35,7 +35,7 @@ import dev.zacsweers.metro.Inject
 @ContributesBinding(AppScope::class)
 @Inject
 class HomeRouterImpl(private val router: AppRouter) : HomeRouter {
-    override fun openScanner() = router.launch(ScanRoute())
+    override fun openScanner() = router.launch(ScanRoute(showBackNavigation = true))
     override fun openSavedRecipes() = router.launch(SavedRoute)
     override fun openHistory() = router.launch(HistoryRoute)
     override fun openProfile() = router.launch(ProfileRoute)
@@ -80,7 +80,7 @@ class ProductsRouterImpl(private val router: AppRouter) : ProductsRouter {
     override fun openCombinationGraph() = router.launch(GraphRoute)
     override fun openConnectionOverview() = router.launch(ConnectionOverviewRoute)
     override fun openProfile() = router.launch(ProfileRoute)
-    override fun openComparisonScanner() = router.launch(ScanRoute(ScanTarget.Comparison))
+    override fun openComparisonScanner() = router.launch(ScanRoute(ScanTarget.Comparison, showBackNavigation = true))
     override fun goBack() = router.goBack()
 }
 

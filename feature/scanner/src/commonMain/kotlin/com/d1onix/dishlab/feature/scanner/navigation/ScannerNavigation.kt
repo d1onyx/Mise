@@ -7,7 +7,11 @@ import kotlinx.serialization.Serializable
 enum class ScanTarget { Graph, Comparison }
 
 @Serializable
-data class ScanRoute(val target: ScanTarget = ScanTarget.Graph) : Route
+data class ScanRoute(
+    val target: ScanTarget = ScanTarget.Graph,
+    /** True only when the scanner was opened from a non-empty graph. */
+    val showBackNavigation: Boolean = false,
+) : Route
 
 @Serializable
 data class ScanNotFoundRoute(val barcode: String, val target: ScanTarget = ScanTarget.Graph) : Route

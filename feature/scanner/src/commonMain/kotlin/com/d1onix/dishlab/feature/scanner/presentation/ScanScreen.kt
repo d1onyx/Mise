@@ -96,11 +96,12 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 @Composable
-fun ScanScreen(viewModel: ScanViewModel) {
+fun ScanScreen(viewModel: ScanViewModel, showBackNavigation: Boolean = false) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     ScanContent(
         state = state,
         onAction = viewModel::onAction,
+        showBackNavigation = showBackNavigation,
         // The camera is a platform concern, injected as a slot so the content
         // itself stays renderable in a preview.
         cameraPreview = { controls, dispatch -> CameraLayer(controls, dispatch) },
@@ -111,6 +112,7 @@ fun ScanScreen(viewModel: ScanViewModel) {
 internal fun ScanContent(
     state: ScanUiState,
     onAction: (ScanAction) -> Unit,
+    showBackNavigation: Boolean = false,
     modifier: Modifier = Modifier,
     cameraPreview: @Composable (CameraControls, (ScanAction) -> Unit) -> Unit = { _, _ -> },
 ) {
@@ -142,7 +144,11 @@ internal fun ScanContent(
                 .screenIn(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            RootScannerTopBar(isResolving = state.isResolving, onBackClick = { onAction(ScanAction.BackClicked) })
+            RootScannerTopBar(
+                isResolving = state.isResolving,
+                showBackNavigation = showBackNavigation,
+                onBackClick = { onAction(ScanAction.BackClicked) },
+            )
 
             Spacer(Modifier.weight(1f))
 
@@ -198,15 +204,26 @@ internal fun ScanContent(
     }
 }
 
-internal data class ScannerTopBarModel(val hasNavigationIcon: Boolean = true)
+internal data class ScannerTopBarModel(val hasNavigationIcon: Boolean)
 
-internal fun rootScannerTopBarModel() = ScannerTopBarModel()
+internal fun rootScannerTopBarModel(showBackNavigation: Boolean) =
+    ScannerTopBarModel(hasNavigationIcon = showBackNavigation)
 
 @Composable
-private fun RootScannerTopBar(isResolving: Boolean, onBackClick: () -> Unit) {
+private fun RootScannerTopBar(
+    isResolving: Boolean,
+    showBackNavigation: Boolean,
+    onBackClick: () -> Unit,
+) {
     val colors = MiseTheme.colors
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        MiseIconCircleButton(icon = MiseIcons.ChevronLeft, contentDescription = stringResource(Res.string.scan_back), onClick = onBackClick)
+        if (showBackNavigation) {
+            MiseIconCircleButton(
+                icon = MiseIcons.ChevronLeft,
+                contentDescription = stringResource(Res.string.scan_back),
+                onClick = onBackClick,
+            )
+        }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             SectionLabel(
                 text = if (isResolving) stringResource(Res.string.scan_title_resolving)
