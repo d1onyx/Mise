@@ -23,6 +23,8 @@ private class TestRecipeCatalogRepository : RecipeCatalogRepository {
     private val recipes = listOf(
         recipe(38, "Low-Fat Berry Blue Frozen Dessert", listOf("flour", "water", "milk", "egg", "butter")),
         recipe(513667, "Zebra Cake", listOf("butter", "flour", "egg", "water")),
+        recipe(777, "Egg-only omelette", listOf("egg")),
+        recipe(778, "Flour-only flatbread", listOf("flour")),
     )
 
     override fun search(firebaseUid: String, query: String?, category: String?, ingredient: String?, page: Int, pageSize: Int) =
@@ -33,10 +35,12 @@ private class TestRecipeCatalogRepository : RecipeCatalogRepository {
         val matches = recipes.mapNotNull { raw ->
             val names = raw.ingredients.flatMap { it.canonicalTags }.map { it.removePrefix("en:") }.toSet()
             val grouped = exactProductGroups.all { group -> group.any { it.removePrefix("en:") in names } }
+            val plainMatch = selected.any(names::contains)
             val qualifies = when {
                 exactProductGroups.isNotEmpty() && exactMatch -> grouped
+                exactProductGroups.isNotEmpty() -> grouped || plainMatch
                 exactMatch -> selected.all(names::contains)
-                partialMatchOnly -> selected.any(names::contains)
+                partialMatchOnly -> plainMatch
                 else -> true
             }
             if (qualifies) PantryMatchedRecipe(withBookmark(firebaseUid, raw), selected.count(names::contains), names.size) else null
