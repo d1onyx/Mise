@@ -200,6 +200,8 @@ private fun ClientProductSnapshotDto.toBackendProduct(): BackendProductDto {
 @Inject
 class CatalogRecipeRepository(
     private val catalog: RecipeCatalogDataSource,
+    private val pantryMatch: PantryMatchDataSource,
+    private val products: ProductRepository,
 ) : RecipeRepository {
 
     override suspend fun all(): List<Recipe> = catalog.recipes()
@@ -209,10 +211,20 @@ class CatalogRecipeRepository(
 
     override suspend fun forProducts(productIds: List<ProductId>): List<Recipe> {
         if (productIds.isEmpty()) return all()
-        return all()
+        val tags = products.byIds(productIds).flatMap { it.canonicalTags }.distinct()
+        if (tags.isEmpty()) return offlineMatches(productIds)
+        return try {
+            pantryMatch.match(ingredients = tags).items.map(PantryMatchedRecipeDto::toDomain)
+        } catch (error: ConnectionException) {
+            offlineMatches(productIds)
+        } catch (error: BackendException) {
+            offlineMatches(productIds)
+        }
+    }
+
+    private suspend fun offlineMatches(productIds: List<ProductId>): List<Recipe> = all()
             .filter { recipe -> recipe.productIds.any { it in productIds } }
             .sortedByDescending { recipe -> recipe.productIds.count { it in productIds } }
-    }
 }
 
 internal fun BackendProductDto.toDomain(): Product {

@@ -2,7 +2,6 @@ package com.d1onix.dishlab.feature.recipes.presentation.list
 
 import androidx.lifecycle.viewModelScope
 import com.d1onix.dishlab.domain.FilterRecipesUseCase
-import com.d1onix.dishlab.domain.FilterRecipesByConnectionsUseCase
 import com.d1onix.dishlab.domain.GetProductsUseCase
 import com.d1onix.dishlab.domain.GetRecipesForProductsUseCase
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
@@ -25,7 +24,6 @@ class RecipesViewModel(
     dependencies: CommonDependencies,
     private val getRecipesForProducts: GetRecipesForProductsUseCase,
     private val filterRecipes: FilterRecipesUseCase,
-    private val filterRecipesByConnections: FilterRecipesByConnectionsUseCase,
     private val getProducts: GetProductsUseCase,
     private val session: ScanSessionStore,
     private val router: RecipesRouter,
@@ -36,11 +34,8 @@ class RecipesViewModel(
 
     init {
         viewModelScope.launch {
-            combine(session.products, session.connections) { ids, connections ->
-                ids to connections
-            }.collectLatest { (ids, connections) ->
-                val candidates = if (ids.isEmpty()) emptyList() else getRecipesForProducts(ids)
-                val recipes = filterRecipesByConnections(candidates, ids, connections)
+            session.products.collectLatest { ids ->
+                val recipes = if (ids.isEmpty()) emptyList() else getRecipesForProducts(ids)
                 val products = getProducts(recipes.flatMap { it.productIds }.distinct())
                 _uiState.update {
                     it.copy(all = recipes, products = products.associateBy { p -> p.id }).refiltered()
