@@ -78,6 +78,8 @@ class ScanViewModel(
                     detectedBarcode = null,
                 )
             }
+            ScanAction.BackClicked -> router.goBack()
+            ScanAction.RecipesClicked -> router.openRecipes()
         }
     }
 

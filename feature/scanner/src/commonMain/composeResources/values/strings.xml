@@ -21,6 +21,7 @@
     <string name="scan_manual_placeholder">Barcode digits</string>
     <string name="scan_manual_submit">Look up barcode</string>
     <string name="scan_manual_cancel">Cancel</string>
+    <string name="scan_open_recipes">Find recipes</string>
     <string name="scan_camera_starting">Starting the camera…</string>
     <string name="scan_camera_denied">Camera access is off — use “Capture scan” or type a barcode below.</string>
     <string name="scan_review_title">Product found</string>

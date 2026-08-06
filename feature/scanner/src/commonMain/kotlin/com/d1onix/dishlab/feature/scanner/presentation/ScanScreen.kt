@@ -73,6 +73,7 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_torch_on
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_cancel
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_entry
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_placeholder
+import com.d1onix.dishlab.feature.scanner.resources.scan_open_recipes
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_submit
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add_comparison
@@ -141,7 +142,7 @@ internal fun ScanContent(
                 .screenIn(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            RootScannerTopBar(isResolving = state.isResolving)
+            RootScannerTopBar(isResolving = state.isResolving, onBackClick = { onAction(ScanAction.BackClicked) })
 
             Spacer(Modifier.weight(1f))
 
@@ -181,6 +182,12 @@ internal fun ScanContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             } else {
+                MisePrimaryButton(
+                    text = stringResource(Res.string.scan_open_recipes),
+                    onClick = { onAction(ScanAction.RecipesClicked) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(10.dp))
                 MiseGhostButton(
                     text = stringResource(Res.string.scan_manual_entry),
                     onClick = { onAction(ScanAction.ManualEntryToggled) },
@@ -191,17 +198,16 @@ internal fun ScanContent(
     }
 }
 
-internal data class ScannerTopBarModel(val navigationIcon: Nothing? = null)
+internal data class ScannerTopBarModel(val hasNavigationIcon: Boolean = true)
 
 internal fun rootScannerTopBarModel() = ScannerTopBarModel()
 
 @Composable
-private fun RootScannerTopBar(isResolving: Boolean) {
+private fun RootScannerTopBar(isResolving: Boolean, onBackClick: () -> Unit) {
     val colors = MiseTheme.colors
-    val model = rootScannerTopBarModel()
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        model.navigationIcon?.let { error("Root Scanner must not render a navigation icon") }
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        MiseIconCircleButton(icon = MiseIcons.ChevronLeft, contentDescription = stringResource(Res.string.scan_back), onClick = onBackClick)
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
             SectionLabel(
                 text = if (isResolving) stringResource(Res.string.scan_title_resolving)
                 else stringResource(Res.string.scan_title),

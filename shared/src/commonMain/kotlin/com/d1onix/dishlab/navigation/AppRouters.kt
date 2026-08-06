@@ -67,6 +67,7 @@ class ScannerRouterImpl(private val router: AppRouter) : ScannerRouter {
     override fun openComparison() = router.replace(ComparisonRoute)
     override fun openAuth() = router.launch(AuthRoute())
     override fun openHome() = router.restart(HomeRoute)
+    override fun openRecipes() = router.launch(RecipesRoute)
     override fun goBack() = router.goBack()
 }
 
