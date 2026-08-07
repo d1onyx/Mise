@@ -35,11 +35,7 @@ class RecipesViewModel(
     init {
         viewModelScope.launch {
             session.products.collectLatest { ids ->
-                val recipes = if (ids.isEmpty()) emptyList() else getRecipesForProducts(ids)
-                val products = getProducts(recipes.flatMap { it.productIds }.distinct())
-                _uiState.update {
-                    it.copy(all = recipes, products = products.associateBy { p -> p.id }).refiltered()
-                }
+                load(ids)
             }
         }
     }
@@ -60,7 +56,16 @@ class RecipesViewModel(
 
             is RecipeListAction.RecipeClicked -> router.openRecipe(action.id)
             RecipeListAction.BackClicked -> router.goBack()
+            RecipeListAction.RetryClicked -> launch("retryRecipes") { load(session.products.value) }
         }
+    }
+
+    private suspend fun load(ids: List<com.d1onix.dishlab.domain.model.ProductId>) = try {
+        val recipes = if (ids.isEmpty()) emptyList() else getRecipesForProducts(ids)
+        val products = getProducts(recipes.flatMap { it.productIds }.distinct())
+        _uiState.update { it.copy(all = recipes, products = products.associateBy { p -> p.id }, loadError = false).refiltered() }
+    } catch (_: Throwable) {
+        _uiState.update { it.copy(all = emptyList(), visible = emptyList(), loadError = true) }
     }
 
     private fun RecipeListUiState.refiltered(): RecipeListUiState =
