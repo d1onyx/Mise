@@ -102,15 +102,19 @@ internal fun RecipeListContent(
             .safeDrawingPadding()
             .screenIn(),
     ) {
+        // Keep the monetisation surface fixed above the screen chrome, rather
+        // than blending it into the recipe list content.
+        if (showBanner) {
+            RecipeBannerAd(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+            )
+        }
+
         MiseScreenHeader(
             title = stringResource(title),
             onBackClick = { onAction(RecipeListAction.BackClicked) },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
         )
-
-        if (showBanner) {
-            RecipeBannerAd(Modifier.fillMaxWidth())
-        }
 
         MiseSearchField(
             value = state.filters.query,

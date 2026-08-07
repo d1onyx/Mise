@@ -25,7 +25,9 @@ internal actual fun RecipeBannerAd(modifier: Modifier) {
     val adView = remember(context) {
         AdView(context).apply {
             adUnitId = context.getString(R.string.admob_recipe_banner_unit_id)
-            setAdSize(AdSize.BANNER)
+            // 320×100 is a standard AdMob large banner: visibly separate
+            // from recipe content while remaining a fixed, familiar format.
+            setAdSize(AdSize.LARGE_BANNER)
         }
     }
 
