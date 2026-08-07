@@ -31,23 +31,6 @@ class PantryMatchDataSource(
         parameter("pageSize", pageSize)
     }.body()
 
-    /** Reads every server page instead of treating the first transport page as a product limit. */
-    suspend fun matchAll(
-        ingredients: List<String>,
-        exactGroups: List<List<String>> = emptyList(),
-    ): List<PantryMatchedRecipeDto> {
-        val first = match(ingredients = ingredients, exactGroups = exactGroups)
-        val items = first.items.toMutableList()
-        var page = first.page + 1
-
-        while (items.size < first.total) {
-            val next = match(ingredients, exactGroups, page = page, pageSize = first.pageSize)
-            if (next.items.isEmpty()) break
-            items += next.items
-            page++
-        }
-        return items
-    }
 }
 
 /** Fetches the complete recipe because pantry-match intentionally returns card-sized items. */
