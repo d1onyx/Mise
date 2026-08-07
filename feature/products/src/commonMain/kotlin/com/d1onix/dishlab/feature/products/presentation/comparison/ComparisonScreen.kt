@@ -39,6 +39,8 @@ import com.d1onix.dishlab.feature.products.resources.comparison_add_selected
 import com.d1onix.dishlab.feature.products.resources.comparison_best
 import com.d1onix.dishlab.feature.products.resources.comparison_clear
 import com.d1onix.dishlab.feature.products.resources.comparison_empty
+import com.d1onix.dishlab.feature.products.resources.comparison_error
+import com.d1onix.dishlab.feature.products.resources.comparison_loading
 import com.d1onix.dishlab.feature.products.resources.comparison_nutrition
 import com.d1onix.dishlab.feature.products.resources.comparison_remove
 import com.d1onix.dishlab.feature.products.resources.comparison_select_hint
@@ -75,6 +77,14 @@ internal fun ComparisonContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
         )
 
+        if (state.isLoading) {
+            EmptyState(stringResource(Res.string.comparison_loading), Modifier.weight(1f).padding(24.dp))
+            return
+        }
+        if (state.hasError) {
+            EmptyState(stringResource(Res.string.comparison_error), Modifier.weight(1f).padding(24.dp))
+            return
+        }
         if (state.products.isEmpty()) {
             EmptyState(
                 text = stringResource(Res.string.comparison_empty),
@@ -213,15 +223,16 @@ private fun NutrientComparisonRow(name: String, products: List<Product>) {
         Column {
             Text(name.uppercase(), style = MiseTheme.typography.monoTiny, color = colors.textMuted)
             Spacer(Modifier.height(8.dp))
-            products.forEach { product ->
-                val nutrient = product.nutrients.firstOrNull { it.name == name }
+            products.mapNotNull { product ->
+                product.nutrients.firstOrNull { it.name == name }?.let { product to it }
+            }.forEach { (product, nutrient) ->
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(product.name, style = MiseTheme.typography.bodySmall, color = colors.text)
                     Text(
-                        nutrient?.let { "${it.amount} ${it.unit}" } ?: "-",
+                        "${nutrient.amount} ${nutrient.unit}",
                         style = MiseTheme.typography.monoSmall,
                         color = colors.textMuted,
                     )

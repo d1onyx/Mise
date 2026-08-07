@@ -93,6 +93,7 @@ class GraphViewModel(
                 )
             }
             GraphAction.ConnectionOverviewClicked -> router.openConnectionOverview()
+            GraphAction.ComparisonClicked -> router.openComparison()
             GraphAction.EmptySpaceClicked -> {
                 if (_uiState.value.isEditingConnections) {
                     _uiState.update { it.copy(pendingConnectionId = null) }

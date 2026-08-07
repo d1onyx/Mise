@@ -54,6 +54,7 @@ import com.d1onix.dishlab.feature.products.presentation.graph.components.Product
 import com.d1onix.dishlab.feature.products.presentation.scoreColor
 import com.d1onix.dishlab.feature.products.resources.Res
 import com.d1onix.dishlab.feature.products.resources.graph_back
+import com.d1onix.dishlab.feature.products.resources.graph_compare
 import com.d1onix.dishlab.feature.products.resources.graph_count_many
 import com.d1onix.dishlab.feature.products.resources.graph_count_one
 import com.d1onix.dishlab.feature.products.resources.graph_edit_connections
@@ -110,6 +111,15 @@ internal fun GraphContent(
                         tint = if (state.isEditingConnections) colors.onLime else colors.violet,
                         borderColor = if (state.isEditingConnections) colors.lime else colors.border,
                         background = if (state.isEditingConnections) colors.lime else colors.panel,
+                    )
+                    MiseIconCircleButton(
+                        icon = MiseIcons.Bookmark,
+                        contentDescription = stringResource(Res.string.graph_compare),
+                        onClick = { onAction(GraphAction.ComparisonClicked) },
+                        iconSize = 16,
+                        tint = colors.violet,
+                        borderColor = colors.border,
+                        background = colors.panel,
                     )
                     MiseIconCircleButton(
                         icon = MiseIcons.Plus,

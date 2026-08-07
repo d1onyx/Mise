@@ -23,6 +23,7 @@ interface ProductsRouter {
     fun openCombinationGraph()
     fun openConnectionOverview()
     fun openProfile()
+    fun openComparison()
     fun openComparisonScanner()
     fun goBack()
 }

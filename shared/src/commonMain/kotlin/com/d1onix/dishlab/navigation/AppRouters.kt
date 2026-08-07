@@ -80,6 +80,7 @@ class ProductsRouterImpl(private val router: AppRouter) : ProductsRouter {
     override fun openCombinationGraph() = router.launch(GraphRoute)
     override fun openConnectionOverview() = router.launch(ConnectionOverviewRoute)
     override fun openProfile() = router.launch(ProfileRoute)
+    override fun openComparison() = router.launch(ComparisonRoute)
     override fun openComparisonScanner() = router.launch(ScanRoute(ScanTarget.Comparison, showBackNavigation = true))
     override fun goBack() = router.goBack()
 }

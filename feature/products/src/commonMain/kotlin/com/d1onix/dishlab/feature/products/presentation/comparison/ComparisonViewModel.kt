@@ -12,6 +12,7 @@ import com.d1onyx.core.presentation.CommonDependencies
 import com.d1onyx.core.presentation.WithMviState
 import com.d1onyx.core.presentation.base.AbstractViewModel
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +24,8 @@ import kotlinx.coroutines.launch
 data class ComparisonUiState(
     val products: List<Product> = emptyList(),
     val selectedForGraph: Set<ProductId> = emptySet(),
+    val isLoading: Boolean = true,
+    val hasError: Boolean = false,
 ) {
     val canAddProduct: Boolean get() = products.size < ProductComparisonStore.MAX_PRODUCTS
     val bestProductId: ProductId? get() = products.maxByOrNull(Product::score)?.id
@@ -53,12 +56,20 @@ class ComparisonViewModel(
     init {
         viewModelScope.launch {
             comparison.products.collectLatest { ids ->
-                val products = getProducts(ids).sortedBy { ids.indexOf(it.id) }
-                mutableState.update { state ->
-                    state.copy(
-                        products = products,
-                        selectedForGraph = state.selectedForGraph.intersect(ids.toSet()),
-                    )
+                mutableState.update { it.copy(isLoading = true, hasError = false) }
+                try {
+                    val products = getProducts(ids).sortedBy { ids.indexOf(it.id) }
+                    mutableState.update { state ->
+                        state.copy(
+                            products = products,
+                            selectedForGraph = state.selectedForGraph.intersect(ids.toSet()),
+                            isLoading = false,
+                        )
+                    }
+                } catch (exception: CancellationException) {
+                    throw exception
+                } catch (_: Throwable) {
+                    mutableState.update { it.copy(isLoading = false, hasError = true) }
                 }
             }
         }
