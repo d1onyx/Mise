@@ -36,6 +36,7 @@ sealed interface GraphAction {
     ) : GraphAction
     data object ConnectionEditingToggled : GraphAction
     data object ConnectionOverviewClicked : GraphAction
+    data object ComparisonClicked : GraphAction
     data object EmptySpaceClicked : GraphAction
     data object ScanMoreClicked : GraphAction
     data object FindRecipesClicked : GraphAction

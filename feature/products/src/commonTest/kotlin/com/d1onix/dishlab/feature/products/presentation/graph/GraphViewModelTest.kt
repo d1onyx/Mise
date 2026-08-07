@@ -64,6 +64,16 @@ class GraphViewModelTest {
     }
 
     @Test
+    fun `comparison action opens the comparison screen`() = runTest(dispatcher) {
+        val router = FakeRouter()
+        val viewModel = viewModel(session = FakeSessionStore(emptyList()), router = router)
+
+        viewModel.onAction(GraphAction.ComparisonClicked)
+
+        assertEquals(1, router.comparisonOpened)
+    }
+
+    @Test
     fun `removing the selected product closes its sheet`() = runTest(dispatcher) {
         val session = FakeSessionStore(listOf(ProductId("oats"), ProductId("banana")))
         val viewModel = viewModel(session)
@@ -236,6 +246,7 @@ class GraphViewModelTest {
 
     private class FakeRouter : ProductsRouter {
         var scannerOpened = 0
+        var comparisonOpened = 0
         override fun openScanner() {
             scannerOpened++
         }
@@ -244,6 +255,9 @@ class GraphViewModelTest {
         override fun openCombinationGraph() = Unit
         override fun openConnectionOverview() = Unit
         override fun openProfile() = Unit
+        override fun openComparison() {
+            comparisonOpened++
+        }
         override fun openComparisonScanner() = Unit
         override fun goBack() = Unit
     }

@@ -8,6 +8,7 @@
     <string name="graph_saved">Saved recipes</string>
     <string name="graph_profile_action">Open profile</string>
     <string name="graph_edit_connections">Edit recipe connections</string>
+    <string name="graph_compare">Compare products</string>
     <string name="graph_hint">drag nodes · tap empty space to scan a product</string>
     <string name="graph_hint_edit">tap a line to cut · tap two products to connect</string>
     <string name="graph_hint_connect">select the second product · tap empty space to cancel</string>
@@ -60,4 +61,6 @@
     <string name="comparison_add_selected">Add selected (%1$d)</string>
     <string name="comparison_select_all">select all</string>
     <string name="comparison_clear_selection">clear selection</string>
+    <string name="comparison_loading">Loading compared products…</string>
+    <string name="comparison_error">Unable to load compared products.</string>
 </resources>

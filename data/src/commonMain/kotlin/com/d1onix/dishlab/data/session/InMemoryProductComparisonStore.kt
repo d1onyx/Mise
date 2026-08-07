@@ -11,6 +11,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+/**
+ * Deliberately session-only: the product comparison is not persisted because the
+ * product requirements do not define a durable comparison list.
+ */
 @ContributesBinding(AppScope::class)
 @SingleIn(AppScope::class)
 @Inject
