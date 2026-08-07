@@ -3,8 +3,8 @@ package com.d1onix.dishlab.data.session
 import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductGraphPosition
 import com.d1onix.dishlab.domain.model.ProductId
-import com.d1onix.dishlab.domain.repository.ScanSessionStore
 import com.d1onix.dishlab.domain.repository.ProfileSettingsRepository
+import com.d1onix.dishlab.domain.repository.ScanSessionStore
 import com.d1onyx.core.essentials.di.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
@@ -14,8 +14,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 @ContributesBinding(AppScope::class)
@@ -34,8 +35,12 @@ class RoomScanSessionStore(
         emptyList(),
     )
 
-    override val products: StateFlow<List<ProductId>> = productEntities
+    override val startupProducts: StateFlow<List<ProductId>?> = dao.observeProducts()
         .map { entities -> entities.map { ProductId(it.productId) } }
+        .stateIn(scope, SharingStarted.Eagerly, null)
+
+    override val products: StateFlow<List<ProductId>> = startupProducts
+        .filterNotNull()
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     override val positions: StateFlow<Map<ProductId, ProductGraphPosition>> = productEntities

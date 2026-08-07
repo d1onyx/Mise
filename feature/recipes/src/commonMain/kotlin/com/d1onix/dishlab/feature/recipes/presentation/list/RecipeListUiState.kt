@@ -21,6 +21,7 @@ data class RecipeListUiState(
     val expandedGroup: FilterGroupId? = null,
     /** Products behind the recipe avatars, keyed for lookup while rendering. */
     val products: Map<ProductId, Product> = emptyMap(),
+    val isLoading: Boolean = false,
     val loadError: Boolean = false,
 ) {
 

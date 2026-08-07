@@ -1,9 +1,13 @@
 package com.d1onix.dishlab.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -11,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.d1onix.dishlab.AppGraph
+import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.feature.home.navigation.HomeRoute
 import com.d1onix.dishlab.feature.home.navigation.AuthRoute
@@ -52,9 +57,14 @@ import com.d1onyx.navigation.rememberAppRouter
  */
 @Composable
 fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
+    val startupProducts by graph.scanSessionStore.startupProducts.collectAsStateWithLifecycle()
+    if (startupProducts == null) {
+        GraphStartupGate()
+        return
+    }
+
     val navController = rememberNavController()
     val router = rememberAppRouter(navController)
-    val graphProducts by graph.scanSessionStore.products.collectAsStateWithLifecycle()
 
     // Lets injected code (view-models, use cases) navigate through AppRouter.
     DisposableEffect(router) {
@@ -63,7 +73,10 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
     }
 
     CompositionLocalProvider(LocalAppRouter provides router) {
-        NavHost(navController = navController, startDestination = if (graphProducts.isEmpty()) ScanRoute() else GraphRoute) {
+        NavHost(
+            navController = navController,
+            startDestination = if (startupProducts.isNullOrEmpty()) ScanRoute() else GraphRoute,
+        ) {
 
             composable<HomeRoute> {
                 HomeScreen(viewModel { graph.homeViewModel })
@@ -149,6 +162,17 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
 
         graph.dialogs.Render()
     }
+}
+
+/**
+ * Hold navigation until the single nullable Room snapshot becomes available so
+ * a persisted graph never flashes the scanner before its destination is known.
+ */
+@Composable
+private fun GraphStartupGate() {
+    Box(
+        modifier = Modifier.fillMaxSize().background(MiseTheme.colors.backgroundDeep),
+    )
 }
 
 internal fun handleAppBack(popBackStack: () -> Boolean, onExit: () -> Unit) {

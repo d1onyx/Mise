@@ -29,7 +29,7 @@ class RecipesViewModel(
     private val router: RecipesRouter,
 ) : AbstractViewModel(dependencies), WithMviState<RecipeListUiState> {
 
-    private val _uiState = MutableStateFlow(RecipeListUiState())
+    private val _uiState = MutableStateFlow(RecipeListUiState(isLoading = true))
     val uiState: StateFlow<RecipeListUiState> = _uiState.asStateFlow()
 
     init {
@@ -60,12 +60,24 @@ class RecipesViewModel(
         }
     }
 
-    private suspend fun load(ids: List<com.d1onix.dishlab.domain.model.ProductId>) = try {
-        val recipes = if (ids.isEmpty()) emptyList() else getRecipesForProducts(ids)
-        val products = getProducts(recipes.flatMap { it.productIds }.distinct())
-        _uiState.update { it.copy(all = recipes, products = products.associateBy { p -> p.id }, loadError = false).refiltered() }
-    } catch (_: Throwable) {
-        _uiState.update { it.copy(all = emptyList(), visible = emptyList(), loadError = true) }
+    private suspend fun load(ids: List<com.d1onix.dishlab.domain.model.ProductId>) {
+        _uiState.update { it.copy(isLoading = true, loadError = false) }
+        try {
+            val recipes = if (ids.isEmpty()) emptyList() else getRecipesForProducts(ids)
+            val products = getProducts(recipes.flatMap { it.productIds }.distinct())
+            _uiState.update {
+                it.copy(
+                    all = recipes,
+                    products = products.associateBy { product -> product.id },
+                    isLoading = false,
+                    loadError = false,
+                ).refiltered()
+            }
+        } catch (_: Throwable) {
+            _uiState.update {
+                it.copy(all = emptyList(), visible = emptyList(), isLoading = false, loadError = true)
+            }
+        }
     }
 
     private fun RecipeListUiState.refiltered(): RecipeListUiState =

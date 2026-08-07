@@ -186,6 +186,27 @@ class ScanViewModelTest {
     }
 
     @Test
+    fun `first reviewed product starts a fresh comparison and opens the scanner`() = runTest(dispatcher) {
+        val router = FakeRouter()
+        val comparison = FakeComparisonStore()
+        comparison.add(ProductId("barcode:old"))
+        val viewModel = viewModel(
+            session = FakeSessionStore(),
+            router = router,
+            comparison = comparison,
+        )
+
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
+        testScheduler.advanceUntilIdle()
+        viewModel.onAction(ScanAction.CompareWithAnotherClicked)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(listOf(ProductId("barcode:111")), comparison.products.value)
+        assertEquals(listOf(ScanTarget.Comparison), router.scannerTargets)
+        assertNull(viewModel.uiState.value.reviewedProduct)
+    }
+
+    @Test
     fun `camera controls stay inert until the camera reports what it supports`() =
         runTest(dispatcher) {
             val viewModel = viewModel(FakeSessionStore(), FakeRouter())
@@ -300,6 +321,7 @@ class ScanViewModelTest {
 
     private class FakeSessionStore : ScanSessionStore {
         private val state = MutableStateFlow<List<ProductId>>(emptyList())
+        override val startupProducts: StateFlow<List<ProductId>?> = MutableStateFlow(emptyList())
         override val products: StateFlow<List<ProductId>> = state
         private val connectionState = MutableStateFlow<Set<ProductConnection>>(emptySet())
         override val connections: StateFlow<Set<ProductConnection>> = connectionState
@@ -345,6 +367,7 @@ class ScanViewModelTest {
         var authOpened = 0
         var backCount = 0
         val notFoundBarcodes = mutableListOf<String>()
+        val scannerTargets = mutableListOf<ScanTarget>()
         override fun openCombinationGraph() {
             graphOpened++
         }
@@ -353,7 +376,9 @@ class ScanViewModelTest {
             notFoundBarcodes += barcode
         }
 
-        override fun openScanner(target: ScanTarget) = Unit
+        override fun openScanner(target: ScanTarget) {
+            scannerTargets += target
+        }
         override fun openComparison() {
             comparisonOpened++
         }

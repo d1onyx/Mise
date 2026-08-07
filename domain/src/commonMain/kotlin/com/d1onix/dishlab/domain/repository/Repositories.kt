@@ -47,6 +47,8 @@ interface ScanHistoryRepository {
  * catalogue implementation.
  */
 interface ScanSessionStore {
+    /** Null until the durable graph answers its first query; empty means a new graph. */
+    val startupProducts: StateFlow<List<ProductId>?>
     val products: StateFlow<List<ProductId>>
     /** User-defined undirected edges that constrain which product sets may form recipes. */
     val connections: StateFlow<Set<ProductConnection>>

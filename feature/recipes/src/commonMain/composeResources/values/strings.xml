@@ -10,6 +10,7 @@
     <string name="discover_empty">No recipes match the selected filters.</string>
     <string name="recipes_minutes">%1$d min</string>
     <string name="recipes_error">Recipes are unavailable right now. Check your connection and try again.</string>
+    <string name="recipes_loading">Loading recipes…</string>
     <string name="recipes_retry">Try again</string>
 
     <string name="filter_group_difficulty">Difficulty</string>

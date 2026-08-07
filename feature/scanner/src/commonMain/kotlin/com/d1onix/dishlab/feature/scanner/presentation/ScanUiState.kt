@@ -81,6 +81,8 @@ sealed interface ScanAction {
     data object ManualBarcodeSubmitted : ScanAction
     data object RetryResolutionClicked : ScanAction
     data object AddReviewedProductClicked : ScanAction
+    /** Starts a new, session-only comparison with this first scanned product. */
+    data object CompareWithAnotherClicked : ScanAction
     data object ReviewedProductSkipped : ScanAction
     data object ReviewBackClicked : ScanAction
     data object BackClicked : ScanAction

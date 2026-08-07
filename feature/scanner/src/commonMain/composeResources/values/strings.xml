@@ -32,6 +32,7 @@
     <string name="scan_review_add">Add to combination graph</string>
     <string name="scan_review_open_graph">Already added · open graph</string>
     <string name="scan_review_add_comparison">Add to comparison</string>
+    <string name="scan_review_compare_another">Compare with another product</string>
     <string name="scan_review_skip">Not now</string>
 
     <string name="not_found_title">Product not found</string>

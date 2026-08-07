@@ -200,6 +200,7 @@ class GraphViewModelTest {
 
     private class FakeSessionStore(initial: List<ProductId>) : ScanSessionStore {
         private val state = MutableStateFlow(initial)
+        override val startupProducts: StateFlow<List<ProductId>?> = MutableStateFlow(initial)
         override val products: StateFlow<List<ProductId>> = state
         private val connectionState = MutableStateFlow(completeConnections(initial))
         override val connections: StateFlow<Set<ProductConnection>> = connectionState
