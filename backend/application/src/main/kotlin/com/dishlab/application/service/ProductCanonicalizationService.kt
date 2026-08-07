@@ -20,7 +20,10 @@ class ProductCanonicalizationService(
             listOf(ProductNormalizationInput(name = product.name, categories = product.categories)),
         ).firstOrNull() ?: return product
         val names = normalized.normalizedNames.map(::normalizeName).filter(String::isNotBlank).distinct()
-        val canonicalTags = normalized.canonicalTags.ifEmpty { product.canonicalTags }
+        val canonicalTags = (
+            normalized.canonicalTags.ifEmpty { product.canonicalTags } +
+                product.categoryDerivedCanonicalTags()
+            ).distinct()
         val conceptName = selectConceptName(names) ?: return product.copy(canonicalTags = canonicalTags)
         val variantName = names.firstOrNull() ?: conceptName
         val evidence = product.evidenceText(names)
@@ -82,6 +85,28 @@ class ProductCanonicalizationService(
         addAll(ingredients.map { it.id })
         addAll(normalizedNames)
     }.joinToString(" ").lowercase()
+
+    /**
+     * OFF category tags are not recipe-ingredient taxonomy tags. In particular, OFF describes
+     * water as `waters`, `carbonated-waters`, or `drinking-water`, while the recipe catalog
+     * stores the shared ingredient as `en:water`. Keep the original normalization result, but
+     * add this stable bridge so scanned water can participate in pantry matching.
+     */
+    private fun CatalogProduct.categoryDerivedCanonicalTags(): List<String> {
+        val normalizedCategories = categories.map { category ->
+            category.lowercase().replace('_', '-').replace(' ', '-')
+        }
+        return if (normalizedCategories.any { category ->
+                category == "water" || category == "waters" ||
+                    category == "drinking-water" || category == "carbonated-water" ||
+                    category == "carbonated-waters"
+            }
+        ) {
+            listOf("en:water")
+        } else {
+            emptyList()
+        }
+    }
 
     private fun CatalogProduct.aliases(
         normalizedNames: List<String>,
