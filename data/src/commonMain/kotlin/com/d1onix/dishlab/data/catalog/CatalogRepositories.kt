@@ -237,13 +237,7 @@ class CatalogRecipeRepository(
         if (productIds.isEmpty()) return all()
         val tags = products.byIds(productIds).flatMap { it.canonicalTags }.distinct()
         if (tags.isEmpty()) return offlineMatches(productIds)
-        return try {
-            pantryMatch.match(ingredients = tags).items.map(PantryMatchedRecipeDto::toDomain)
-        } catch (error: ConnectionException) {
-            offlineMatches(productIds)
-        } catch (error: BackendException) {
-            offlineMatches(productIds)
-        }
+        return pantryMatch.match(ingredients = tags).items.map(PantryMatchedRecipeDto::toDomain)
     }
 
     private suspend fun offlineMatches(productIds: List<ProductId>): List<Recipe> = all()

@@ -21,6 +21,7 @@ data class RecipeListUiState(
     val expandedGroup: FilterGroupId? = null,
     /** Products behind the recipe avatars, keyed for lookup while rendering. */
     val products: Map<ProductId, Product> = emptyMap(),
+    val loadError: Boolean = false,
 ) {
 
     fun productsOf(recipe: Recipe): List<Product> = recipe.productIds.mapNotNull(products::get)
@@ -44,4 +45,5 @@ sealed interface RecipeListAction {
     data class OptionClicked(val group: FilterGroupId, val option: String) : RecipeListAction
     data class RecipeClicked(val id: RecipeId) : RecipeListAction
     data object BackClicked : RecipeListAction
+    data object RetryClicked : RecipeListAction
 }

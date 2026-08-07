@@ -21,6 +21,7 @@ import com.d1onix.dishlab.designsystem.component.FilterGroup
 import com.d1onix.dishlab.designsystem.component.FilterOption
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.MiseSearchField
+import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.feature.recipes.presentation.components.RecipeCard
 import com.d1onix.dishlab.feature.recipes.presentation.difficultyLabel
@@ -35,6 +36,8 @@ import com.d1onix.dishlab.feature.recipes.resources.discover_title
 import com.d1onix.dishlab.feature.recipes.resources.recipes_empty
 import com.d1onix.dishlab.feature.recipes.resources.recipes_search_placeholder
 import com.d1onix.dishlab.feature.recipes.resources.recipes_title
+import com.d1onix.dishlab.feature.recipes.resources.recipes_error
+import com.d1onix.dishlab.feature.recipes.resources.recipes_retry
 import com.d1onix.dishlab.feature.recipes.resources.saved_empty
 import com.d1onix.dishlab.feature.recipes.resources.saved_search_placeholder
 import com.d1onix.dishlab.feature.recipes.resources.saved_title
@@ -126,6 +129,11 @@ internal fun RecipeListContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
         )
 
+        if (state.loadError) {
+            EmptyState(stringResource(Res.string.recipes_error), Modifier.fillMaxWidth())
+            MisePrimaryButton(stringResource(Res.string.recipes_retry), { onAction(RecipeListAction.RetryClicked) }, Modifier.fillMaxWidth().padding(horizontal = 20.dp))
+            return@Column
+        }
         if (state.visible.isEmpty()) {
             EmptyState(stringResource(emptyText), Modifier.fillMaxWidth())
             return@Column
