@@ -243,7 +243,10 @@ class CatalogRecipeRepository(
         if (productIds.isEmpty()) return all()
         val tags = products.byIds(productIds).flatMap { it.canonicalTags }.distinct()
         if (tags.isEmpty()) return offlineMatches(productIds)
-        return pantryMatch.matchAll(ingredients = tags).map(PantryMatchedRecipeDto::toDomain)
+        // Pantry-match is already ordered by match percentage.  A recipes screen
+        // shows the top page; fetching every catalog page here would exhaust the
+        // per-client rate-limit before the user sees a single result.
+        return pantryMatch.match(ingredients = tags).items.map(PantryMatchedRecipeDto::toDomain)
     }
 
     private suspend fun offlineMatches(productIds: List<ProductId>): List<Recipe> = all()
