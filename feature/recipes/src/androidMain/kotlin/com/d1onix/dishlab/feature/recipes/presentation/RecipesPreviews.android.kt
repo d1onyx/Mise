@@ -10,10 +10,8 @@ import com.d1onix.dishlab.feature.recipes.presentation.detail.RecipeDetailConten
 import com.d1onix.dishlab.feature.recipes.presentation.list.RecipeListContent
 import com.d1onix.dishlab.feature.recipes.resources.Res
 import com.d1onix.dishlab.feature.recipes.resources.recipes_empty
-import com.d1onix.dishlab.feature.recipes.resources.recipes_search_placeholder
 import com.d1onix.dishlab.feature.recipes.resources.recipes_title
 import com.d1onix.dishlab.feature.recipes.resources.saved_empty
-import com.d1onix.dishlab.feature.recipes.resources.saved_search_placeholder
 import com.d1onix.dishlab.feature.recipes.resources.saved_title
 
 @MiseScreenPreviews
@@ -22,7 +20,6 @@ private fun RecipeListContentPreview() {
     MiseTheme {
         RecipeListContent(
             title = Res.string.recipes_title,
-            searchPlaceholder = Res.string.recipes_search_placeholder,
             emptyText = Res.string.recipes_empty,
             state = RecipeListPreviewStates.Default,
             onAction = {},
@@ -37,23 +34,8 @@ private fun RecipeListContentEmptyPreview() {
     MiseTheme {
         RecipeListContent(
             title = Res.string.saved_title,
-            searchPlaceholder = Res.string.saved_search_placeholder,
             emptyText = Res.string.saved_empty,
             state = RecipeListPreviewStates.Empty,
-            onAction = {},
-        )
-    }
-}
-
-@MiseScreenPreviews
-@Composable
-private fun RecipeListContentExpandedFilterPreview() {
-    MiseTheme {
-        RecipeListContent(
-            title = Res.string.recipes_title,
-            searchPlaceholder = Res.string.recipes_search_placeholder,
-            emptyText = Res.string.recipes_empty,
-            state = RecipeListPreviewStates.ExpandedFilter,
             onAction = {},
         )
     }

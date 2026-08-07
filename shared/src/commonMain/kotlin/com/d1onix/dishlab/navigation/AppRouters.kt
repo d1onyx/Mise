@@ -13,7 +13,6 @@ import com.d1onix.dishlab.feature.products.navigation.HistoryRoute
 import com.d1onix.dishlab.feature.products.navigation.ProductsRouter
 import com.d1onix.dishlab.feature.products.navigation.ConnectionOverviewRoute
 import com.d1onix.dishlab.feature.recipes.navigation.CookingRoute
-import com.d1onix.dishlab.feature.recipes.navigation.DiscoverRecipesRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipeDetailRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRouter
@@ -46,13 +45,13 @@ class HomeRouterImpl(private val router: AppRouter) : HomeRouter {
         ProtectedDestination.Previous -> router.goBack()
         ProtectedDestination.Profile -> router.replace(ProfileRoute)
         ProtectedDestination.Comparison -> router.replace(ComparisonRoute)
-        ProtectedDestination.RecipeDiscovery -> router.replace(DiscoverRecipesRoute)
+        ProtectedDestination.Recipes -> router.replace(RecipesRoute)
         ProtectedDestination.Saved -> router.replace(SavedRoute)
         ProtectedDestination.History -> router.replace(HistoryRoute)
     }
     override fun openPreferenceSetup() = router.launch(OnboardingRoute(showIntro = false))
     override fun openComparison() = router.launch(ComparisonRoute)
-    override fun openRecipeDiscovery() = router.launch(DiscoverRecipesRoute)
+    override fun openRecipes() = router.launch(RecipesRoute)
     override fun goBack() = router.goBack()
 }
 

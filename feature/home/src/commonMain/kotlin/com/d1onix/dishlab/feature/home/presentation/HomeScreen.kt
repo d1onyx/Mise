@@ -137,7 +137,7 @@ internal fun HomeContent(
                         subtitle = stringResource(Res.string.home_discover_subtitle),
                         icon = MiseIcons.Search,
                         tint = colors.violet,
-                        onClick = { onAction(HomeAction.DiscoverRecipesClicked) },
+                        onClick = { onAction(HomeAction.RecipesClicked) },
                         modifier = Modifier.weight(1f),
                     )
                 }

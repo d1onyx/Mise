@@ -10,7 +10,7 @@ data object HomeRoute : Route
 data object ProfileRoute : Route
 
 @Serializable
-enum class ProtectedDestination { Previous, Profile, Comparison, RecipeDiscovery, Saved, History }
+enum class ProtectedDestination { Previous, Profile, Comparison, Recipes, Saved, History }
 
 @Serializable
 data class AuthRoute(val destination: ProtectedDestination = ProtectedDestination.Previous) : Route
@@ -35,6 +35,6 @@ interface HomeRouter {
     fun completeProtectedNavigation(destination: ProtectedDestination)
     fun openPreferenceSetup()
     fun openComparison()
-    fun openRecipeDiscovery()
+    fun openRecipes()
     fun goBack()
 }

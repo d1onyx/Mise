@@ -60,7 +60,7 @@ class AuthViewModelTest {
             sessions,
             FakeProfileSettings(),
             router,
-            ProtectedDestination.RecipeDiscovery,
+            ProtectedDestination.Recipes,
         )
 
         viewModel.onAction(AuthAction.EmailChanged("dana@example.com"))
@@ -69,7 +69,7 @@ class AuthViewModelTest {
         testScheduler.advanceUntilIdle()
 
         assertEquals("dana@example.com" to "secret1", sessions.signedIn)
-        assertEquals(ProtectedDestination.RecipeDiscovery, router.completedDestination)
+        assertEquals(ProtectedDestination.Recipes, router.completedDestination)
     }
 
     private fun viewModel(
@@ -126,7 +126,7 @@ class AuthViewModelTest {
         override fun openAuth(destination: ProtectedDestination) = Unit
         override fun openPreferenceSetup() = Unit
         override fun openComparison() = Unit
-        override fun openRecipeDiscovery() = Unit
+        override fun openRecipes() = Unit
         override fun goBack() = Unit
     }
 }

@@ -16,5 +16,5 @@ sealed interface HomeAction {
     data object HistoryClicked : HomeAction
     data object ProfileClicked : HomeAction
     data object CompareClicked : HomeAction
-    data object DiscoverRecipesClicked : HomeAction
+    data object RecipesClicked : HomeAction
 }
