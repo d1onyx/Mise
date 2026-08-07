@@ -37,6 +37,7 @@ import com.d1onix.dishlab.feature.recipes.resources.recipes_empty
 import com.d1onix.dishlab.feature.recipes.resources.recipes_search_placeholder
 import com.d1onix.dishlab.feature.recipes.resources.recipes_title
 import com.d1onix.dishlab.feature.recipes.resources.recipes_error
+import com.d1onix.dishlab.feature.recipes.resources.recipes_loading
 import com.d1onix.dishlab.feature.recipes.resources.recipes_retry
 import com.d1onix.dishlab.feature.recipes.resources.saved_empty
 import com.d1onix.dishlab.feature.recipes.resources.saved_search_placeholder
@@ -106,7 +107,7 @@ internal fun RecipeListContent(
         // than blending it into the recipe list content.
         if (showBanner) {
             RecipeBannerAd(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                Modifier.fillMaxWidth().padding(vertical = 4.dp),
             )
         }
 
@@ -133,6 +134,10 @@ internal fun RecipeListContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
         )
 
+        if (state.isLoading) {
+            EmptyState(stringResource(Res.string.recipes_loading), Modifier.fillMaxWidth())
+            return@Column
+        }
         if (state.loadError) {
             EmptyState(stringResource(Res.string.recipes_error), Modifier.fillMaxWidth())
             MisePrimaryButton(stringResource(Res.string.recipes_retry), { onAction(RecipeListAction.RetryClicked) }, Modifier.fillMaxWidth().padding(horizontal = 20.dp))

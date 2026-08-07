@@ -84,6 +84,7 @@ class ConnectionOverviewViewModelTest {
         ids: List<ProductId>,
         initialConnections: Set<ProductConnection>,
     ) : ScanSessionStore {
+        override val startupProducts: StateFlow<List<ProductId>?> = MutableStateFlow(ids)
         override val products: StateFlow<List<ProductId>> = MutableStateFlow(ids)
         override val connections: StateFlow<Set<ProductConnection>> =
             MutableStateFlow(initialConnections)

@@ -78,6 +78,7 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_browse_recipes
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_submit
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add_comparison
+import com.d1onix.dishlab.feature.scanner.resources.scan_review_compare_another
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_alternatives
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_incomplete
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_nutrition
@@ -458,6 +459,14 @@ private fun ScannedProductReview(
                 onClick = { onAction(ScanAction.AddReviewedProductClicked) },
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (!comparisonMode) {
+                Spacer(Modifier.height(8.dp))
+                MiseGhostButton(
+                    text = stringResource(Res.string.scan_review_compare_another),
+                    onClick = { onAction(ScanAction.CompareWithAnotherClicked) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Spacer(Modifier.height(8.dp))
             MiseGhostButton(
                 text = stringResource(Res.string.scan_review_skip),

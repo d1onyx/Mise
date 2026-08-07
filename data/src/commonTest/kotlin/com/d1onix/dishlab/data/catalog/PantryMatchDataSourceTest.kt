@@ -42,6 +42,30 @@ class PantryMatchDataSourceTest {
         assertEquals(listOf("en:oats,en:rolled-oats"), parameters["exactGroup"])
         assertEquals("Oat Bowl", result.items.single().toDomain().name)
     }
+
+    @Test
+    fun `pantry match reads every backend page`() = runTest {
+        val requestedPages = mutableListOf<String?>()
+        val client = createHttpClient(
+            config = NetworkConfig(baseUrl = "https://api.example.com/", isDebug = true),
+            logger = DefaultLogger(RecordingLogSink()),
+            engine = MockEngine { request ->
+                val page = request.url.parameters["page"]
+                requestedPages += page
+                val recipeId = if (page == "1") "catalog:one" else "catalog:two"
+                respond(
+                    content = """{"items":[{"recipe":{"id":"$recipeId","title":"$recipeId","ingredients":[],"steps":[]},"matched_count":1,"total_ingredients":1,"match_percent":100}],"page":$page,"page_size":1,"total":2}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf("Content-Type", "application/json"),
+                )
+            },
+        )
+
+        val recipes = PantryMatchDataSource(client).matchAll(ingredients = listOf("en:oats"))
+
+        assertEquals(listOf<String?>("1", "2"), requestedPages)
+        assertEquals(listOf("catalog:one", "catalog:two"), recipes.map { it.recipe.id })
+    }
 }
 
 class RecipeCatalogRemoteDataSourceTest {

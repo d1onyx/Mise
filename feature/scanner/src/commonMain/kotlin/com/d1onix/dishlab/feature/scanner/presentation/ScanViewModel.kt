@@ -70,6 +70,7 @@ class ScanViewModel(
             ScanAction.ManualBarcodeSubmitted -> submitManualBarcode()
             ScanAction.RetryResolutionClicked -> retryResolution()
             ScanAction.AddReviewedProductClicked -> addReviewedProduct()
+            ScanAction.CompareWithAnotherClicked -> compareWithAnother()
             ScanAction.ReviewedProductSkipped -> skipReviewedProduct()
             ScanAction.ReviewBackClicked -> _uiState.update {
                 it.copy(
@@ -180,6 +181,22 @@ class ScanViewModel(
                 if (!state.reviewedProductAlreadyAdded) session.add(product.id)
                 router.openCombinationGraph()
             }
+            clearReview()
+        }
+    }
+
+    /**
+     * Comparison is intentionally separate from the persisted graph. Starting
+     * it from a newly reviewed product replaces any earlier comparison session,
+     * then returns directly to the scanner for the second product.
+     */
+    private fun compareWithAnother() {
+        if (target == ScanTarget.Comparison) return
+        val product = _uiState.value.reviewedProduct ?: return
+        launch("startComparison") {
+            comparison.clear()
+            comparison.add(product.id)
+            router.openScanner(ScanTarget.Comparison)
             clearReview()
         }
     }

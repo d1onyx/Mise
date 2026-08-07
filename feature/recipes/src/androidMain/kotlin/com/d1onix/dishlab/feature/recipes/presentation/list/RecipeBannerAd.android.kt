@@ -8,6 +8,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.d1onix.dishlab.feature.recipes.R
@@ -22,12 +23,16 @@ import com.google.android.ump.UserMessagingPlatform
 internal actual fun RecipeBannerAd(modifier: Modifier) {
     val context = LocalContext.current
     val activity = context.findActivity() ?: return
-    val adView = remember(context) {
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val adSize = remember(context, screenWidthDp) {
+        AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, screenWidthDp)
+    }
+    val adView = remember(context, adSize) {
         AdView(context).apply {
             adUnitId = context.getString(R.string.admob_recipe_banner_unit_id)
-            // 320×100 is a standard AdMob large banner: visibly separate
-            // from recipe content while remaining a fixed, familiar format.
-            setAdSize(AdSize.LARGE_BANNER)
+            // Adaptive banners use the available full width but keep their
+            // standard, short height instead of the old 320×100 large unit.
+            setAdSize(adSize)
         }
     }
 
