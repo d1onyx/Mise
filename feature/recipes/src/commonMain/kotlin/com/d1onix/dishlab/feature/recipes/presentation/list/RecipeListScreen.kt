@@ -16,31 +16,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.EmptyState
-import com.d1onix.dishlab.designsystem.component.FilterChipBar
-import com.d1onix.dishlab.designsystem.component.FilterGroup
-import com.d1onix.dishlab.designsystem.component.FilterOption
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
-import com.d1onix.dishlab.designsystem.component.MiseSearchField
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.feature.recipes.presentation.components.RecipeCard
-import com.d1onix.dishlab.feature.recipes.presentation.difficultyLabel
-import com.d1onix.dishlab.feature.recipes.presentation.timeBucketLabel
 import com.d1onix.dishlab.feature.recipes.resources.Res
-import com.d1onix.dishlab.feature.recipes.resources.filter_group_category
-import com.d1onix.dishlab.feature.recipes.resources.filter_group_difficulty
-import com.d1onix.dishlab.feature.recipes.resources.filter_group_time
 import com.d1onix.dishlab.feature.recipes.resources.discover_empty
-import com.d1onix.dishlab.feature.recipes.resources.discover_search_placeholder
 import com.d1onix.dishlab.feature.recipes.resources.discover_title
 import com.d1onix.dishlab.feature.recipes.resources.recipes_empty
-import com.d1onix.dishlab.feature.recipes.resources.recipes_search_placeholder
 import com.d1onix.dishlab.feature.recipes.resources.recipes_title
 import com.d1onix.dishlab.feature.recipes.resources.recipes_error
 import com.d1onix.dishlab.feature.recipes.resources.recipes_loading
 import com.d1onix.dishlab.feature.recipes.resources.recipes_retry
 import com.d1onix.dishlab.feature.recipes.resources.saved_empty
-import com.d1onix.dishlab.feature.recipes.resources.saved_search_placeholder
 import com.d1onix.dishlab.feature.recipes.resources.saved_title
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -51,7 +39,6 @@ fun RecipesScreen(viewModel: RecipesViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     RecipeListContent(
         title = Res.string.recipes_title,
-        searchPlaceholder = Res.string.recipes_search_placeholder,
         emptyText = Res.string.recipes_empty,
         state = state,
         onAction = viewModel::onAction,
@@ -64,7 +51,6 @@ fun SavedRecipesScreen(viewModel: SavedRecipesViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     RecipeListContent(
         title = Res.string.saved_title,
-        searchPlaceholder = Res.string.saved_search_placeholder,
         emptyText = Res.string.saved_empty,
         state = state,
         onAction = viewModel::onAction,
@@ -76,7 +62,6 @@ fun DiscoverRecipesScreen(viewModel: DiscoverRecipesViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     RecipeListContent(
         title = Res.string.discover_title,
-        searchPlaceholder = Res.string.discover_search_placeholder,
         emptyText = Res.string.discover_empty,
         state = state,
         onAction = viewModel::onAction,
@@ -90,7 +75,6 @@ fun DiscoverRecipesScreen(viewModel: DiscoverRecipesViewModel) {
 @Composable
 internal fun RecipeListContent(
     title: StringResource,
-    searchPlaceholder: StringResource,
     emptyText: StringResource,
     state: RecipeListUiState,
     onAction: (RecipeListAction) -> Unit,
@@ -115,23 +99,6 @@ internal fun RecipeListContent(
             title = stringResource(title),
             onBackClick = { onAction(RecipeListAction.BackClicked) },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-        )
-
-        MiseSearchField(
-            value = state.filters.query,
-            onValueChange = { onAction(RecipeListAction.QueryChanged(it)) },
-            placeholder = stringResource(searchPlaceholder),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
-        )
-
-        FilterChipBar(
-            groups = state.filterGroups(),
-            expandedGroupId = state.expandedGroup?.name,
-            onGroupClick = { id -> onAction(RecipeListAction.GroupClicked(FilterGroupId.valueOf(id))) },
-            onOptionClick = { id, option ->
-                onAction(RecipeListAction.OptionClicked(FilterGroupId.valueOf(id), option))
-            },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
         )
 
         if (state.isLoading) {
@@ -162,26 +129,3 @@ internal fun RecipeListContent(
         }
     }
 }
-
-@Composable
-private fun RecipeListUiState.filterGroups(): List<FilterGroup> = listOf(
-    FilterGroup(
-        id = FilterGroupId.Difficulty.name,
-        name = stringResource(Res.string.filter_group_difficulty),
-        options = difficultyOptions.map { FilterOption(it.name, difficultyLabel(it)) },
-        selected = filters.difficulties.map { it.name }.toSet(),
-    ),
-    FilterGroup(
-        id = FilterGroupId.Category.name,
-        name = stringResource(Res.string.filter_group_category),
-        // Categories come from the catalogue, so the id is the value itself.
-        options = categoryOptions.map { FilterOption(it, it) },
-        selected = filters.categories,
-    ),
-    FilterGroup(
-        id = FilterGroupId.Time.name,
-        name = stringResource(Res.string.filter_group_time),
-        options = timeOptions.map { FilterOption(it.name, timeBucketLabel(it)) },
-        selected = filters.times.map { it.name }.toSet(),
-    ),
-)

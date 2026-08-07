@@ -1,7 +1,7 @@
 <resources>
     <string name="recipes_title">Recipes</string>
     <string name="recipes_search_placeholder">Search recipes</string>
-    <string name="recipes_empty">No recipes match those filters.</string>
+    <string name="recipes_empty">No recipes are available for the products on your graph.</string>
     <string name="saved_title">Saved</string>
     <string name="saved_search_placeholder">Search saved</string>
     <string name="saved_empty">Nothing saved matches those filters.</string>

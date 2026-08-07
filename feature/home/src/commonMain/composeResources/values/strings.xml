@@ -8,7 +8,7 @@
     <string name="home_compare_title">Compare</string>
     <string name="home_compare_subtitle">Up to 5 products</string>
     <string name="home_discover_title">Recipes</string>
-    <string name="home_discover_subtitle">Browse &amp; filter</string>
+    <string name="home_discover_subtitle">From your scanned products</string>
     <string name="home_saved_title">Saved recipes</string>
     <string name="home_saved_empty">Nothing saved yet</string>
     <string name="home_saved_one">1 recipe ready</string>

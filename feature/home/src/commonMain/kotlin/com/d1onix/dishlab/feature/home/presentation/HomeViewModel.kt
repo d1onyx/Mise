@@ -62,8 +62,8 @@ class HomeViewModel(
             HomeAction.HistoryClicked -> authenticated(ProtectedDestination.History) { router.openHistory() }
             HomeAction.ProfileClicked -> authenticated(ProtectedDestination.Profile) { router.openProfile() }
             HomeAction.CompareClicked -> authenticated(ProtectedDestination.Comparison) { router.openComparison() }
-            HomeAction.DiscoverRecipesClicked -> authenticated(ProtectedDestination.RecipeDiscovery) {
-                router.openRecipeDiscovery()
+            HomeAction.RecipesClicked -> authenticated(ProtectedDestination.Recipes) {
+                router.openRecipes()
             }
         }
     }
