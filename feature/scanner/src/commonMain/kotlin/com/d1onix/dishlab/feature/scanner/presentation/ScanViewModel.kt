@@ -148,7 +148,6 @@ class ScanViewModel(
     }
 
     private suspend fun present(product: Product) {
-        recordScan(product.id)
         _uiState.update {
             it.copy(
                 isResolving = false,
@@ -165,6 +164,9 @@ class ScanViewModel(
                 },
             )
         }
+        // History persistence must not hold the recognised product card behind
+        // a database write; the viewfinder can acknowledge a scan immediately.
+        launch("recordScan") { recordScan(product.id) }
     }
 
     private fun addReviewedProduct() {
