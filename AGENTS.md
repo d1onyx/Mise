@@ -58,6 +58,14 @@ the branch name `product-manager` set on the task at creation
 (`--branch <type>/t-<id>-<slug>`); an unset `--branch` makes herdr invent its
 own `task/t-<id>`, which breaks the naming convention below.
 
+**Claiming is the permission to start.** `backender` and `mobile-dev`: once a
+task is claimed (`task next --claim`) or already `in_progress`, go straight to
+work on its DoD. Do not stop for confirmation and do not spend a turn
+reporting the claim itself ("Automatically took t-67 — investigating
+latency") — that costs a full stop-and-wait cycle for zero new information.
+Report when there is something to report: DoD met, blocked, or a scope
+question that only the owner can answer.
+
 Name is `<type>/t-<id>-<slug>`, where `t-<id>` is the Herdr task ID. Types:
 `feat`, `fix`, `chore`, `docs`. The branch lives exactly as long as the task.
 A worktree is not optional — a checkout is global to the clone, so two agents
