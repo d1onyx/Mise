@@ -32,6 +32,16 @@ class PantryMatchDataSource(
     }.body()
 }
 
+/** Fetches the complete recipe because pantry-match intentionally returns card-sized items. */
+@SingleIn(AppScope::class)
+@Inject
+class RecipeCatalogRemoteDataSource(
+    private val client: HttpClient,
+) {
+    suspend fun recipe(id: RecipeId): CatalogRecipeDto =
+        client.get("api/v1/recipe-catalog/${id.value}").body()
+}
+
 @Serializable
 data class PantryMatchPageDto(
     val items: List<PantryMatchedRecipeDto>,

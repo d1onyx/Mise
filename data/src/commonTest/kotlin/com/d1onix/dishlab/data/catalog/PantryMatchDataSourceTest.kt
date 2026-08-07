@@ -1,5 +1,6 @@
 package com.d1onix.dishlab.data.catalog
 
+import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onyx.core.essentials.logger.DefaultLogger
 import com.d1onyx.core.essentials.logger.RecordingLogSink
 import com.d1onyx.core.network.NetworkConfig
@@ -40,5 +41,29 @@ class PantryMatchDataSourceTest {
         assertEquals(listOf("en:oats"), parameters["ingredient"])
         assertEquals(listOf("en:oats,en:rolled-oats"), parameters["exactGroup"])
         assertEquals("Oat Bowl", result.items.single().toDomain().name)
+    }
+}
+
+class RecipeCatalogRemoteDataSourceTest {
+    @Test
+    fun `recipe detail requests catalog recipe id and preserves preparation steps`() = runTest {
+        var path = ""
+        val client = createHttpClient(
+            config = NetworkConfig(baseUrl = "https://api.example.com/", isDebug = true),
+            logger = DefaultLogger(RecordingLogSink()),
+            engine = MockEngine { request ->
+                path = request.url.encodedPath
+                respond(
+                    content = """{"id":"catalog:15324","title":"Crackers","ingredients":[],"steps":[{"position":2,"text":"Bake"},{"position":1,"text":"Mix"}]}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf("Content-Type", "application/json"),
+                )
+            },
+        )
+
+        val recipe = RecipeCatalogRemoteDataSource(client).recipe(RecipeId("catalog:15324")).toDomain()
+
+        assertEquals("/api/v1/recipe-catalog/catalog:15324", path)
+        assertEquals(listOf("Mix", "Bake"), recipe.steps.map { it.description })
     }
 }
