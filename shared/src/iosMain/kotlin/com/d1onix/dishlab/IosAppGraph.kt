@@ -7,6 +7,8 @@ import com.d1onyx.core.datastore.preferencesDataStorePath
 import com.d1onix.dishlab.data.session.GraphDatabase
 import com.d1onix.dishlab.data.session.buildGraphDatabase
 import com.d1onix.dishlab.data.session.graphDatabaseBuilder
+import com.d1onix.dishlab.domain.analytics.AnalyticsTracker
+import com.d1onix.dishlab.domain.analytics.NoOpAnalyticsTracker
 import com.d1onyx.core.essentials.di.AppScope
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
 import com.d1onyx.core.essentials.logger.LogLevel
@@ -35,6 +37,10 @@ interface IosAppGraph : AppGraph {
     @SingleIn(AppScope::class)
     fun provideGraphDatabase(): GraphDatabase =
         buildGraphDatabase(graphDatabaseBuilder())
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAnalyticsTracker(): AnalyticsTracker = NoOpAnalyticsTracker
 
     @Provides
     fun provideLogger(): Logger = Logger

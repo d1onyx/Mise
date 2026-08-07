@@ -53,6 +53,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
             implementation(libs.firebase.auth)
+            implementation(libs.firebase.analytics)
             implementation(libs.kotlinx.coroutines.play.services)
             implementation(libs.androidx.activity.compose)
         }
