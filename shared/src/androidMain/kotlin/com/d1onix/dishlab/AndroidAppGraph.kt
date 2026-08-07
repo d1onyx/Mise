@@ -9,6 +9,7 @@ import com.d1onix.dishlab.data.session.GraphDatabase
 import com.d1onix.dishlab.data.session.buildGraphDatabase
 import com.d1onix.dishlab.data.session.graphDatabaseBuilder
 import com.google.firebase.auth.FirebaseAuth
+import com.d1onix.dishlab.domain.analytics.AnalyticsTracker
 import com.d1onyx.core.essentials.di.AppScope
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
 import com.d1onyx.core.essentials.logger.LogLevel
@@ -49,6 +50,11 @@ interface AndroidAppGraph : AppGraph {
     @Provides
     @SingleIn(AppScope::class)
     fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideAnalyticsTracker(context: Context): AnalyticsTracker =
+        FirebaseAnalyticsTracker(context)
 
     @Provides
     fun provideLogger(): Logger = Logger
