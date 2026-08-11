@@ -8,9 +8,7 @@ import com.d1onix.dishlab.domain.model.DietPreference
 import com.d1onix.dishlab.domain.model.KitchenEquipment
 import com.d1onix.dishlab.domain.model.TastePreference
 import com.d1onix.dishlab.domain.repository.CookingPreferencesRepository
-import com.d1onix.dishlab.domain.repository.UserSessionRepository
-import com.d1onix.dishlab.feature.home.navigation.HomeRouter
-import com.d1onix.dishlab.feature.home.navigation.ProtectedDestination
+import com.d1onix.dishlab.feature.home.navigation.SettingsRouter
 import com.d1onyx.core.presentation.CommonDependencies
 import com.d1onyx.core.presentation.WithMviState
 import com.d1onyx.core.presentation.base.AbstractViewModel
@@ -48,10 +46,8 @@ sealed interface OnboardingAction {
 class OnboardingViewModel(
     dependencies: CommonDependencies,
     @Assisted showIntro: Boolean,
-    @Assisted private val destination: ProtectedDestination,
     private val preferencesRepository: CookingPreferencesRepository,
-    private val sessions: UserSessionRepository,
-    private val router: HomeRouter,
+    private val router: SettingsRouter,
 ) : AbstractViewModel(dependencies), WithMviState<OnboardingUiState> {
     private val mutableState = MutableStateFlow(OnboardingUiState(showIntro = showIntro))
     val uiState: StateFlow<OnboardingUiState> = mutableState.asStateFlow()
@@ -95,8 +91,7 @@ class OnboardingViewModel(
 
     private fun finish(save: Boolean) = launch("finishOnboarding") {
         if (save) preferencesRepository.save(mutableState.value.preferences)
-        sessions.markOnboardingCompleted()
-        router.completeProtectedNavigation(destination)
+        router.goBack()
     }
 
     private fun toggle(value: String) {
@@ -124,7 +119,6 @@ class OnboardingViewModel(
     fun interface Factory {
         fun create(
             showIntro: Boolean,
-            destination: ProtectedDestination,
         ): OnboardingViewModel
     }
 }

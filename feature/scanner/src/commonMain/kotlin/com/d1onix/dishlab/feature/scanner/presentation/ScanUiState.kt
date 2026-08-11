@@ -2,7 +2,6 @@ package com.d1onix.dishlab.feature.scanner.presentation
 
 import androidx.compose.runtime.Immutable
 import com.d1onix.dishlab.domain.model.Product
-import com.d1onix.dishlab.feature.scanner.navigation.ScanTarget
 
 /** Which physical camera the viewfinder is bound to. */
 enum class CameraFacing { Back, Front }
@@ -41,7 +40,6 @@ enum class ScanPhase { Searching, Resolving, Failed }
 
 @Immutable
 data class ScanUiState(
-    val target: ScanTarget = ScanTarget.Graph,
     /** A barcode is being resolved — further detections are ignored until it finishes. */
     val isResolving: Boolean = false,
     val manualEntryVisible: Boolean = false,
@@ -56,8 +54,6 @@ data class ScanUiState(
     val reviewedProductAlreadyAdded: Boolean = false,
 ) {
     val canSubmitManualBarcode: Boolean get() = manualBarcode.isNotBlank() && !isResolving
-    val isComparison: Boolean get() = target == ScanTarget.Comparison
-
     val phase: ScanPhase
         get() = when {
             resolutionFailed -> ScanPhase.Failed
@@ -81,8 +77,6 @@ sealed interface ScanAction {
     data object ManualBarcodeSubmitted : ScanAction
     data object RetryResolutionClicked : ScanAction
     data object AddReviewedProductClicked : ScanAction
-    /** Starts a new, session-only comparison with this first scanned product. */
-    data object CompareWithAnotherClicked : ScanAction
     data object ReviewedProductSkipped : ScanAction
     data object ReviewBackClicked : ScanAction
     data object BackClicked : ScanAction

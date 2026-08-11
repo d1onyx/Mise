@@ -1,11 +1,8 @@
 package com.d1onix.dishlab
 
 import com.d1onix.dishlab.data.demo.LegacyDemoProductsCleaner
-import com.d1onix.dishlab.feature.home.presentation.HomeViewModel
-import com.d1onix.dishlab.feature.home.presentation.auth.AuthViewModel
 import com.d1onix.dishlab.feature.home.presentation.onboarding.OnboardingViewModel
-import com.d1onix.dishlab.feature.home.presentation.profile.ProfileViewModel
-import com.d1onix.dishlab.feature.products.presentation.comparison.ComparisonViewModel
+import com.d1onix.dishlab.feature.home.presentation.settings.SettingsViewModel
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphViewModel
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryViewModel
 import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewViewModel
@@ -37,13 +34,10 @@ interface AppGraph {
     /** Removes legacy bundled product IDs after the app switches to the API. */
     val legacyDemoProductsCleaner: LegacyDemoProductsCleaner
 
-    val homeViewModel: HomeViewModel
-    val profileViewModel: ProfileViewModel
-    val authViewModelFactory: AuthViewModel.Factory
+    val settingsViewModel: SettingsViewModel
     val onboardingViewModelFactory: OnboardingViewModel.Factory
     val scanViewModelFactory: ScanViewModel.Factory
     val graphViewModel: GraphViewModel
-    val comparisonViewModel: ComparisonViewModel
     val connectionOverviewViewModel: ConnectionOverviewViewModel
     val historyViewModel: HistoryViewModel
     val recipesViewModel: RecipesViewModel

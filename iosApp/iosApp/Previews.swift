@@ -21,10 +21,6 @@ private struct ComposePreview: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIViewController, context: Self.Context) {}
 }
 
-#Preview("Home") {
-    ComposePreview { DishLabPreviews.shared.home() }.ignoresSafeArea()
-}
-
 #Preview("Scan") {
     ComposePreview { DishLabPreviews.shared.scan() }.ignoresSafeArea()
 }

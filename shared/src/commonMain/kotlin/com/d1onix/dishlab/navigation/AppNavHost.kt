@@ -17,20 +17,14 @@ import androidx.navigation.toRoute
 import com.d1onix.dishlab.AppGraph
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.RecipeId
-import com.d1onix.dishlab.feature.home.navigation.HomeRoute
-import com.d1onix.dishlab.feature.home.navigation.AuthRoute
 import com.d1onix.dishlab.feature.home.navigation.OnboardingRoute
-import com.d1onix.dishlab.feature.home.navigation.ProfileRoute
-import com.d1onix.dishlab.feature.home.presentation.HomeScreen
-import com.d1onix.dishlab.feature.home.presentation.auth.AuthScreen
+import com.d1onix.dishlab.feature.home.navigation.SettingsRoute
 import com.d1onix.dishlab.feature.home.presentation.onboarding.OnboardingScreen
-import com.d1onix.dishlab.feature.home.presentation.profile.ProfileScreen
+import com.d1onix.dishlab.feature.home.presentation.settings.SettingsScreen
 import com.d1onix.dishlab.feature.products.navigation.GraphRoute
-import com.d1onix.dishlab.feature.products.navigation.ComparisonRoute
 import com.d1onix.dishlab.feature.products.navigation.HistoryRoute
 import com.d1onix.dishlab.feature.products.navigation.ConnectionOverviewRoute
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphScreen
-import com.d1onix.dishlab.feature.products.presentation.comparison.ComparisonScreen
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryScreen
 import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewScreen
 import com.d1onix.dishlab.feature.recipes.navigation.CookingRoute
@@ -76,24 +70,15 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
             startDestination = if (startupProducts.isNullOrEmpty()) ScanRoute() else GraphRoute,
         ) {
 
-            composable<HomeRoute> {
-                HomeScreen(viewModel { graph.homeViewModel })
-            }
-
-            composable<ProfileRoute> {
-                ProfileScreen(viewModel { graph.profileViewModel })
-            }
-
-            composable<AuthRoute> { entry ->
-                val destination = entry.toRoute<AuthRoute>().destination
-                AuthScreen(viewModel { graph.authViewModelFactory.create(destination) })
+            composable<SettingsRoute> {
+                SettingsScreen(viewModel { graph.settingsViewModel })
             }
 
             composable<OnboardingRoute> { entry ->
                 val route = entry.toRoute<OnboardingRoute>()
                 OnboardingScreen(
                     viewModel {
-                        graph.onboardingViewModelFactory.create(route.showIntro, route.destination)
+                        graph.onboardingViewModelFactory.create(route.showIntro)
                     },
                 )
             }
@@ -101,7 +86,7 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
             composable<ScanRoute> { entry ->
                 val route = entry.toRoute<ScanRoute>()
                 ScanScreen(
-                    viewModel = viewModel { graph.scanViewModelFactory.create(route.target) },
+                    viewModel = viewModel { graph.scanViewModelFactory.create(route.showBackNavigation) },
                     showBackNavigation = route.showBackNavigation,
                 )
             }
@@ -109,7 +94,7 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
             composable<ScanNotFoundRoute> { entry ->
                 val route = entry.toRoute<ScanNotFoundRoute>()
                 ScanNotFoundScreen(
-                    viewModel { graph.scanNotFoundViewModelFactory.create(route.barcode, route.target) },
+                    viewModel { graph.scanNotFoundViewModelFactory.create(route.barcode, route.showBackNavigation) },
                 )
             }
 
@@ -117,9 +102,6 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
                 GraphScreen(viewModel { graph.graphViewModel })
             }
 
-            composable<ComparisonRoute> {
-                ComparisonScreen(viewModel { graph.comparisonViewModel })
-            }
 
             composable<ConnectionOverviewRoute> {
                 ConnectionOverviewScreen(viewModel { graph.connectionOverviewViewModel })

@@ -6,9 +6,7 @@ import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.ProductGraphPosition
-import com.d1onix.dishlab.domain.repository.ProductComparisonStore
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
-import com.d1onix.dishlab.feature.scanner.navigation.ScanTarget
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
 import com.d1onyx.core.essentials.exceptions.ConnectionException
@@ -164,49 +162,6 @@ class ScanViewModelTest {
     }
 
     @Test
-    fun `comparison scan adds product without changing graph`() = runTest(dispatcher) {
-        val session = FakeSessionStore()
-        val router = FakeRouter()
-        val comparison = FakeComparisonStore()
-        val viewModel = viewModel(
-            session = session,
-            router = router,
-            target = ScanTarget.Comparison,
-            comparison = comparison,
-        )
-
-        viewModel.onAction(ScanAction.BarcodeDetected("111"))
-        testScheduler.advanceUntilIdle()
-        viewModel.onAction(ScanAction.AddReviewedProductClicked)
-        testScheduler.advanceUntilIdle()
-
-        assertEquals(listOf(ProductId("barcode:111")), comparison.products.value)
-        assertTrue(session.products.value.isEmpty())
-        assertEquals(1, router.comparisonOpened)
-    }
-
-    @Test
-    fun `first reviewed product starts a fresh comparison and opens the scanner`() = runTest(dispatcher) {
-        val router = FakeRouter()
-        val comparison = FakeComparisonStore()
-        comparison.add(ProductId("barcode:old"))
-        val viewModel = viewModel(
-            session = FakeSessionStore(),
-            router = router,
-            comparison = comparison,
-        )
-
-        viewModel.onAction(ScanAction.BarcodeDetected("111"))
-        testScheduler.advanceUntilIdle()
-        viewModel.onAction(ScanAction.CompareWithAnotherClicked)
-        testScheduler.advanceUntilIdle()
-
-        assertEquals(listOf(ProductId("barcode:111")), comparison.products.value)
-        assertEquals(listOf(ScanTarget.Comparison), router.scannerTargets)
-        assertNull(viewModel.uiState.value.reviewedProduct)
-    }
-
-    @Test
     fun `camera controls stay inert until the camera reports what it supports`() =
         runTest(dispatcher) {
             val viewModel = viewModel(FakeSessionStore(), FakeRouter())
@@ -290,8 +245,6 @@ class ScanViewModelTest {
         session: ScanSessionStore,
         router: ScannerRouter,
         recorded: MutableList<ProductId> = mutableListOf(),
-        target: ScanTarget = ScanTarget.Graph,
-        comparison: ProductComparisonStore = FakeComparisonStore(),
         productLookup: suspend (String) -> Product? = { barcode ->
             if (barcode == "111") product else null
         },
@@ -299,9 +252,8 @@ class ScanViewModelTest {
         dependencies = CommonDependencies(DefaultLogger(RecordingLogSink()), ExceptionHandler { }),
         getProductByBarcode = GetProductByBarcodeUseCase(productLookup),
         recordScan = RecordScanUseCase { id -> recorded += id },
-        target = target,
+        showBackNavigation = false,
         session = session,
-        comparison = comparison,
         router = router,
     )
 
@@ -363,47 +315,20 @@ class ScanViewModelTest {
 
     private class FakeRouter : ScannerRouter {
         var graphOpened = 0
-        var comparisonOpened = 0
-        var authOpened = 0
         var backCount = 0
         val notFoundBarcodes = mutableListOf<String>()
-        val scannerTargets = mutableListOf<ScanTarget>()
         override fun openCombinationGraph() {
             graphOpened++
         }
 
-        override fun openNotFound(barcode: String, target: ScanTarget) {
+        override fun openNotFound(barcode: String, showBackNavigation: Boolean) {
             notFoundBarcodes += barcode
         }
 
-        override fun openScanner(target: ScanTarget) {
-            scannerTargets += target
-        }
-        override fun openComparison() {
-            comparisonOpened++
-        }
-        override fun openAuth() {
-            authOpened++
-        }
-        override fun openHome() = Unit
+        override fun openScanner(showBackNavigation: Boolean) = Unit
         override fun openRecipes() = Unit
         override fun goBack() {
             backCount++
-        }
-    }
-
-    private class FakeComparisonStore : ProductComparisonStore {
-        private val state = MutableStateFlow<List<ProductId>>(emptyList())
-        override val products: StateFlow<List<ProductId>> = state
-        override suspend fun add(id: ProductId): Boolean {
-            state.value += id
-            return true
-        }
-        override suspend fun remove(id: ProductId) {
-            state.value -= id
-        }
-        override suspend fun clear() {
-            state.value = emptyList()
         }
     }
 

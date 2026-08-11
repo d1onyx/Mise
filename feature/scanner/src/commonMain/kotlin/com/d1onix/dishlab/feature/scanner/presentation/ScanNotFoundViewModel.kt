@@ -2,7 +2,6 @@ package com.d1onix.dishlab.feature.scanner.presentation
 
 import androidx.compose.runtime.Immutable
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
-import com.d1onix.dishlab.feature.scanner.navigation.ScanTarget
 import com.d1onyx.core.presentation.CommonDependencies
 import com.d1onyx.core.presentation.WithMviState
 import com.d1onyx.core.presentation.base.AbstractViewModel
@@ -27,7 +26,7 @@ sealed interface ScanNotFoundAction {
 class ScanNotFoundViewModel(
     dependencies: CommonDependencies,
     @Assisted barcode: String,
-    @Assisted private val target: ScanTarget,
+    @Assisted private val showBackNavigation: Boolean,
     private val router: ScannerRouter,
 ) : AbstractViewModel(dependencies), WithMviState<ScanNotFoundUiState> {
 
@@ -36,13 +35,13 @@ class ScanNotFoundViewModel(
 
     fun onAction(action: ScanNotFoundAction) {
         when (action) {
-            ScanNotFoundAction.RetryClicked -> router.openScanner(target)
-            ScanNotFoundAction.HomeClicked -> router.openHome()
+            ScanNotFoundAction.RetryClicked -> router.openScanner(showBackNavigation)
+            ScanNotFoundAction.HomeClicked -> router.goBack()
         }
     }
 
     @AssistedFactory
     fun interface Factory {
-        fun create(barcode: String, target: ScanTarget): ScanNotFoundViewModel
+        fun create(barcode: String, showBackNavigation: Boolean): ScanNotFoundViewModel
     }
 }
