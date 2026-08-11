@@ -246,24 +246,53 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         val cteValues = if (normalizedNames.isEmpty()) "SELECT NULL WHERE 0" // empty set
         else normalizedNames.joinToString(", ") { "(?)" }.let { "VALUES $it" }
 
+        // Resolve pantry names to ingredient ids up front so match scoring can use
+        // idx_recipe_ingredients_ingredient(ingredient_id, recipe_id) directly. The previous
+        // per-recipe correlated EXISTS (recipe_ingredients JOIN ingredients, filtered by a LOWER()
+        // comparison against pantry_names) had to run once for every row in the WHERE-filtered
+        // candidate set — for the common multi-tag request that set is the whole active catalog
+        // (500k+ rows), which is what pushed the endpoint past the client's 10s timeout.
+        val matchedIngredientIds: List<Long> = if (normalizedNames.isEmpty()) {
+            emptyList()
+        } else {
+            val placeholders = normalizedNames.joinToString(",") { "?" }
+            conn.prepareStatement("SELECT id FROM ingredients WHERE LOWER(canonical_name) IN ($placeholders)").use { stmt ->
+                normalizedNames.forEachIndexed { i, name -> stmt.setString(i + 1, name) }
+                stmt.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.getLong(1)) } }
+            }
+        }
+        val matchedCte = if (matchedIngredientIds.isEmpty()) {
+            "SELECT NULL, NULL WHERE 0"
+        } else {
+            val placeholders = matchedIngredientIds.joinToString(",") { "?" }
+            """
+            SELECT ri.recipe_id, COUNT(DISTINCT ri.ingredient_id)
+            FROM recipe_ingredients ri
+            WHERE ri.ingredient_id IN ($placeholders)
+            GROUP BY ri.recipe_id
+            """.trimIndent()
+        }
+
         val sql = """
-            WITH pantry_names(norm) AS ($cteValues)
+            WITH pantry_names(norm) AS ($cteValues),
+                 matched(recipe_id, matched_count) AS ($matchedCte),
+                 totals(recipe_id, total_count) AS (
+                     SELECT recipe_id, COUNT(*) FROM recipe_ingredients GROUP BY recipe_id
+                 )
             SELECT r.*,
-                   (SELECT COUNT(*) FROM recipe_ingredients ri2 WHERE ri2.recipe_id = r.id) AS total_count,
-                   (SELECT COUNT(*) FROM recipe_ingredients ri2
-                    JOIN ingredients i2 ON i2.id = ri2.ingredient_id
-                    WHERE ri2.recipe_id = r.id
-                      AND EXISTS(SELECT 1 FROM pantry_names p WHERE LOWER(i2.canonical_name) = LOWER(p.norm))
-                   ) AS matched_count,
+                   COALESCE(t.total_count, 0) AS total_count,
+                   COALESCE(m.matched_count, 0) AS matched_count,
                    EXISTS(
                        SELECT 1 FROM catalog_bookmarks b
                        WHERE b.firebase_uid = ? AND b.recipe_id = r.id
                    ) AS bookmarked
             FROM recipes r
+            LEFT JOIN matched m ON m.recipe_id = r.id
+            LEFT JOIN totals t ON t.recipe_id = r.id
             $where
             ORDER BY
                 CASE WHEN total_count = 0 THEN 1 ELSE 0 END,
-                CAST(matched_count AS FLOAT) / total_count DESC,
+                CASE WHEN total_count = 0 THEN 0.0 ELSE CAST(matched_count AS FLOAT) / total_count END DESC,
                 r.aggregated_rating IS NULL,
                 r.aggregated_rating DESC
         """.trimIndent()
@@ -283,6 +312,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         val items = conn.prepareStatement("$sql LIMIT ? OFFSET ?").use { stmt ->
             var idx = 1
             normalizedNames.forEach { stmt.setString(idx++, it) }
+            matchedIngredientIds.forEach { stmt.setLong(idx++, it) }
             stmt.setString(idx++, firebaseUid)
             condParams.forEach { stmt.setObject(idx++, it) }
             stmt.setInt(idx++, pageSize)
