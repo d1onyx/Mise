@@ -40,7 +40,7 @@ class ScanViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun `a known barcode is reviewed before it is added to the graph`() = runTest(dispatcher) {
+    fun `a known barcode opens the complete product detail in the graph`() = runTest(dispatcher) {
         val session = FakeSessionStore()
         val router = FakeRouter()
         val recorded = mutableListOf<ProductId>()
@@ -49,18 +49,11 @@ class ScanViewModelTest {
         viewModel.onAction(ScanAction.BarcodeDetected("111"))
         testScheduler.advanceUntilIdle()
 
-        assertTrue(session.products.value.isEmpty())
-        assertEquals(listOf(ProductId("barcode:111")), recorded)
-        assertEquals(ProductId("barcode:111"), viewModel.uiState.value.reviewedProduct?.id)
-        assertEquals(0, router.graphOpened)
-        assertTrue(router.notFoundBarcodes.isEmpty())
-
-        viewModel.onAction(ScanAction.AddReviewedProductClicked)
-        testScheduler.advanceUntilIdle()
-
         assertEquals(listOf(ProductId("barcode:111")), session.products.value)
-        assertEquals(1, router.graphOpened)
+        assertEquals(listOf(ProductId("barcode:111")), recorded)
         assertNull(viewModel.uiState.value.reviewedProduct)
+        assertEquals(1, router.graphOpened)
+        assertTrue(router.notFoundBarcodes.isEmpty())
     }
 
     @Test
@@ -88,8 +81,8 @@ class ScanViewModelTest {
         viewModel.onAction(ScanAction.BarcodeDetected("111"))
         testScheduler.advanceUntilIdle()
 
-        assertEquals(ProductId("barcode:111"), viewModel.uiState.value.reviewedProduct?.id)
-        assertEquals(0, router.graphOpened)
+        assertEquals(listOf(ProductId("barcode:111")), session.products.value)
+        assertEquals(1, router.graphOpened)
     }
 
     @Test
@@ -130,7 +123,7 @@ class ScanViewModelTest {
     }
 
     @Test
-    fun `not now keeps the scanned product out of the graph`() = runTest(dispatcher) {
+    fun `a recognised product is recorded while opening its full detail`() = runTest(dispatcher) {
         val session = FakeSessionStore()
         val router = FakeRouter()
         val recorded = mutableListOf<ProductId>()
@@ -138,24 +131,19 @@ class ScanViewModelTest {
 
         viewModel.onAction(ScanAction.BarcodeDetected("111"))
         testScheduler.advanceUntilIdle()
-        viewModel.onAction(ScanAction.ReviewedProductSkipped)
-
-        assertTrue(session.products.value.isEmpty())
+        assertEquals(listOf(ProductId("barcode:111")), session.products.value)
         assertEquals(listOf(ProductId("barcode:111")), recorded)
-        assertEquals(1, router.backCount)
+        assertEquals(1, router.graphOpened)
     }
 
     @Test
-    fun `guest can add a reviewed product to the graph`() = runTest(dispatcher) {
+    fun `a recognised product is added once without a confirmation tap`() = runTest(dispatcher) {
         val session = FakeSessionStore()
         val router = FakeRouter()
         val viewModel = viewModel(session, router)
 
         viewModel.onAction(ScanAction.BarcodeDetected("111"))
         testScheduler.advanceUntilIdle()
-        viewModel.onAction(ScanAction.AddReviewedProductClicked)
-        testScheduler.advanceUntilIdle()
-
         assertEquals(listOf(ProductId("barcode:111")), session.products.value)
         assertEquals(1, router.graphOpened)
         assertNull(viewModel.uiState.value.reviewedProduct)

@@ -145,6 +145,7 @@ class ScanViewModel(
     }
 
     private suspend fun present(product: Product) {
+        if (product.id !in session.products.value) session.add(product.id)
         _uiState.update {
             it.copy(
                 isResolving = false,
@@ -153,13 +154,14 @@ class ScanViewModel(
                 manualEntryVisible = false,
                 manualBarcode = "",
                 detectedBarcode = null,
-                reviewedProduct = product,
-                reviewedProductAlreadyAdded = product.id in session.products.value,
+                reviewedProduct = null,
+                reviewedProductAlreadyAdded = false,
             )
         }
-        // History persistence must not hold the recognised product card behind
-        // a database write; the viewfinder can acknowledge a scan immediately.
+        // The graph owns the complete product card, so do not stop at the
+        // scanner's compact review while the user waits for details.
         launch("recordScan") { recordScan(product.id) }
+        router.openCombinationGraph()
     }
 
     private fun addReviewedProduct() {
