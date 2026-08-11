@@ -8,12 +8,10 @@ import com.d1onix.dishlab.domain.model.DietPreference
 import com.d1onix.dishlab.domain.model.KitchenEquipment
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.domain.model.TastePreference
-import com.d1onix.dishlab.domain.model.UserSession
 import com.d1onix.dishlab.domain.repository.CookingPreferencesRepository
 import com.d1onix.dishlab.domain.repository.SavedRecipesRepository
 import com.d1onix.dishlab.domain.repository.ScanHistoryRepository
 import com.d1onix.dishlab.domain.repository.ProfileSettingsRepository
-import com.d1onix.dishlab.domain.repository.UserSessionRepository
 import com.d1onyx.core.datastore.KeyValueStorage
 import com.d1onyx.core.datastore.PreferenceKey
 import com.d1onyx.core.datastore.get
@@ -36,12 +34,6 @@ private object DishLabKeys {
     val Allergens = PreferenceKey.StringSetKey("cooking_allergens")
     val Tastes = PreferenceKey.StringSetKey("cooking_tastes")
     val Equipment = PreferenceKey.StringSetKey("cooking_equipment")
-}
-
-/** Preference keys shared by the platform-specific account implementations. */
-object UserSessionPreferenceKeys {
-    val Authenticated = PreferenceKey.BooleanKey("user_authenticated")
-    val OnboardingCompleted = PreferenceKey.BooleanKey("onboarding_completed")
 }
 
 private const val HISTORY_SEPARATOR = ","
@@ -132,39 +124,6 @@ class StoredProfileSettingsRepository(
 
     override suspend fun setShowProductScores(enabled: Boolean) {
         storage.put(DishLabKeys.ShowProductScores, enabled)
-    }
-}
-
-@Inject
-class StoredUserSessionRepository(
-    private val storage: KeyValueStorage,
-) : UserSessionRepository {
-
-    override val session: Flow<UserSession> = combine(
-        storage.observe(UserSessionPreferenceKeys.Authenticated),
-        storage.observe(UserSessionPreferenceKeys.OnboardingCompleted),
-    ) { authenticated, onboardingCompleted ->
-        UserSession(
-            isAuthenticated = authenticated ?: false,
-            onboardingCompleted = onboardingCompleted ?: false,
-        )
-    }
-
-    override suspend fun signIn(email: String, password: String) {
-        storage.put(UserSessionPreferenceKeys.Authenticated, true)
-    }
-
-    override suspend fun register(email: String, password: String) {
-        storage.put(UserSessionPreferenceKeys.Authenticated, true)
-        storage.put(UserSessionPreferenceKeys.OnboardingCompleted, false)
-    }
-
-    override suspend fun signOut() {
-        storage.put(UserSessionPreferenceKeys.Authenticated, false)
-    }
-
-    override suspend fun markOnboardingCompleted() {
-        storage.put(UserSessionPreferenceKeys.OnboardingCompleted, true)
     }
 }
 

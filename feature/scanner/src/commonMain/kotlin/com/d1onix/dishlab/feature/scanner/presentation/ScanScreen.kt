@@ -77,8 +77,6 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_manual_placeholder
 import com.d1onix.dishlab.feature.scanner.resources.scan_browse_recipes
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_submit
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add
-import com.d1onix.dishlab.feature.scanner.resources.scan_review_add_comparison
-import com.d1onix.dishlab.feature.scanner.resources.scan_review_compare_another
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_alternatives
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_incomplete
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_nutrition
@@ -124,7 +122,6 @@ internal fun ScanContent(
         ScannedProductReview(
             product = product,
             alreadyAdded = state.reviewedProductAlreadyAdded,
-            comparisonMode = state.isComparison,
             usedDeviceFallback = product.dataOrigin == ProductDataOrigin.DeviceFallback,
             onAction = onAction,
             modifier = modifier,
@@ -242,7 +239,6 @@ private fun RootScannerTopBar(
 private fun ScannedProductReview(
     product: Product,
     alreadyAdded: Boolean,
-    comparisonMode: Boolean,
     usedDeviceFallback: Boolean,
     onAction: (ScanAction) -> Unit,
     modifier: Modifier = Modifier,
@@ -448,9 +444,7 @@ private fun ScannedProductReview(
             )
             MisePrimaryButton(
                 text = stringResource(
-                    if (comparisonMode) {
-                        Res.string.scan_review_add_comparison
-                    } else if (alreadyAdded) {
+                    if (alreadyAdded) {
                         Res.string.scan_review_open_graph
                     } else {
                         Res.string.scan_review_add
@@ -459,14 +453,6 @@ private fun ScannedProductReview(
                 onClick = { onAction(ScanAction.AddReviewedProductClicked) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            if (!comparisonMode) {
-                Spacer(Modifier.height(8.dp))
-                MiseGhostButton(
-                    text = stringResource(Res.string.scan_review_compare_another),
-                    onClick = { onAction(ScanAction.CompareWithAnotherClicked) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
             Spacer(Modifier.height(8.dp))
             MiseGhostButton(
                 text = stringResource(Res.string.scan_review_skip),

@@ -1,7 +1,6 @@
 package com.d1onix.dishlab
 
 import com.d1onix.dishlab.designsystem.preview.MiseComponentGalleryController
-import com.d1onix.dishlab.feature.home.presentation.homePreviewController
 import com.d1onix.dishlab.feature.products.presentation.graphPreviewController
 import com.d1onix.dishlab.feature.products.presentation.graphSheetPreviewController
 import com.d1onix.dishlab.feature.products.presentation.historyPreviewController
@@ -27,8 +26,6 @@ import platform.UIKit.UIViewController
  * canvas never starts a repository, a data store or the camera.
  */
 object DishLabPreviews {
-
-    fun home(): UIViewController = homePreviewController()
 
     fun scan(): UIViewController = scanPreviewController()
 

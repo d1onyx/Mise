@@ -1,10 +1,5 @@
 package com.d1onix.dishlab.domain.model
 
-data class UserSession(
-    val isAuthenticated: Boolean = false,
-    val onboardingCompleted: Boolean = false,
-)
-
 enum class DietPreference {
     Vegetarian,
     Vegan,

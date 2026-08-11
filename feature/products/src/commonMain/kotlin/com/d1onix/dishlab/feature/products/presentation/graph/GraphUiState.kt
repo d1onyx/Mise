@@ -37,12 +37,11 @@ sealed interface GraphAction {
     ) : GraphAction
     data object ConnectionEditingToggled : GraphAction
     data object ConnectionOverviewClicked : GraphAction
-    data object ComparisonClicked : GraphAction
     data object EmptySpaceClicked : GraphAction
     data object ScanMoreClicked : GraphAction
     data object FindRecipesClicked : GraphAction
     data object SavedClicked : GraphAction
-    data object ProfileClicked : GraphAction
+    data object SettingsClicked : GraphAction
     data object BackClicked : GraphAction
     data object SheetDismissed : GraphAction
 }

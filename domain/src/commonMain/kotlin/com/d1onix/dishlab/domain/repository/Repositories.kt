@@ -8,7 +8,6 @@ import com.d1onix.dishlab.domain.model.ProfileSettings
 import com.d1onix.dishlab.domain.model.CookingPreferences
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeId
-import com.d1onix.dishlab.domain.model.UserSession
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -69,26 +68,7 @@ interface ProfileSettingsRepository {
     suspend fun setShowProductScores(enabled: Boolean)
 }
 
-interface UserSessionRepository {
-    val session: Flow<UserSession>
-    suspend fun signIn(email: String, password: String)
-    suspend fun register(email: String, password: String)
-    suspend fun signOut()
-    suspend fun markOnboardingCompleted()
-}
-
 interface CookingPreferencesRepository {
     val preferences: Flow<CookingPreferences>
     suspend fun save(preferences: CookingPreferences)
-}
-
-interface ProductComparisonStore {
-    val products: StateFlow<List<ProductId>>
-    suspend fun add(id: ProductId): Boolean
-    suspend fun remove(id: ProductId)
-    suspend fun clear()
-
-    companion object {
-        const val MAX_PRODUCTS = 5
-    }
 }

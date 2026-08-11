@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -40,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.anim.rememberSweep
-import com.d1onix.dishlab.designsystem.component.MiseCircleButton
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
@@ -55,7 +56,6 @@ import com.d1onix.dishlab.feature.products.presentation.graph.components.Product
 import com.d1onix.dishlab.feature.products.presentation.scoreColor
 import com.d1onix.dishlab.feature.products.resources.Res
 import com.d1onix.dishlab.feature.products.resources.graph_back
-import com.d1onix.dishlab.feature.products.resources.graph_compare
 import com.d1onix.dishlab.feature.products.resources.graph_count_many
 import com.d1onix.dishlab.feature.products.resources.graph_count_one
 import com.d1onix.dishlab.feature.products.resources.graph_edit_connections
@@ -66,6 +66,7 @@ import com.d1onix.dishlab.feature.products.resources.graph_hint_connect
 import com.d1onix.dishlab.feature.products.resources.graph_hint_edit
 import com.d1onix.dishlab.feature.products.resources.graph_saved
 import com.d1onix.dishlab.feature.products.resources.graph_scan_more
+import com.d1onix.dishlab.feature.products.resources.graph_settings
 import com.d1onix.dishlab.feature.products.resources.graph_title
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.PI
@@ -119,15 +120,6 @@ internal fun GraphContent(
                         background = if (state.isEditingConnections) colors.lime else colors.panel,
                     )
                     MiseIconCircleButton(
-                        icon = MiseIcons.Bookmark,
-                        contentDescription = stringResource(Res.string.graph_compare),
-                        onClick = { onAction(GraphAction.ComparisonClicked) },
-                        iconSize = 16,
-                        tint = colors.violet,
-                        borderColor = colors.border,
-                        background = colors.panel,
-                    )
-                    MiseIconCircleButton(
                         icon = MiseIcons.Plus,
                         contentDescription = stringResource(Res.string.graph_scan_more),
                         onClick = { onAction(GraphAction.ScanMoreClicked) },
@@ -172,16 +164,16 @@ internal fun GraphContent(
                     borderColor = colors.border,
                     background = colors.panel,
                 )
-                MiseCircleButton(
-                    onClick = { onAction(GraphAction.ProfileClicked) },
+                MiseIconCircleButton(
+                    icon = Icons.Outlined.Settings,
+                    contentDescription = stringResource(Res.string.graph_settings),
+                    onClick = { onAction(GraphAction.SettingsClicked) },
                     size = 56,
-                ) {
-                    Text(
-                        text = state.profileInitials,
-                        style = MiseTheme.typography.monoSmall,
-                        color = colors.textMuted,
-                    )
-                }
+                    iconSize = 20,
+                    tint = colors.violet,
+                    borderColor = colors.border,
+                    background = colors.panel,
+                )
             }
         }
 

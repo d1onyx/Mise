@@ -13,17 +13,12 @@ data object ConnectionOverviewRoute : Route
 @Serializable
 data object HistoryRoute : Route
 
-@Serializable
-data object ComparisonRoute : Route
-
 interface ProductsRouter {
     fun openScanner()
     fun openRecipes()
     fun openSavedRecipes()
     fun openCombinationGraph()
     fun openConnectionOverview()
-    fun openProfile()
-    fun openComparison()
-    fun openComparisonScanner()
+    fun openSettings()
     fun goBack()
 }
