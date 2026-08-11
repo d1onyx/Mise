@@ -24,6 +24,9 @@
     <string name="time_over_30">30 min +</string>
 
     <string name="recipe_back">Back</string>
+    <string name="recipe_loading">Loading recipe…</string>
+    <string name="recipe_unavailable">This recipe is unavailable right now.</string>
+    <string name="recipe_retry">Try again</string>
     <string name="recipe_save">Save recipe</string>
     <string name="recipe_unsave">Remove from saved</string>
     <string name="recipe_ingredients">Ingredients</string>

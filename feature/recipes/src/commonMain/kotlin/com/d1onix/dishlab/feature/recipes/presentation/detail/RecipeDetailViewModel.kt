@@ -22,9 +22,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 sealed interface RecipeDetailAction {
     data object BackClicked : RecipeDetailAction
+    data object RetryClicked : RecipeDetailAction
     data object SaveClicked : RecipeDetailAction
     data object StartCookingClicked : RecipeDetailAction
 }
@@ -34,6 +36,8 @@ data class RecipeDetailUiState(
     val recipe: Recipe? = null,
     val products: List<Product> = emptyList(),
     val isSaved: Boolean = false,
+    val isLoading: Boolean = true,
+    val loadError: Boolean = false,
 )
 
 @AssistedInject
@@ -59,15 +63,36 @@ class RecipeDetailViewModel(
     }
 
     override suspend fun onInitialized() {
-        val recipe = getRecipe(recipeId) ?: return
-        _uiState.update { it.copy(recipe = recipe, products = getProducts(recipe.productIds)) }
+        loadRecipe()
     }
 
     fun onAction(action: RecipeDetailAction) {
         when (action) {
             RecipeDetailAction.BackClicked -> router.goBack()
+            RecipeDetailAction.RetryClicked -> launch("reloadRecipe") { loadRecipe() }
             RecipeDetailAction.SaveClicked -> launch("toggleSaved") { toggleSaved(recipeId) }
             RecipeDetailAction.StartCookingClicked -> router.openCookingMode(recipeId)
+        }
+    }
+
+    private suspend fun loadRecipe() {
+        _uiState.update { it.copy(isLoading = true, loadError = false) }
+        try {
+            val recipe = getRecipe(recipeId)
+            if (recipe == null) {
+                _uiState.update { it.copy(isLoading = false, loadError = true) }
+                return
+            }
+            _uiState.update {
+                it.copy(
+                    recipe = recipe,
+                    products = getProducts(recipe.productIds),
+                    isLoading = false,
+                )
+            }
+        } catch (exception: Throwable) {
+            if (exception is CancellationException) throw exception
+            _uiState.update { it.copy(recipe = null, products = emptyList(), isLoading = false, loadError = true) }
         }
     }
 
