@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -85,6 +86,11 @@ internal fun GraphContent(
     modifier: Modifier = Modifier,
 ) {
     val colors = MiseTheme.colors
+
+    if (state.isLoading) {
+        GraphLoadingSkeleton(modifier)
+        return
+    }
 
     Box(modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
@@ -198,6 +204,27 @@ internal fun GraphContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun GraphLoadingSkeleton(modifier: Modifier = Modifier) {
+    val colors = MiseTheme.colors
+    Column(
+        modifier
+            .fillMaxSize()
+            .safeDrawingPadding()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        repeat(3) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .background(colors.panel, RoundedCornerShape(14.dp)),
+            )
         }
     }
 }

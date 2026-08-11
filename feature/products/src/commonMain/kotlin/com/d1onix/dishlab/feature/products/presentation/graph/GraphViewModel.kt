@@ -29,7 +29,7 @@ class GraphViewModel(
     private val router: ProductsRouter,
 ) : AbstractViewModel(dependencies), WithMviState<GraphUiState> {
 
-    private val _uiState = MutableStateFlow(GraphUiState())
+    private val _uiState = MutableStateFlow(GraphUiState(isLoading = true))
     val uiState: StateFlow<GraphUiState> = _uiState.asStateFlow()
 
     init {
@@ -46,6 +46,7 @@ class GraphViewModel(
                 val products = getProducts(ids)
                 _uiState.update { state ->
                     state.copy(
+                        isLoading = false,
                         products = products,
                         connections = connections,
                         positions = positions,

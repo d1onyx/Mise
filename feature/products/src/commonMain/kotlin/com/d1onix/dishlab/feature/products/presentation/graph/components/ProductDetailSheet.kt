@@ -155,7 +155,7 @@ fun ProductDetailSheet(
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = product.name,
-                    contentScale = ContentScale.Crop,
+                    contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxWidth().height(160.dp).background(colors.border, RoundedCornerShape(10.dp)),
                 )
             }

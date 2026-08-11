@@ -24,23 +24,32 @@ internal enum class ProductDetailFactKind { Brand, Quantity, ServingSize, NutriS
 internal fun Product.toDetailCardModel(): ProductDetailCardModel {
     val details = details
     val facts = buildList {
-        details.brand.takeIf(String::isNotBlank)?.let { add(ProductDetailFact(ProductDetailFactKind.Brand, it)) }
-        details.quantity.takeIf(String::isNotBlank)?.let { add(ProductDetailFact(ProductDetailFactKind.Quantity, it)) }
-        details.servingSize.takeIf(String::isNotBlank)?.let { add(ProductDetailFact(ProductDetailFactKind.ServingSize, it)) }
-        details.nutriScore.takeIf(String::isNotBlank)?.let { add(ProductDetailFact(ProductDetailFactKind.NutriScore, it.uppercase())) }
-        details.novaGroup?.let { add(ProductDetailFact(ProductDetailFactKind.Nova, it.toString())) }
-        details.ecoScore.takeIf(String::isNotBlank)?.let { add(ProductDetailFact(ProductDetailFactKind.EcoScore, it.uppercase())) }
+        details.brand.normalizedText()?.let { add(ProductDetailFact(ProductDetailFactKind.Brand, it)) }
+        details.quantity.normalizedText()?.let { add(ProductDetailFact(ProductDetailFactKind.Quantity, it)) }
+        details.servingSize.normalizedText()?.let { add(ProductDetailFact(ProductDetailFactKind.ServingSize, it)) }
+        details.nutriScore.normalizedGrade()?.let { add(ProductDetailFact(ProductDetailFactKind.NutriScore, it)) }
+        details.novaGroup?.takeIf { it in 1..4 }?.let { add(ProductDetailFact(ProductDetailFactKind.Nova, it.toString())) }
+        details.ecoScore.normalizedGrade()?.let { add(ProductDetailFact(ProductDetailFactKind.EcoScore, it)) }
     }
-    val nutritionPresent = nutrients.any { nutrient -> nutrient.amount.toDoubleOrNull()?.let { it != 0.0 } == true }
+    val validNutrients = nutrients.filter { nutrient ->
+        nutrient.name.normalizedText() != null &&
+            nutrient.unit.normalizedText() != null &&
+            nutrient.amount.toDoubleOrNull()?.let { it.isFinite() && it > 0 } == true
+    }
+    val nutritionPresent = validNutrients.isNotEmpty()
     return ProductDetailCardModel(
         facts = facts,
-        ingredients = details.ingredientsText.takeIf(String::isNotBlank),
-        allergens = details.allergens.filter(String::isNotBlank),
-        categories = details.categories.filter(String::isNotBlank),
-        labels = details.labels.filter(String::isNotBlank),
-        nutrients = nutrients.takeIf { nutritionPresent }.orEmpty(),
+        ingredients = details.ingredientsText.normalizedText(),
+        allergens = details.allergens.mapNotNull(String::normalizedText),
+        categories = details.categories.mapNotNull(String::normalizedText),
+        labels = details.labels.mapNotNull(String::normalizedText),
+        nutrients = validNutrients,
         notInDatabase = !nutritionPresent,
-        imageUrl = details.imageUrl.takeIf(String::isNotBlank),
+        imageUrl = details.imageUrl.trim().takeIf { it.startsWith("https://") },
         isDeviceFallback = dataOrigin == ProductDataOrigin.DeviceFallback,
     )
 }
+
+private fun String.normalizedText(): String? = trim().takeIf { it.isNotEmpty() && !it.equals("null", true) }
+
+private fun String.normalizedGrade(): String? = trim().uppercase().takeIf { it in setOf("A", "B", "C", "D", "E") }

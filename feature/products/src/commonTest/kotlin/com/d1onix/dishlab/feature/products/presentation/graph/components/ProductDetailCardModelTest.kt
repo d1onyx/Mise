@@ -43,6 +43,38 @@ class ProductDetailCardModelTest {
         assertTrue(card.nutrients.isEmpty())
     }
 
+    @Test
+    fun `invalid product fields are omitted from the detail card`() {
+        val card = fullProduct().copy(
+            details = ProductDetails(
+                brand = " null ",
+                nutriScore = "unknown",
+                novaGroup = 7,
+                ecoScore = "?",
+                imageUrl = "http://example.test/oats.jpg",
+                allergens = listOf("", " null "),
+            ),
+        ).toDetailCardModel()
+
+        assertTrue(card.facts.isEmpty())
+        assertTrue(card.allergens.isEmpty())
+        assertEquals(null, card.imageUrl)
+    }
+
+    @Test
+    fun `invalid nutrition values do not make a product appear complete`() {
+        val card = fullProduct().copy(
+            nutrients = listOf(
+                Nutrient("Energy", "NaN", "kcal"),
+                Nutrient("Protein", "-2", "g"),
+                Nutrient("", "12", "g"),
+            ),
+        ).toDetailCardModel()
+
+        assertTrue(card.notInDatabase)
+        assertTrue(card.nutrients.isEmpty())
+    }
+
     private fun fullProduct() = Product(
         id = ProductId("barcode:1"), barcode = "1", name = "Oats", category = "Cereals", score = 90,
         accentColor = 0, initial = "O", nutrients = listOf(Nutrient("Energy", "350", "kcal"), Nutrient("Protein", "12", "g")),

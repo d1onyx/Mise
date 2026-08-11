@@ -12,6 +12,7 @@ import com.d1onix.dishlab.domain.model.ProductGraphPosition
  */
 @Immutable
 data class GraphUiState(
+    val isLoading: Boolean = false,
     val products: List<Product> = emptyList(),
     val connections: Set<ProductConnection> = emptySet(),
     val positions: Map<ProductId, ProductGraphPosition> = emptyMap(),
