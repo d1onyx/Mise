@@ -22,6 +22,7 @@ interface ProductRepository {
 
 interface RecipeRepository {
     suspend fun all(): List<Recipe>
+    suspend fun allPage(page: Int, pageSize: Int): RecipePage
     suspend fun byId(id: RecipeId): Recipe?
     /** Recipes that use at least one of [productIds]. */
     suspend fun forProducts(productIds: List<ProductId>): List<Recipe>

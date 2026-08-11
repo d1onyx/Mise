@@ -23,7 +23,7 @@ fun interface GetRecipesForProductsUseCase {
 }
 
 fun interface GetAllRecipesUseCase {
-    suspend operator fun invoke(): List<Recipe>
+    suspend operator fun invoke(page: Int, pageSize: Int): RecipePage
 }
 
 fun interface FilterRecipesByConnectionsUseCase {

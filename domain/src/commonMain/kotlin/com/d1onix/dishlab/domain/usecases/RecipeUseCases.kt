@@ -36,7 +36,7 @@ class GetRecipesForProductsUseCaseImpl(
 class GetAllRecipesUseCaseImpl(
     private val recipes: RecipeRepository,
 ) : GetAllRecipesUseCase {
-    override suspend fun invoke(): List<Recipe> = recipes.all()
+    override suspend fun invoke(page: Int, pageSize: Int): RecipePage = recipes.allPage(page, pageSize)
 }
 
 @ContributesBinding(AppScope::class)
