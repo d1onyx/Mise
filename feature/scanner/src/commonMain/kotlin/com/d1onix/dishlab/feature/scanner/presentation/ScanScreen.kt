@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -93,6 +94,7 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_title_resolving
 import com.kashif.cameraK.permissions.providePermissions
 import org.jetbrains.compose.resources.stringResource
+import coil3.compose.AsyncImage
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -352,12 +354,36 @@ private fun ScannedProductReview(
                 }
             }
 
+            product.details.imageUrl.trim().takeIf { it.startsWith("https://") }?.let { imageUrl ->
+                item {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(204.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(colors.surface),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = product.name,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize().padding(12.dp),
+                        )
+                    }
+                }
+            }
+
             item {
                 Text(
                     text = product.summary,
                     style = MiseTheme.typography.body,
                     color = colors.text.copy(alpha = 0.82f),
                 )
+            }
+
+            product.scanDetails().forEach { (title, value) ->
+                item { ScannedDetailTile(title, value) }
             }
 
             if (product.nutrients.isNotEmpty()) {
@@ -468,6 +494,48 @@ private fun ScannedProductReview(
             )
         }
     }
+}
+
+@Composable
+private fun ScannedDetailTile(title: String, value: String) {
+    val colors = MiseTheme.colors
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(colors.panel, RoundedCornerShape(10.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(10.dp))
+            .padding(12.dp),
+    ) {
+        Text(title.uppercase(), style = MiseTheme.typography.monoTiny, color = colors.textMuted)
+        Spacer(Modifier.height(4.dp))
+        Text(value, style = MiseTheme.typography.bodySmall, color = colors.text)
+    }
+}
+
+private fun Product.scanDetails(): List<Pair<String, String>> = buildList {
+    fun String.clean() = trim().takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
+    fun List<String>.tags() = mapNotNull { it.clean()?.substringAfter(':')?.replace('-', ' ') }
+        .joinToString().takeIf(String::isNotBlank)
+
+    details.brand.clean()?.let { add("Brand" to it) }
+    details.quantity.clean()?.let { add("Quantity" to it) }
+    details.servingSize.clean()?.let { add("Serving size" to it) }
+    details.ingredientsText.clean()?.let { add("Ingredients" to it) }
+    details.allergens.tags()?.let { add("Allergens" to it) }
+    details.categories.tags()?.let { add("Categories" to it) }
+    details.labels.tags()?.let { add("Labels" to it) }
+    details.nutriScore.clean()?.uppercase()?.takeIf { it in setOf("A", "B", "C", "D", "E") }
+        ?.let { add("Nutri-Score" to "$it · A is better, E is lower") }
+    details.novaGroup?.takeIf { it in 1..4 }?.let { group ->
+        add("NOVA $group" to when (group) {
+            1 -> "Unprocessed or minimally processed food"
+            2 -> "Processed culinary ingredient"
+            3 -> "Processed food"
+            else -> "Ultra-processed food"
+        })
+    }
+    details.ecoScore.clean()?.uppercase()?.takeIf { it in setOf("A", "B", "C", "D", "E") }
+        ?.let { add("Eco-Score" to it) }
 }
 
 /**
