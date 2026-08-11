@@ -3,6 +3,7 @@ package com.dishlab.backend
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -174,6 +175,71 @@ class RecipeCatalogAcceptanceTest {
                 "grouped exact match must find recipes that contain one tag from every product group",
             )
         }
+
+    @Test
+    fun `recipe detail resolves both catalog ids and user-authored uuid ids from the catalog list`() =
+        testApplication {
+            application { testModule() }
+
+            // GET / merges catalog:* recipes with user-authored ones, whose ids are raw UUIDs
+            // (RecipeCatalogDtos.kt, Recipe.toCatalogResponse). Publish one so the list actually
+            // contains a UUID id to resolve, not just fixture catalog:* entries.
+            val recipeId = createPublishableRecipe("UUID Detail Regression Soup")
+
+            val listBody = client.get("/api/v1/recipe-catalog?pageSize=100") {
+                header(HttpHeaders.Authorization, token)
+            }.bodyAsText()
+            assertTrue(listBody.contains("\"id\":\"$recipeId\""), listBody)
+
+            val uuidDetails = client.get("/api/v1/recipe-catalog/$recipeId") {
+                header(HttpHeaders.Authorization, token)
+            }
+            assertEquals(HttpStatusCode.OK, uuidDetails.status, uuidDetails.bodyAsText())
+            assertTrue(uuidDetails.bodyAsText().contains("UUID Detail Regression Soup"), uuidDetails.bodyAsText())
+
+            // Catalog ids (from the SQLite-backed fixture) must keep resolving too.
+            val catalogDetails = client.get("/api/v1/recipe-catalog/catalog:38") {
+                header(HttpHeaders.Authorization, token)
+            }
+            assertEquals(HttpStatusCode.OK, catalogDetails.status, catalogDetails.bodyAsText())
+
+            val garbage = client.get("/api/v1/recipe-catalog/not-a-real-id") {
+                header(HttpHeaders.Authorization, token)
+            }
+            assertEquals(HttpStatusCode.NotFound, garbage.status)
+        }
+
+    private suspend fun io.ktor.server.testing.ApplicationTestBuilder.createPublishableRecipe(title: String): String {
+        val draft = client.post("/api/v1/recipes") {
+            header(HttpHeaders.Authorization, token)
+            contentType(ContentType.Application.Json)
+            setBody("""{"title":"$title","servings":4,"visibility":"PRIVATE","tags":["soup"],"equipment":["pot"]}""")
+        }
+        assertEquals(HttpStatusCode.Created, draft.status, draft.bodyAsText())
+        val recipeId = Regex("\"id\":\"([^\"]+)\"").find(draft.bodyAsText())!!.groupValues[1]
+
+        val updated = client.patch("/api/v1/recipes/$recipeId") {
+            header(HttpHeaders.Authorization, token)
+            contentType(ContentType.Application.Json)
+            setBody(
+                """
+                {
+                  "ingredients":[{"ingredientId":"11111111-1111-1111-1111-111111111111","name":"Tomato","amount":250.0,"unit":"g"}],
+                  "steps":[{"position":1,"text":"Prep the ingredients."}],
+                  "tags":["soup","vegan"],
+                  "equipment":["knife"]
+                }
+                """.trimIndent(),
+            )
+        }
+        assertEquals(HttpStatusCode.OK, updated.status, updated.bodyAsText())
+
+        val published = client.post("/api/v1/recipes/$recipeId/publish") {
+            header(HttpHeaders.Authorization, token)
+        }
+        assertEquals(HttpStatusCode.OK, published.status, published.bodyAsText())
+        return recipeId
+    }
 
     @Test
     fun `exact groups are AND clauses while plain ingredients are OR clauses`() = testApplication {

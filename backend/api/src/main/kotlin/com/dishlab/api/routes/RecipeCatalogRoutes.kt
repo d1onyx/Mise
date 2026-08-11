@@ -90,7 +90,17 @@ fun Route.recipeCatalogRoutes(
         }
 
         get("/{recipeId}") {
-            call.respond(service.get("anonymous", call.catalogRecipeId()).toCatalogResponse())
+            // GET / merges two id spaces into one page: catalog recipes ("catalog:<long>") and
+            // user-authored recipes (raw UUID, see Recipe.toCatalogResponse in RecipeCatalogDtos.kt).
+            // The detail route has to resolve whichever one the client got from that list.
+            val rawId = call.parameters["recipeId"] ?: throw NotFoundError("Рецепт не знайдено")
+            if (rawId.startsWith("catalog:")) {
+                call.respond(service.get("anonymous", call.catalogRecipeId()).toCatalogResponse())
+            } else {
+                val recipeId = rawId.toUuidOrNull() ?: throw NotFoundError("Рецепт не знайдено")
+                val viewerId = currentUserResolver.resolve("anonymous").id
+                call.respond(recipeService.get("anonymous", recipeId).toCatalogResponse(viewerId))
+            }
         }
 
         post("/{recipeId}/bookmark") {
@@ -114,3 +124,5 @@ private fun io.ktor.server.application.ApplicationCall.catalogRecipeId(): Long =
         ?: throw NotFoundError("Рецепт не знайдено")
 
 private fun Long.catalogId(): String = "catalog:$this"
+
+private fun String.toUuidOrNull(): java.util.UUID? = runCatching { java.util.UUID.fromString(this) }.getOrNull()
