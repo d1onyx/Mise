@@ -2,7 +2,6 @@ package com.d1onix.dishlab.feature.products.presentation.graph.components
 
 import com.d1onix.dishlab.domain.model.Nutrient
 import com.d1onix.dishlab.domain.model.Product
-import com.d1onix.dishlab.domain.model.ProductDataOrigin
 
 /** UI-ready sections for the product sheet. Empty values never become a tile. */
 internal data class ProductDetailCardModel(
@@ -13,7 +12,6 @@ internal data class ProductDetailCardModel(
     val labels: List<String>,
     val nutrients: List<Nutrient>,
     val imageUrl: String?,
-    val isDeviceFallback: Boolean,
 )
 
 internal data class ProductDetailFact(val kind: ProductDetailFactKind, val value: String)
@@ -43,7 +41,6 @@ internal fun Product.toDetailCardModel(): ProductDetailCardModel {
         labels = details.labels.mapNotNull(String::normalizedTaxonomyTag),
         nutrients = validNutrients,
         imageUrl = details.imageUrl.trim().takeIf { it.startsWith("https://") },
-        isDeviceFallback = dataOrigin == ProductDataOrigin.DeviceFallback,
     )
 }
 

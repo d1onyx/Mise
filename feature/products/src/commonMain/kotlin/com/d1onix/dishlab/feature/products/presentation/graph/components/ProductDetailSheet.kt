@@ -39,7 +39,6 @@ import com.d1onix.dishlab.feature.products.resources.product_allergens
 import com.d1onix.dishlab.feature.products.resources.product_brand
 import com.d1onix.dishlab.feature.products.resources.product_categories
 import com.d1onix.dishlab.feature.products.resources.product_cook
-import com.d1onix.dishlab.feature.products.resources.product_device_fallback
 import com.d1onix.dishlab.feature.products.resources.product_eco_score
 import com.d1onix.dishlab.feature.products.resources.product_image
 import com.d1onix.dishlab.feature.products.resources.product_incomplete_data
@@ -135,11 +134,6 @@ fun ProductDetailSheet(
                     .border(1.dp, colors.amber.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             )
-        }
-
-        if (card.isDeviceFallback) {
-            Spacer(Modifier.height(8.dp))
-            DetailTile(text = stringResource(Res.string.product_device_fallback), accent = colors.amber)
         }
 
         Spacer(Modifier.height(16.dp))

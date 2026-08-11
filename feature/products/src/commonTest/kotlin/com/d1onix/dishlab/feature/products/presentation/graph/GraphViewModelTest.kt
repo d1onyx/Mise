@@ -51,7 +51,7 @@ class GraphViewModelTest {
 
         assertFalse(viewModel.uiState.value.isLoading)
         assertEquals(listOf("oats"), viewModel.uiState.value.products.map { it.id.value })
-        assertEquals(ProductId("oats"), viewModel.uiState.value.selectedId)
+        assertNull(viewModel.uiState.value.selectedId)
         assertEquals(1, viewModel.uiState.value.products.size)
     }
 

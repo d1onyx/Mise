@@ -15,8 +15,6 @@
     <string name="scan_front_camera_note">Front camera — point the back camera at the barcode</string>
     <string name="scan_server_unavailable">Can’t reach the product service. Check the connection and try again.</string>
     <string name="scan_server_retry">Try again</string>
-    <string name="scan_server_fallback_title">Product service unavailable</string>
-    <string name="scan_server_fallback_body">Showing device-fetched Open Food Facts data. DishLab normalization will be available when the service returns.</string>
     <string name="scan_manual_entry">Enter barcode manually</string>
     <string name="scan_manual_placeholder">Barcode digits</string>
     <string name="scan_manual_submit">Look up barcode</string>

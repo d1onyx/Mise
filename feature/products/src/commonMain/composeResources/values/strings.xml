@@ -44,7 +44,6 @@
     <string name="product_alternatives">Healthier alternatives</string>
     <string name="product_cook">What can I cook?</string>
     <string name="product_remove">×</string>
-    <string name="product_device_fallback">Showing the product data saved on this device</string>
     <string name="product_brand">Brand</string>
     <string name="product_quantity">Quantity</string>
     <string name="product_serving_size">Serving size</string>
