@@ -21,11 +21,15 @@ class DiscoverRecipesViewModel(
     private val getProducts: GetProductsUseCase,
     private val router: RecipesRouter,
 ) : AbstractViewModel(dependencies), WithMviState<RecipeListUiState> {
-    private val mutableState = MutableStateFlow(RecipeListUiState())
+    private val mutableState = MutableStateFlow(RecipeListUiState(isLoading = true))
     val uiState: StateFlow<RecipeListUiState> = mutableState.asStateFlow()
 
     init {
-        launch("loadRecipeCatalogue") {
+        loadFirstPage()
+    }
+
+    private fun loadFirstPage() = launch("loadRecipeCatalogue") {
+        try {
             val page = getAllRecipes(1, PAGE_SIZE)
             val recipes = page.items
             val products = getProducts(recipes.flatMap { it.productIds }.distinct())
@@ -34,9 +38,13 @@ class DiscoverRecipesViewModel(
                     all = recipes,
                     products = products.associateBy { product -> product.id },
                     hasNextPage = page.hasNextPage,
+                    isLoading = false,
+                    loadError = false,
                 )
                     .refiltered()
             }
+        } catch (_: Throwable) {
+            mutableState.update { it.copy(isLoading = false, loadError = true) }
         }
     }
 
@@ -53,7 +61,7 @@ class DiscoverRecipesViewModel(
             }
             is RecipeListAction.RecipeClicked -> router.openRecipe(action.id)
             RecipeListAction.BackClicked -> router.goBack()
-            RecipeListAction.RetryClicked -> Unit
+            RecipeListAction.RetryClicked -> loadFirstPage()
             RecipeListAction.LoadNextPage -> loadNextPage()
         }
     }

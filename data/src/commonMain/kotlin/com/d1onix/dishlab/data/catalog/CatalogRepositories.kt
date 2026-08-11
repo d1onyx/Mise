@@ -247,17 +247,13 @@ class CatalogRecipeRepository(
 
     override suspend fun all(): List<Recipe> = catalog.recipes()
 
-    override suspend fun allPage(page: Int, pageSize: Int): RecipePage = try {
+    override suspend fun allPage(page: Int, pageSize: Int): RecipePage {
         val result = remoteCatalog.recipes(page, pageSize)
-        RecipePage(
+        return RecipePage(
             items = result.items.map(CatalogRecipeDto::toDomain),
             page = result.page,
             hasNextPage = result.page * result.pageSize < result.total,
         )
-    } catch (_: Throwable) {
-        val all = catalog.recipes()
-        val from = (page.coerceAtLeast(1) - 1) * pageSize
-        RecipePage(all.drop(from).take(pageSize), page, from + pageSize < all.size)
     }
 
     override suspend fun byId(id: RecipeId): Recipe? = try {
