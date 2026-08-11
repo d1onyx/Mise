@@ -6,7 +6,6 @@ import com.d1onix.dishlab.domain.model.ProductDetails
 import com.d1onix.dishlab.domain.model.ProductId
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ProductDetailCardModelTest {
@@ -19,7 +18,6 @@ class ProductDetailCardModelTest {
         assertEquals("Oats", card.ingredients)
         assertEquals(listOf("Gluten"), card.allergens)
         assertEquals(2, card.nutrients.size)
-        assertFalse(card.notInDatabase)
         assertTrue(card.imageUrl!!.startsWith("https://"))
     }
 
@@ -36,11 +34,56 @@ class ProductDetailCardModelTest {
     }
 
     @Test
-    fun `zero nutrition maps to the not yet in database state`() {
+    fun `zero nutrition is omitted without showing a database status`() {
         val card = fullProduct().copy(nutrients = listOf(Nutrient("Energy", "0", "kcal"))).toDetailCardModel()
 
-        assertTrue(card.notInDatabase)
         assertTrue(card.nutrients.isEmpty())
+    }
+
+    @Test
+    fun `invalid product fields are omitted from the detail card`() {
+        val card = fullProduct().copy(
+            details = ProductDetails(
+                brand = " null ",
+                nutriScore = "unknown",
+                novaGroup = 7,
+                ecoScore = "?",
+                imageUrl = "http://example.test/oats.jpg",
+                allergens = listOf("", " null "),
+            ),
+        ).toDetailCardModel()
+
+        assertTrue(card.facts.isEmpty())
+        assertTrue(card.allergens.isEmpty())
+        assertEquals(null, card.imageUrl)
+    }
+
+    @Test
+    fun `invalid nutrition values are omitted`() {
+        val card = fullProduct().copy(
+            nutrients = listOf(
+                Nutrient("Energy", "NaN", "kcal"),
+                Nutrient("Protein", "-2", "g"),
+                Nutrient("", "12", "g"),
+            ),
+        ).toDetailCardModel()
+
+        assertTrue(card.nutrients.isEmpty())
+    }
+
+    @Test
+    fun `taxonomy prefixes are removed from product details`() {
+        val card = fullProduct().copy(
+            details = fullProduct().details.copy(
+                allergens = listOf("en:gluten", "fr:oeufs"),
+                categories = listOf("en:plant-based-foods", "en:oat-milks"),
+                labels = listOf("en:organic", "en:no-added-sugar"),
+            ),
+        ).toDetailCardModel()
+
+        assertEquals(listOf("Gluten", "Oeufs"), card.allergens)
+        assertEquals(listOf("Plant Based Foods", "Oat Milks"), card.categories)
+        assertEquals(listOf("Organic", "No Added Sugar"), card.labels)
     }
 
     private fun fullProduct() = Product(

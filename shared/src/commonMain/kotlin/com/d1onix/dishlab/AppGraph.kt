@@ -4,6 +4,7 @@ import com.d1onix.dishlab.data.demo.LegacyDemoProductsCleaner
 import com.d1onix.dishlab.feature.home.presentation.onboarding.OnboardingViewModel
 import com.d1onix.dishlab.feature.home.presentation.settings.SettingsViewModel
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphViewModel
+import com.d1onix.dishlab.feature.products.presentation.comparison.ComparisonViewModel
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryViewModel
 import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.cooking.CookingViewModel
@@ -38,6 +39,7 @@ interface AppGraph {
     val onboardingViewModelFactory: OnboardingViewModel.Factory
     val scanViewModelFactory: ScanViewModel.Factory
     val graphViewModel: GraphViewModel
+    val comparisonViewModel: ComparisonViewModel
     val connectionOverviewViewModel: ConnectionOverviewViewModel
     val historyViewModel: HistoryViewModel
     val recipesViewModel: RecipesViewModel

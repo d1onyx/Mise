@@ -13,6 +13,20 @@
     <string name="graph_hint_connect">select the second product · tap empty space to cancel</string>
     <string name="graph_empty">Nothing scanned yet — tap anywhere to scan a product.</string>
 
+    <string name="comparison_title">Compare products</string>
+    <string name="comparison_empty">Scan two or more products to compare their nutrition and scores.</string>
+    <string name="comparison_add">Scan product</string>
+    <string name="comparison_clear">clear</string>
+    <string name="comparison_best">BEST SCORE</string>
+    <string name="comparison_remove">remove</string>
+    <string name="comparison_select_hint">Tap products to select which ones should be added to the graph.</string>
+    <string name="comparison_nutrition">Nutrition side by side</string>
+    <string name="comparison_add_selected">Add selected (%1$d)</string>
+    <string name="comparison_select_all">select all</string>
+    <string name="comparison_clear_selection">clear selection</string>
+    <string name="comparison_loading">Loading compared products…</string>
+    <string name="comparison_error">Unable to load compared products.</string>
+
     <string name="connections_title">Product connections</string>
     <string name="connections_summary">%1$d products · %2$d total connections</string>
     <string name="connections_empty">Add products to the graph to inspect their connections.</string>
@@ -30,8 +44,6 @@
     <string name="product_alternatives">Healthier alternatives</string>
     <string name="product_cook">What can I cook?</string>
     <string name="product_remove">×</string>
-    <string name="product_device_fallback">Showing the product data saved on this device</string>
-    <string name="product_not_in_database">This product is not yet in our database.</string>
     <string name="product_brand">Brand</string>
     <string name="product_quantity">Quantity</string>
     <string name="product_serving_size">Serving size</string>

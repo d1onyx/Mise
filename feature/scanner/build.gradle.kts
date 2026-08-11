@@ -50,6 +50,8 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.compose.components.resources)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor3)
 
             // Camera permissions are handled through CameraK; barcode decoding
             // is Android-native ML Kit in ProductBarcodeCamera.android.kt.

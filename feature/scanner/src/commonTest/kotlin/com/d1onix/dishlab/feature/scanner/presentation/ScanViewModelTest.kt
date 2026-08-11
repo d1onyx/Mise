@@ -7,6 +7,7 @@ import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.ProductGraphPosition
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
+import com.d1onix.dishlab.domain.repository.ProductComparisonStore
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
 import com.d1onyx.core.essentials.exceptions.ExceptionHandler
 import com.d1onyx.core.essentials.exceptions.ConnectionException
@@ -40,7 +41,7 @@ class ScanViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun `a known barcode is reviewed before it is added to the graph`() = runTest(dispatcher) {
+    fun `a known barcode is shown for a destination choice`() = runTest(dispatcher) {
         val session = FakeSessionStore()
         val router = FakeRouter()
         val recorded = mutableListOf<ProductId>()
@@ -54,13 +55,6 @@ class ScanViewModelTest {
         assertEquals(ProductId("barcode:111"), viewModel.uiState.value.reviewedProduct?.id)
         assertEquals(0, router.graphOpened)
         assertTrue(router.notFoundBarcodes.isEmpty())
-
-        viewModel.onAction(ScanAction.AddReviewedProductClicked)
-        testScheduler.advanceUntilIdle()
-
-        assertEquals(listOf(ProductId("barcode:111")), session.products.value)
-        assertEquals(1, router.graphOpened)
-        assertNull(viewModel.uiState.value.reviewedProduct)
     }
 
     @Test
@@ -88,7 +82,7 @@ class ScanViewModelTest {
         viewModel.onAction(ScanAction.BarcodeDetected("111"))
         testScheduler.advanceUntilIdle()
 
-        assertEquals(ProductId("barcode:111"), viewModel.uiState.value.reviewedProduct?.id)
+        assertTrue(session.products.value.isEmpty())
         assertEquals(0, router.graphOpened)
     }
 
@@ -130,7 +124,7 @@ class ScanViewModelTest {
     }
 
     @Test
-    fun `not now keeps the scanned product out of the graph`() = runTest(dispatcher) {
+    fun `a recognised product waits for the user's destination choice`() = runTest(dispatcher) {
         val session = FakeSessionStore()
         val router = FakeRouter()
         val recorded = mutableListOf<ProductId>()
@@ -138,15 +132,14 @@ class ScanViewModelTest {
 
         viewModel.onAction(ScanAction.BarcodeDetected("111"))
         testScheduler.advanceUntilIdle()
-        viewModel.onAction(ScanAction.ReviewedProductSkipped)
-
         assertTrue(session.products.value.isEmpty())
         assertEquals(listOf(ProductId("barcode:111")), recorded)
-        assertEquals(1, router.backCount)
+        assertEquals(ProductId("barcode:111"), viewModel.uiState.value.reviewedProduct?.id)
+        assertEquals(0, router.graphOpened)
     }
 
     @Test
-    fun `guest can add a reviewed product to the graph`() = runTest(dispatcher) {
+    fun `a reviewed product is added to the graph after confirmation`() = runTest(dispatcher) {
         val session = FakeSessionStore()
         val router = FakeRouter()
         val viewModel = viewModel(session, router)
@@ -155,10 +148,26 @@ class ScanViewModelTest {
         testScheduler.advanceUntilIdle()
         viewModel.onAction(ScanAction.AddReviewedProductClicked)
         testScheduler.advanceUntilIdle()
-
         assertEquals(listOf(ProductId("barcode:111")), session.products.value)
         assertEquals(1, router.graphOpened)
         assertNull(viewModel.uiState.value.reviewedProduct)
+    }
+
+    @Test
+    fun `a reviewed product can be added to comparison instead of the graph`() = runTest(dispatcher) {
+        val session = FakeSessionStore()
+        val router = FakeRouter()
+        val comparison = FakeComparisonStore()
+        val viewModel = viewModel(session, router, comparison = comparison)
+
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
+        testScheduler.advanceUntilIdle()
+        viewModel.onAction(ScanAction.CompareWithAnotherClicked)
+        testScheduler.advanceUntilIdle()
+
+        assertTrue(session.products.value.isEmpty())
+        assertEquals(listOf(ProductId("barcode:111")), comparison.products.value)
+        assertEquals(1, router.comparisonOpened)
     }
 
     @Test
@@ -245,6 +254,7 @@ class ScanViewModelTest {
         session: ScanSessionStore,
         router: ScannerRouter,
         recorded: MutableList<ProductId> = mutableListOf(),
+        comparison: ProductComparisonStore = FakeComparisonStore(),
         productLookup: suspend (String) -> Product? = { barcode ->
             if (barcode == "111") product else null
         },
@@ -254,6 +264,7 @@ class ScanViewModelTest {
         recordScan = RecordScanUseCase { id -> recorded += id },
         showBackNavigation = false,
         session = session,
+        comparison = comparison,
         router = router,
     )
 
@@ -313,13 +324,28 @@ class ScanViewModelTest {
         }
     }
 
+    private class FakeComparisonStore : ProductComparisonStore {
+        private val state = MutableStateFlow<List<ProductId>>(emptyList())
+        override val products: StateFlow<List<ProductId>> = state
+        override suspend fun add(id: ProductId): Boolean {
+            if (id in state.value) return true
+            if (state.value.size == ProductComparisonStore.MAX_PRODUCTS) return false
+            state.value += id
+            return true
+        }
+        override suspend fun remove(id: ProductId) { state.value -= id }
+        override suspend fun clear() { state.value = emptyList() }
+    }
+
     private class FakeRouter : ScannerRouter {
         var graphOpened = 0
         var backCount = 0
+        var comparisonOpened = 0
         val notFoundBarcodes = mutableListOf<String>()
         override fun openCombinationGraph() {
             graphOpened++
         }
+        override fun openComparison() { comparisonOpened++ }
 
         override fun openNotFound(barcode: String, showBackNavigation: Boolean) {
             notFoundBarcodes += barcode

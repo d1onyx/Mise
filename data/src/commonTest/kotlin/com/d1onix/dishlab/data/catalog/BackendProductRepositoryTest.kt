@@ -28,6 +28,21 @@ import kotlin.test.assertTrue
 class BackendProductRepositoryTest {
 
     @Test
+    fun `Open Food Facts taxonomy tags are converted into display labels`() {
+        val details = ClientProductSnapshotDto(
+            barcode = BARCODE,
+            name = "Oat drink",
+            categories = listOf("en:plant-based-foods", "en:oat-milks"),
+            labels = listOf("en:organic"),
+            allergens = listOf("en:gluten"),
+        ).toDetails()
+
+        assertEquals(listOf("Plant Based Foods", "Oat Milks"), details.categories)
+        assertEquals(listOf("Organic"), details.labels)
+        assertEquals(listOf("Gluten"), details.allergens)
+    }
+
+    @Test
     fun `a canonical product is served from the cache without a lookup`() = runTest {
         val cache = cache()
         cache.put(canonicalDto.toDomain())

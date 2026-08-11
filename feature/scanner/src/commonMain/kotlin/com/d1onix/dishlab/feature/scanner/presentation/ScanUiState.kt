@@ -77,6 +77,7 @@ sealed interface ScanAction {
     data object ManualBarcodeSubmitted : ScanAction
     data object RetryResolutionClicked : ScanAction
     data object AddReviewedProductClicked : ScanAction
+    data object CompareWithAnotherClicked : ScanAction
     data object ReviewedProductSkipped : ScanAction
     data object ReviewBackClicked : ScanAction
     data object BackClicked : ScanAction

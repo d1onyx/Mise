@@ -26,6 +26,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -44,9 +45,13 @@ class GraphViewModelTest {
     fun `the graph mirrors the scan session`() = runTest(dispatcher) {
         val session = FakeSessionStore(listOf(ProductId("oats")))
         val viewModel = viewModel(session)
+
+        assertTrue(viewModel.uiState.value.isLoading)
         testScheduler.advanceUntilIdle()
 
+        assertFalse(viewModel.uiState.value.isLoading)
         assertEquals(listOf("oats"), viewModel.uiState.value.products.map { it.id.value })
+        assertNull(viewModel.uiState.value.selectedId)
         assertEquals(1, viewModel.uiState.value.products.size)
     }
 
@@ -244,6 +249,8 @@ class GraphViewModelTest {
         override fun openSavedRecipes() = Unit
         override fun openCombinationGraph() = Unit
         override fun openConnectionOverview() = Unit
+        override fun openComparison() = Unit
+        override fun openComparisonScanner() = Unit
         override fun openSettings() = Unit
         override fun goBack() = Unit
     }

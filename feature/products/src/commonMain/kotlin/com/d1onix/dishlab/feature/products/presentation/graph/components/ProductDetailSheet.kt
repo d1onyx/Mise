@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -37,13 +39,11 @@ import com.d1onix.dishlab.feature.products.resources.product_allergens
 import com.d1onix.dishlab.feature.products.resources.product_brand
 import com.d1onix.dishlab.feature.products.resources.product_categories
 import com.d1onix.dishlab.feature.products.resources.product_cook
-import com.d1onix.dishlab.feature.products.resources.product_device_fallback
 import com.d1onix.dishlab.feature.products.resources.product_eco_score
 import com.d1onix.dishlab.feature.products.resources.product_image
 import com.d1onix.dishlab.feature.products.resources.product_incomplete_data
 import com.d1onix.dishlab.feature.products.resources.product_ingredients
 import com.d1onix.dishlab.feature.products.resources.product_labels
-import com.d1onix.dishlab.feature.products.resources.product_not_in_database
 import com.d1onix.dishlab.feature.products.resources.product_nova
 import com.d1onix.dishlab.feature.products.resources.product_nutrients_per_100g
 import com.d1onix.dishlab.feature.products.resources.product_nutri_score
@@ -136,14 +136,10 @@ fun ProductDetailSheet(
             )
         }
 
-        if (card.isDeviceFallback) {
-            Spacer(Modifier.height(8.dp))
-            DetailTile(text = stringResource(Res.string.product_device_fallback), accent = colors.amber)
-        }
-
         Spacer(Modifier.height(16.dp))
         product.summary.takeIf(String::isNotBlank)?.let { DetailTile(text = it) }
         card.imageUrl?.let { imageUrl ->
+            val imageShape = RoundedCornerShape(18.dp)
             Column(
                 Modifier.fillMaxWidth().padding(bottom = 8.dp)
                     .background(colors.panel, RoundedCornerShape(14.dp))
@@ -152,16 +148,32 @@ fun ProductDetailSheet(
             ) {
                 Text(stringResource(Res.string.product_image).uppercase(), style = MiseTheme.typography.monoTiny, color = colors.textMuted)
                 Spacer(Modifier.height(6.dp))
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = product.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth().height(160.dp).background(colors.border, RoundedCornerShape(10.dp)),
-                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(204.dp)
+                        .clip(imageShape)
+                        .background(colors.surface),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = product.name,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize().padding(12.dp),
+                    )
+                }
             }
         }
         card.facts.forEach { fact ->
-            DetailTile(title = fact.kind.label(), text = fact.value)
+            when (fact.kind) {
+                ProductDetailFactKind.NutriScore -> NutriScoreScale(fact.value)
+                ProductDetailFactKind.Nova -> DetailTile(
+                    title = "NOVA ${fact.value}",
+                    text = fact.value.novaExplanation(),
+                )
+                else -> DetailTile(title = fact.kind.label(), text = fact.value)
+            }
         }
         card.ingredients?.let { DetailTile(title = stringResource(Res.string.product_ingredients), text = it) }
         card.allergens.takeIf(List<String>::isNotEmpty)?.let {
@@ -174,9 +186,7 @@ fun ProductDetailSheet(
             DetailTile(title = stringResource(Res.string.product_labels), text = it.joinToString())
         }
 
-        if (card.notInDatabase) {
-            DetailTile(text = stringResource(Res.string.product_not_in_database), accent = colors.amber)
-        } else {
+        if (card.nutrients.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             SectionLabel(text = stringResource(Res.string.product_nutrients_per_100g), color = colors.textMuted)
             Spacer(Modifier.height(8.dp))
@@ -256,6 +266,64 @@ fun ProductDetailSheet(
             )
         }
     }
+}
+
+@Composable
+private fun NutriScoreScale(selectedGrade: String) {
+    val colors = MiseTheme.colors
+    val grades = listOf("A", "B", "C", "D", "E")
+    val gradeColors = listOf(colors.lime, colors.cyan, colors.amber, colors.amber, colors.red)
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+            .background(colors.panel, RoundedCornerShape(14.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(14.dp))
+            .padding(12.dp),
+    ) {
+        Text(
+            stringResource(Res.string.product_nutri_score).uppercase(),
+            style = MiseTheme.typography.monoTiny,
+            color = colors.textMuted,
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            grades.forEachIndexed { index, grade ->
+                val isSelected = grade == selectedGrade
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(if (isSelected) 34.dp else 28.dp)
+                        .background(
+                            if (isSelected) gradeColors[index] else gradeColors[index].copy(alpha = 0.22f),
+                            RoundedCornerShape(7.dp),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        grade,
+                        style = MiseTheme.typography.monoSmall,
+                        color = if (isSelected) colors.background else gradeColors[index],
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(7.dp))
+        Text(
+            "A = better nutritional quality · E = lower nutritional quality",
+            style = MiseTheme.typography.monoTiny,
+            color = colors.textMuted,
+        )
+    }
+}
+
+private fun String.novaExplanation(): String = when (this) {
+    "1" -> "Unprocessed or minimally processed food"
+    "2" -> "Processed culinary ingredient"
+    "3" -> "Processed food"
+    "4" -> "Ultra-processed food"
+    else -> ""
 }
 
 @Composable

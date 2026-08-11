@@ -18,6 +18,7 @@ data class ScanNotFoundRoute(
 interface ScannerRouter {
     /** A product was recognised and added to the session. */
     fun openCombinationGraph()
+    fun openComparison()
     fun openNotFound(barcode: String, showBackNavigation: Boolean)
     /** Back to the viewfinder, without stacking another «not found» behind it. */
     fun openScanner(showBackNavigation: Boolean)

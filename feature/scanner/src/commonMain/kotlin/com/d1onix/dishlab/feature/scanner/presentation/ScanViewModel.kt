@@ -4,6 +4,7 @@ import com.d1onix.dishlab.domain.GetProductByBarcodeUseCase
 import com.d1onix.dishlab.domain.RecordScanUseCase
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
+import com.d1onix.dishlab.domain.repository.ProductComparisonStore
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
 import com.d1onyx.core.presentation.CommonDependencies
 import com.d1onyx.core.presentation.WithMviState
@@ -24,6 +25,7 @@ class ScanViewModel(
     private val getProductByBarcode: GetProductByBarcodeUseCase,
     private val recordScan: RecordScanUseCase,
     private val session: ScanSessionStore,
+    private val comparison: ProductComparisonStore,
     private val router: ScannerRouter,
 ) : AbstractViewModel(dependencies), WithMviState<ScanUiState> {
 
@@ -67,6 +69,7 @@ class ScanViewModel(
             ScanAction.ManualBarcodeSubmitted -> submitManualBarcode()
             ScanAction.RetryResolutionClicked -> retryResolution()
             ScanAction.AddReviewedProductClicked -> addReviewedProduct()
+            ScanAction.CompareWithAnotherClicked -> addReviewedProductToComparison()
             ScanAction.ReviewedProductSkipped -> skipReviewedProduct()
             ScanAction.ReviewBackClicked -> _uiState.update {
                 it.copy(
@@ -157,8 +160,6 @@ class ScanViewModel(
                 reviewedProductAlreadyAdded = product.id in session.products.value,
             )
         }
-        // History persistence must not hold the recognised product card behind
-        // a database write; the viewfinder can acknowledge a scan immediately.
         launch("recordScan") { recordScan(product.id) }
     }
 
@@ -168,6 +169,15 @@ class ScanViewModel(
         launch("addReviewedProduct") {
             if (!state.reviewedProductAlreadyAdded) session.add(product.id)
             router.openCombinationGraph()
+            clearReview()
+        }
+    }
+
+    private fun addReviewedProductToComparison() {
+        val product = _uiState.value.reviewedProduct ?: return
+        launch("addComparisonProduct") {
+            comparison.add(product.id)
+            router.openComparison()
             clearReview()
         }
     }

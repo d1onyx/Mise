@@ -5,6 +5,7 @@ import com.d1onix.dishlab.feature.home.navigation.OnboardingRoute
 import com.d1onix.dishlab.feature.home.navigation.SettingsRoute
 import com.d1onix.dishlab.feature.home.navigation.SettingsRouter
 import com.d1onix.dishlab.feature.products.navigation.GraphRoute
+import com.d1onix.dishlab.feature.products.navigation.ComparisonRoute
 import com.d1onix.dishlab.feature.products.navigation.HistoryRoute
 import com.d1onix.dishlab.feature.products.navigation.ProductsRouter
 import com.d1onix.dishlab.feature.products.navigation.ConnectionOverviewRoute
@@ -38,6 +39,7 @@ class SettingsRouterImpl(private val router: AppRouter) : SettingsRouter {
 class ScannerRouterImpl(private val router: AppRouter) : ScannerRouter {
     /** `replace`, so backing out of the graph does not return to the viewfinder. */
     override fun openCombinationGraph() = router.replace(GraphRoute)
+    override fun openComparison() = router.replace(ComparisonRoute)
     override fun openNotFound(barcode: String, showBackNavigation: Boolean) =
         router.replace(ScanNotFoundRoute(barcode, showBackNavigation))
     override fun openScanner(showBackNavigation: Boolean) = router.replace(ScanRoute(showBackNavigation))
@@ -53,6 +55,8 @@ class ProductsRouterImpl(private val router: AppRouter) : ProductsRouter {
     override fun openSavedRecipes() = router.launch(SavedRoute)
     override fun openCombinationGraph() = router.launch(GraphRoute)
     override fun openConnectionOverview() = router.launch(ConnectionOverviewRoute)
+    override fun openComparison() = router.launch(ComparisonRoute)
+    override fun openComparisonScanner() = router.launch(ScanRoute(showBackNavigation = true))
     override fun openSettings() = router.launch(SettingsRoute)
     override fun goBack() = router.goBack()
 }
