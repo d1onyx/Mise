@@ -209,6 +209,32 @@ class RecipeCatalogAcceptanceTest {
             assertEquals(HttpStatusCode.NotFound, garbage.status)
         }
 
+    @Test
+    fun `bookmark routes resolve user-authored uuid ids the same way as detail`() = testApplication {
+        application { testModule() }
+
+        val recipeId = createPublishableRecipe("UUID Bookmark Regression Stew")
+
+        val bookmarked = client.post("/api/v1/recipe-catalog/$recipeId/bookmark") {
+            header(HttpHeaders.Authorization, token)
+        }
+        assertEquals(HttpStatusCode.OK, bookmarked.status, bookmarked.bodyAsText())
+        assertTrue(bookmarked.bodyAsText().contains("\"bookmarked\":true"), bookmarked.bodyAsText())
+
+        // GET /{recipeId} is public (t-11: uid is always "anonymous"), so it never reflects any
+        // caller's bookmark — same contract as catalog:* ids, now also true for uuid ids.
+        val details = client.get("/api/v1/recipe-catalog/$recipeId") {
+            header(HttpHeaders.Authorization, token)
+        }.bodyAsText()
+        assertTrue(details.contains("\"bookmarked\":false"), details)
+
+        val unbookmarked = client.delete("/api/v1/recipe-catalog/$recipeId/bookmark") {
+            header(HttpHeaders.Authorization, token)
+        }
+        assertEquals(HttpStatusCode.OK, unbookmarked.status, unbookmarked.bodyAsText())
+        assertTrue(unbookmarked.bodyAsText().contains("\"bookmarked\":false"), unbookmarked.bodyAsText())
+    }
+
     private suspend fun io.ktor.server.testing.ApplicationTestBuilder.createPublishableRecipe(title: String): String {
         val draft = client.post("/api/v1/recipes") {
             header(HttpHeaders.Authorization, token)
