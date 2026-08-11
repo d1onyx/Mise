@@ -12,7 +12,6 @@ internal data class ProductDetailCardModel(
     val categories: List<String>,
     val labels: List<String>,
     val nutrients: List<Nutrient>,
-    val notInDatabase: Boolean,
     val imageUrl: String?,
     val isDeviceFallback: Boolean,
 )
@@ -36,15 +35,13 @@ internal fun Product.toDetailCardModel(): ProductDetailCardModel {
             nutrient.unit.normalizedText() != null &&
             nutrient.amount.toDoubleOrNull()?.let { it.isFinite() && it > 0 } == true
     }
-    val nutritionPresent = validNutrients.isNotEmpty()
     return ProductDetailCardModel(
         facts = facts,
         ingredients = details.ingredientsText.normalizedText(),
-        allergens = details.allergens.mapNotNull(String::normalizedText),
-        categories = details.categories.mapNotNull(String::normalizedText),
-        labels = details.labels.mapNotNull(String::normalizedText),
+        allergens = details.allergens.mapNotNull(String::normalizedTaxonomyTag),
+        categories = details.categories.mapNotNull(String::normalizedTaxonomyTag),
+        labels = details.labels.mapNotNull(String::normalizedTaxonomyTag),
         nutrients = validNutrients,
-        notInDatabase = !nutritionPresent,
         imageUrl = details.imageUrl.trim().takeIf { it.startsWith("https://") },
         isDeviceFallback = dataOrigin == ProductDataOrigin.DeviceFallback,
     )
@@ -53,3 +50,11 @@ internal fun Product.toDetailCardModel(): ProductDetailCardModel {
 private fun String.normalizedText(): String? = trim().takeIf { it.isNotEmpty() && !it.equals("null", true) }
 
 private fun String.normalizedGrade(): String? = trim().uppercase().takeIf { it in setOf("A", "B", "C", "D", "E") }
+
+private fun String.normalizedTaxonomyTag(): String? = normalizedText()
+    ?.substringAfter(':')
+    ?.replace('-', ' ')
+    ?.split(' ')
+    ?.filter(String::isNotBlank)
+    ?.joinToString(" ") { word -> word.replaceFirstChar(Char::uppercaseChar) }
+    ?.takeIf(String::isNotBlank)

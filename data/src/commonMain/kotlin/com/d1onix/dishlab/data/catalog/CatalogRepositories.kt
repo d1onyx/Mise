@@ -193,10 +193,22 @@ class BackendProductRepository(
 
 internal fun ClientProductSnapshotDto.toDetails() = ProductDetails(
     brand = brand, quantity = quantity, servingSize = servingSize,
-    ingredientsText = ingredientsText, allergens = allergens, categories = categories,
-    labels = labels, nutriScore = nutritionGrade, novaGroup = novaGroup,
+    ingredientsText = ingredientsText, allergens = allergens.toDisplayTaxonomyTags(),
+    categories = categories.toDisplayTaxonomyTags(), labels = labels.toDisplayTaxonomyTags(),
+    nutriScore = nutritionGrade, novaGroup = novaGroup,
     ecoScore = environmentalScoreGrade, imageUrl = imageFrontSmallUrl.ifBlank { imageFrontUrl },
 )
+
+private fun List<String>.toDisplayTaxonomyTags(): List<String> = mapNotNull { tag ->
+    tag.trim()
+        .takeIf(String::isNotBlank)
+        ?.substringAfter(':')
+        ?.replace('-', ' ')
+        ?.split(' ')
+        ?.filter(String::isNotBlank)
+        ?.joinToString(" ") { word -> word.replaceFirstChar(Char::uppercaseChar) }
+        ?.takeIf(String::isNotBlank)
+}.distinct()
 
 internal fun ClientProductSnapshotDto.toBackendProduct(): BackendProductDto {
     val nutrientValues = nutrition?.nutrients.orEmpty()

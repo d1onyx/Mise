@@ -45,6 +45,9 @@ class GraphViewModel(
                 val (ids, connections, positions, settings) = source
                 val products = getProducts(ids)
                 _uiState.update { state ->
+                    val newlyAddedProduct = products.lastOrNull { product ->
+                        product.id !in state.products.map { it.id }.toSet()
+                    }
                     state.copy(
                         isLoading = false,
                         products = products,
@@ -54,7 +57,8 @@ class GraphViewModel(
                         reduceMotion = settings.reduceGraphMotion,
                         showProductScores = settings.showProductScores,
                         // Keep the sheet open only while its product is still on the graph.
-                        selectedId = state.selectedId?.takeIf { id -> products.any { it.id == id } },
+                        selectedId = state.selectedId?.takeIf { id -> products.any { it.id == id } }
+                            ?: newlyAddedProduct?.id,
                         pendingConnectionId = state.pendingConnectionId?.takeIf { id ->
                             products.any { it.id == id }
                         },
