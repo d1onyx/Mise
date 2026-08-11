@@ -105,6 +105,8 @@ class ConnectionOverviewViewModelTest {
         override fun openSavedRecipes() = Unit
         override fun openCombinationGraph() = Unit
         override fun openConnectionOverview() = Unit
+        override fun openComparison() = Unit
+        override fun openComparisonScanner() = Unit
         override fun openSettings() = Unit
         override fun goBack() = Unit
     }

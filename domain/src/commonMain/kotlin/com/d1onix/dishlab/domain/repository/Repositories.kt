@@ -72,3 +72,14 @@ interface CookingPreferencesRepository {
     val preferences: Flow<CookingPreferences>
     suspend fun save(preferences: CookingPreferences)
 }
+
+interface ProductComparisonStore {
+    val products: StateFlow<List<ProductId>>
+    suspend fun add(id: ProductId): Boolean
+    suspend fun remove(id: ProductId)
+    suspend fun clear()
+
+    companion object {
+        const val MAX_PRODUCTS = 5
+    }
+}

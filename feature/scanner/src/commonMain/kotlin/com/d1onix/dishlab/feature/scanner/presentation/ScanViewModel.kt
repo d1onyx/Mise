@@ -4,6 +4,7 @@ import com.d1onix.dishlab.domain.GetProductByBarcodeUseCase
 import com.d1onix.dishlab.domain.RecordScanUseCase
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
+import com.d1onix.dishlab.domain.repository.ProductComparisonStore
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
 import com.d1onyx.core.presentation.CommonDependencies
 import com.d1onyx.core.presentation.WithMviState
@@ -24,6 +25,7 @@ class ScanViewModel(
     private val getProductByBarcode: GetProductByBarcodeUseCase,
     private val recordScan: RecordScanUseCase,
     private val session: ScanSessionStore,
+    private val comparison: ProductComparisonStore,
     private val router: ScannerRouter,
 ) : AbstractViewModel(dependencies), WithMviState<ScanUiState> {
 
@@ -67,6 +69,7 @@ class ScanViewModel(
             ScanAction.ManualBarcodeSubmitted -> submitManualBarcode()
             ScanAction.RetryResolutionClicked -> retryResolution()
             ScanAction.AddReviewedProductClicked -> addReviewedProduct()
+            ScanAction.CompareWithAnotherClicked -> addReviewedProductToComparison()
             ScanAction.ReviewedProductSkipped -> skipReviewedProduct()
             ScanAction.ReviewBackClicked -> _uiState.update {
                 it.copy(
@@ -145,7 +148,6 @@ class ScanViewModel(
     }
 
     private suspend fun present(product: Product) {
-        if (product.id !in session.products.value) session.add(product.id)
         _uiState.update {
             it.copy(
                 isResolving = false,
@@ -154,14 +156,11 @@ class ScanViewModel(
                 manualEntryVisible = false,
                 manualBarcode = "",
                 detectedBarcode = null,
-                reviewedProduct = null,
-                reviewedProductAlreadyAdded = false,
+                reviewedProduct = product,
+                reviewedProductAlreadyAdded = product.id in session.products.value,
             )
         }
-        // The graph owns the complete product card, so do not stop at the
-        // scanner's compact review while the user waits for details.
         launch("recordScan") { recordScan(product.id) }
-        router.openCombinationGraph()
     }
 
     private fun addReviewedProduct() {
@@ -170,6 +169,15 @@ class ScanViewModel(
         launch("addReviewedProduct") {
             if (!state.reviewedProductAlreadyAdded) session.add(product.id)
             router.openCombinationGraph()
+            clearReview()
+        }
+    }
+
+    private fun addReviewedProductToComparison() {
+        val product = _uiState.value.reviewedProduct ?: return
+        launch("addComparisonProduct") {
+            comparison.add(product.id)
+            router.openComparison()
             clearReview()
         }
     }
