@@ -8,6 +8,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object RecipesRoute : Route
 
+/** Browse the complete recipe catalogue without requiring scanned products. */
+@Serializable
+data object DiscoverRecipesRoute : Route
+
 @Serializable
 data object SavedRoute : Route
 

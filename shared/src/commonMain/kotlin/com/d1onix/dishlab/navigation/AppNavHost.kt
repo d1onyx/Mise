@@ -32,10 +32,12 @@ import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOv
 import com.d1onix.dishlab.feature.recipes.navigation.CookingRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipeDetailRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRoute
+import com.d1onix.dishlab.feature.recipes.navigation.DiscoverRecipesRoute
 import com.d1onix.dishlab.feature.recipes.navigation.SavedRoute
 import com.d1onix.dishlab.feature.recipes.presentation.cooking.CookingScreen
 import com.d1onix.dishlab.feature.recipes.presentation.detail.RecipeDetailScreen
 import com.d1onix.dishlab.feature.recipes.presentation.list.RecipesScreen
+import com.d1onix.dishlab.feature.recipes.presentation.list.DiscoverRecipesScreen
 import com.d1onix.dishlab.feature.recipes.presentation.list.SavedRecipesScreen
 import com.d1onix.dishlab.feature.scanner.navigation.ScanNotFoundRoute
 import com.d1onix.dishlab.feature.scanner.navigation.ScanRoute
@@ -118,6 +120,10 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
 
             composable<RecipesRoute> {
                 RecipesScreen(viewModel { graph.recipesViewModel })
+            }
+
+            composable<DiscoverRecipesRoute> {
+                DiscoverRecipesScreen(viewModel { graph.discoverRecipesViewModel })
             }
 
             composable<SavedRoute> {
