@@ -7,6 +7,7 @@ import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductAlternative
 import com.d1onix.dishlab.domain.model.ProductDataOrigin
 import com.d1onix.dishlab.domain.model.ProductId
+import com.d1onix.dishlab.domain.model.RecipePage
 import com.d1onix.dishlab.domain.model.ProductDetails
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeId
@@ -259,6 +260,24 @@ class CatalogRecipeRepository(
         // shows the top page; fetching every catalog page here would exhaust the
         // per-client rate-limit before the user sees a single result.
         return pantryMatch.match(ingredients = tags).items.map(PantryMatchedRecipeDto::toDomain)
+    }
+
+    override suspend fun forProductsPage(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage {
+        val safePage = page.coerceAtLeast(1)
+        val safeSize = pageSize.coerceIn(1, 50)
+        if (productIds.isEmpty()) return RecipePage(emptyList(), safePage, false)
+        val tags = products.byIds(productIds).flatMap { it.canonicalTags }.distinct()
+        if (tags.isNotEmpty()) {
+            val result = pantryMatch.match(ingredients = tags, page = safePage, pageSize = safeSize)
+            return RecipePage(
+                items = result.items.map(PantryMatchedRecipeDto::toDomain),
+                page = result.page,
+                hasNextPage = result.page * result.pageSize < result.total,
+            )
+        }
+        val matches = offlineMatches(productIds)
+        val from = (safePage - 1) * safeSize
+        return RecipePage(matches.drop(from).take(safeSize), safePage, from + safeSize < matches.size)
     }
 
     private suspend fun offlineMatches(productIds: List<ProductId>): List<Recipe> = all()

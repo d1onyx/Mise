@@ -18,6 +18,12 @@ data class Recipe(
     val steps: List<RecipeStep>,
 )
 
+data class RecipePage(
+    val items: List<Recipe>,
+    val page: Int,
+    val hasNextPage: Boolean,
+)
+
 data class Ingredient(
     val quantity: String,
     val name: String,

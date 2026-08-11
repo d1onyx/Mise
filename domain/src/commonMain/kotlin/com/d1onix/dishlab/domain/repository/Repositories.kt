@@ -8,6 +8,7 @@ import com.d1onix.dishlab.domain.model.ProfileSettings
 import com.d1onix.dishlab.domain.model.CookingPreferences
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeId
+import com.d1onix.dishlab.domain.model.RecipePage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -24,6 +25,7 @@ interface RecipeRepository {
     suspend fun byId(id: RecipeId): Recipe?
     /** Recipes that use at least one of [productIds]. */
     suspend fun forProducts(productIds: List<ProductId>): List<Recipe>
+    suspend fun forProductsPage(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage
 }
 
 interface SavedRecipesRepository {

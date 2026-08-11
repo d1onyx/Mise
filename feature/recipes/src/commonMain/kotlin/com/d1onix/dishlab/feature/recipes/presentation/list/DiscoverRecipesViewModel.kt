@@ -49,6 +49,7 @@ class DiscoverRecipesViewModel(
             is RecipeListAction.RecipeClicked -> router.openRecipe(action.id)
             RecipeListAction.BackClicked -> router.goBack()
             RecipeListAction.RetryClicked -> Unit
+            RecipeListAction.LoadNextPage -> Unit
         }
     }
 
