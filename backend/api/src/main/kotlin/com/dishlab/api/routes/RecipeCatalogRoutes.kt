@@ -90,19 +90,27 @@ fun Route.recipeCatalogRoutes(
         }
 
         get("/{recipeId}") {
-            call.respond(service.get("anonymous", call.catalogRecipeId()).toCatalogResponse())
+            // GET / merges two id spaces into one page: catalog recipes ("catalog:<long>") and
+            // user-authored recipes (raw UUID, see Recipe.toCatalogResponse in RecipeCatalogDtos.kt).
+            // The detail route has to resolve whichever one the client got from that list.
+            val rawId = call.parameters["recipeId"] ?: throw NotFoundError("Рецепт не знайдено")
+            if (rawId.startsWith("catalog:")) {
+                call.respond(service.get("anonymous", call.catalogRecipeId()).toCatalogResponse())
+            } else {
+                val recipeId = rawId.toUuidOrNull() ?: throw NotFoundError("Рецепт не знайдено")
+                val viewerId = currentUserResolver.resolve("anonymous").id
+                call.respond(recipeService.get("anonymous", recipeId).toCatalogResponse(viewerId))
+            }
         }
 
         post("/{recipeId}/bookmark") {
             val user = call.requireFirebaseUser(authVerifier) ?: return@post
-            val recipe = service.setBookmarked(user.uid, call.catalogRecipeId(), bookmarked = true)
-            call.respond(BookmarkResponse(recipe.id.catalogId(), bookmarked = true))
+            call.respond(call.bookmark(user.uid, service, recipeService, bookmarked = true))
         }
 
         delete("/{recipeId}/bookmark") {
             val user = call.requireFirebaseUser(authVerifier) ?: return@delete
-            val recipe = service.setBookmarked(user.uid, call.catalogRecipeId(), bookmarked = false)
-            call.respond(BookmarkResponse(recipe.id.catalogId(), bookmarked = false))
+            call.respond(call.bookmark(user.uid, service, recipeService, bookmarked = false))
         }
     }
 }
@@ -114,3 +122,24 @@ private fun io.ktor.server.application.ApplicationCall.catalogRecipeId(): Long =
         ?: throw NotFoundError("Рецепт не знайдено")
 
 private fun Long.catalogId(): String = "catalog:$this"
+
+private fun String.toUuidOrNull(): java.util.UUID? = runCatching { java.util.UUID.fromString(this) }.getOrNull()
+
+// Same catalog:<long> vs raw-uuid dispatch as GET /{recipeId} — the client bookmarks whichever
+// id shape the catalog list gave it, so this has to resolve both id spaces too.
+private fun io.ktor.server.application.ApplicationCall.bookmark(
+    firebaseUid: String,
+    service: RecipeCatalogService,
+    recipeService: RecipeService,
+    bookmarked: Boolean,
+): BookmarkResponse {
+    val rawId = parameters["recipeId"] ?: throw NotFoundError("Рецепт не знайдено")
+    return if (rawId.startsWith("catalog:")) {
+        val recipe = service.setBookmarked(firebaseUid, catalogRecipeId(), bookmarked)
+        BookmarkResponse(recipe.id.catalogId(), bookmarked)
+    } else {
+        val recipeId = rawId.toUuidOrNull() ?: throw NotFoundError("Рецепт не знайдено")
+        val recipe = recipeService.bookmark(firebaseUid, recipeId, bookmarked)
+        BookmarkResponse(recipe.id.toString(), bookmarked)
+    }
+}
