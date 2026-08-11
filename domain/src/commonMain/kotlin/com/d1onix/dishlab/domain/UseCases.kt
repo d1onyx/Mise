@@ -6,6 +6,7 @@ import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeFilters
 import com.d1onix.dishlab.domain.model.RecipeId
+import com.d1onix.dishlab.domain.model.RecipePage
 import kotlinx.coroutines.flow.Flow
 
 /** Resolve a scanned barcode. `null` means «not in the catalogue» — the Not found screen. */
@@ -18,11 +19,11 @@ fun interface GetProductsUseCase {
 }
 
 fun interface GetRecipesForProductsUseCase {
-    suspend operator fun invoke(productIds: List<ProductId>): List<Recipe>
+    suspend operator fun invoke(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage
 }
 
 fun interface GetAllRecipesUseCase {
-    suspend operator fun invoke(): List<Recipe>
+    suspend operator fun invoke(page: Int, pageSize: Int): RecipePage
 }
 
 fun interface FilterRecipesByConnectionsUseCase {

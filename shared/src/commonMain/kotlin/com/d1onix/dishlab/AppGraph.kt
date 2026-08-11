@@ -10,6 +10,7 @@ import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOv
 import com.d1onix.dishlab.feature.recipes.presentation.cooking.CookingViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.detail.RecipeDetailViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.list.RecipesViewModel
+import com.d1onix.dishlab.feature.recipes.presentation.list.DiscoverRecipesViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.list.SavedRecipesViewModel
 import com.d1onix.dishlab.feature.scanner.presentation.ScanNotFoundViewModel
 import com.d1onix.dishlab.feature.scanner.presentation.ScanViewModel
@@ -43,6 +44,7 @@ interface AppGraph {
     val connectionOverviewViewModel: ConnectionOverviewViewModel
     val historyViewModel: HistoryViewModel
     val recipesViewModel: RecipesViewModel
+    val discoverRecipesViewModel: DiscoverRecipesViewModel
     val savedRecipesViewModel: SavedRecipesViewModel
 
     // Screens with an argument build their view-model through an assisted factory.

@@ -21,17 +21,30 @@ class DiscoverRecipesViewModel(
     private val getProducts: GetProductsUseCase,
     private val router: RecipesRouter,
 ) : AbstractViewModel(dependencies), WithMviState<RecipeListUiState> {
-    private val mutableState = MutableStateFlow(RecipeListUiState())
+    private val mutableState = MutableStateFlow(RecipeListUiState(isLoading = true))
     val uiState: StateFlow<RecipeListUiState> = mutableState.asStateFlow()
 
     init {
-        launch("loadRecipeCatalogue") {
-            val recipes = getAllRecipes()
+        loadFirstPage()
+    }
+
+    private fun loadFirstPage() = launch("loadRecipeCatalogue") {
+        try {
+            val page = getAllRecipes(1, PAGE_SIZE)
+            val recipes = page.items
             val products = getProducts(recipes.flatMap { it.productIds }.distinct())
             mutableState.update {
-                it.copy(all = recipes, products = products.associateBy { product -> product.id })
+                it.copy(
+                    all = recipes,
+                    products = products.associateBy { product -> product.id },
+                    hasNextPage = page.hasNextPage,
+                    isLoading = false,
+                    loadError = false,
+                )
                     .refiltered()
             }
+        } catch (_: Throwable) {
+            mutableState.update { it.copy(isLoading = false, loadError = true) }
         }
     }
 
@@ -48,10 +61,27 @@ class DiscoverRecipesViewModel(
             }
             is RecipeListAction.RecipeClicked -> router.openRecipe(action.id)
             RecipeListAction.BackClicked -> router.goBack()
-            RecipeListAction.RetryClicked -> Unit
+            RecipeListAction.RetryClicked -> loadFirstPage()
+            RecipeListAction.LoadNextPage -> loadNextPage()
         }
     }
 
     private fun RecipeListUiState.refiltered(): RecipeListUiState =
         copy(visible = filterRecipes(all, filters))
+
+    private fun loadNextPage() = launch("loadMoreCatalogueRecipes") {
+        val state = mutableState.value
+        if (state.isLoadingMore || !state.hasNextPage) return@launch
+        mutableState.update { it.copy(isLoadingMore = true) }
+        val page = getAllRecipes(state.all.size / PAGE_SIZE + 1, PAGE_SIZE)
+        mutableState.update {
+            it.copy(
+                all = (it.all + page.items).distinctBy { recipe -> recipe.id },
+                hasNextPage = page.hasNextPage,
+                isLoadingMore = false,
+            ).refiltered()
+        }
+    }
+
+    private companion object { const val PAGE_SIZE = 20 }
 }

@@ -28,6 +28,17 @@ import kotlin.test.assertTrue
 class BackendProductRepositoryTest {
 
     @Test
+    fun `fallback product retains OFF tags for recipe matching`() {
+        val product = ClientProductSnapshotDto(
+            barcode = BARCODE,
+            name = "Oats",
+            categories = listOf("en:cereals", "en:oats"),
+        ).toBackendProduct().toDomain()
+
+        assertEquals(listOf("en:cereals", "en:oats"), product.canonicalTags)
+    }
+
+    @Test
     fun `Open Food Facts taxonomy tags are converted into display labels`() {
         val details = ClientProductSnapshotDto(
             barcode = BARCODE,

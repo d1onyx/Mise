@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
+import com.d1onix.dishlab.designsystem.component.EmptyState
+import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.MiseTag
 import com.d1onix.dishlab.designsystem.component.ProductAvatar
 import com.d1onix.dishlab.designsystem.component.SectionLabel
@@ -38,6 +40,9 @@ import com.d1onix.dishlab.feature.recipes.presentation.components.difficultyColo
 import com.d1onix.dishlab.feature.recipes.presentation.difficultyLabel
 import com.d1onix.dishlab.feature.recipes.resources.Res
 import com.d1onix.dishlab.feature.recipes.resources.recipe_back
+import com.d1onix.dishlab.feature.recipes.resources.recipe_loading
+import com.d1onix.dishlab.feature.recipes.resources.recipe_unavailable
+import com.d1onix.dishlab.feature.recipes.resources.recipe_retry
 import com.d1onix.dishlab.feature.recipes.resources.recipe_ingredients
 import com.d1onix.dishlab.feature.recipes.resources.recipe_save
 import com.d1onix.dishlab.feature.recipes.resources.recipe_start_cooking
@@ -61,7 +66,11 @@ internal fun RecipeDetailContent(
     modifier: Modifier = Modifier,
 ) {
     val colors = MiseTheme.colors
-    val recipe = state.recipe ?: return
+    val recipe = state.recipe
+    if (recipe == null) {
+        RecipeDetailUnavailableContent(state, onAction, modifier)
+        return
+    }
 
     Box(modifier.fillMaxSize().screenIn()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -254,6 +263,39 @@ internal fun RecipeDetailContent(
                 text = stringResource(Res.string.recipe_start_cooking),
                 onClick = { onAction(RecipeDetailAction.StartCookingClicked) },
                 modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecipeDetailUnavailableContent(
+    state: RecipeDetailUiState,
+    onAction: (RecipeDetailAction) -> Unit,
+    modifier: Modifier,
+) {
+    Column(
+        modifier
+            .fillMaxSize()
+            .safeDrawingPadding()
+            .screenIn(),
+    ) {
+        MiseScreenHeader(
+            title = "",
+            onBackClick = { onAction(RecipeDetailAction.BackClicked) },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+        )
+        EmptyState(
+            text = stringResource(
+                if (state.isLoading) Res.string.recipe_loading else Res.string.recipe_unavailable,
+            ),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (state.loadError) {
+            MisePrimaryButton(
+                text = stringResource(Res.string.recipe_retry),
+                onClick = { onAction(RecipeDetailAction.RetryClicked) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             )
         }
     }

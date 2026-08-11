@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -119,12 +120,15 @@ internal fun RecipeListContent(
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 30.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(state.visible, key = { it.id.value }) { recipe ->
+            itemsIndexed(state.visible, key = { _, recipe -> recipe.id.value }) { index, recipe ->
                 RecipeCard(
                     recipe = recipe,
                     products = state.productsOf(recipe),
                     onClick = { onAction(RecipeListAction.RecipeClicked(recipe.id)) },
                 )
+                if (index == state.visible.lastIndex && state.hasNextPage) {
+                    LaunchedEffect(recipe.id) { onAction(RecipeListAction.LoadNextPage) }
+                }
             }
         }
     }

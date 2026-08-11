@@ -12,6 +12,7 @@ import com.d1onix.dishlab.feature.products.navigation.ConnectionOverviewRoute
 import com.d1onix.dishlab.feature.recipes.navigation.CookingRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipeDetailRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRoute
+import com.d1onix.dishlab.feature.recipes.navigation.DiscoverRecipesRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRouter
 import com.d1onix.dishlab.feature.recipes.navigation.SavedRoute
 import com.d1onix.dishlab.feature.scanner.navigation.ScanNotFoundRoute
@@ -43,7 +44,7 @@ class ScannerRouterImpl(private val router: AppRouter) : ScannerRouter {
     override fun openNotFound(barcode: String, showBackNavigation: Boolean) =
         router.replace(ScanNotFoundRoute(barcode, showBackNavigation))
     override fun openScanner(showBackNavigation: Boolean) = router.replace(ScanRoute(showBackNavigation))
-    override fun openRecipes() = router.launch(RecipesRoute)
+    override fun openRecipes() = router.launch(DiscoverRecipesRoute)
     override fun goBack() = router.goBack()
 }
 

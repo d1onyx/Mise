@@ -13,6 +13,7 @@ import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeFilters
 import com.d1onix.dishlab.domain.model.RecipeId
+import com.d1onix.dishlab.domain.model.RecipePage
 import com.d1onix.dishlab.domain.repository.RecipeRepository
 import com.d1onix.dishlab.domain.repository.SavedRecipesRepository
 import com.d1onyx.core.essentials.di.AppScope
@@ -26,8 +27,8 @@ import kotlinx.coroutines.flow.map
 class GetRecipesForProductsUseCaseImpl(
     private val recipes: RecipeRepository,
 ) : GetRecipesForProductsUseCase {
-    override suspend fun invoke(productIds: List<ProductId>): List<Recipe> =
-        recipes.forProducts(productIds)
+    override suspend fun invoke(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage =
+        recipes.forProductsPage(productIds, page, pageSize)
 }
 
 @ContributesBinding(AppScope::class)
@@ -35,7 +36,7 @@ class GetRecipesForProductsUseCaseImpl(
 class GetAllRecipesUseCaseImpl(
     private val recipes: RecipeRepository,
 ) : GetAllRecipesUseCase {
-    override suspend fun invoke(): List<Recipe> = recipes.all()
+    override suspend fun invoke(page: Int, pageSize: Int): RecipePage = recipes.allPage(page, pageSize)
 }
 
 @ContributesBinding(AppScope::class)

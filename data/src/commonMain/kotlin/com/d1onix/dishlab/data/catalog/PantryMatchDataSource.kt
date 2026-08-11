@@ -41,11 +41,25 @@ class RecipeCatalogRemoteDataSource(
 ) {
     suspend fun recipe(id: RecipeId): CatalogRecipeDto =
         client.get("api/v1/recipe-catalog/${id.value}").body()
+
+    suspend fun recipes(page: Int, pageSize: Int): CatalogRecipePageDto =
+        client.get("api/v1/recipe-catalog") {
+            parameter("page", page)
+            parameter("pageSize", pageSize)
+        }.body()
 }
 
 @Serializable
 data class PantryMatchPageDto(
     val items: List<PantryMatchedRecipeDto>,
+    val page: Int,
+    val pageSize: Int,
+    val total: Int,
+)
+
+@Serializable
+data class CatalogRecipePageDto(
+    val items: List<CatalogRecipeDto>,
     val page: Int,
     val pageSize: Int,
     val total: Int,

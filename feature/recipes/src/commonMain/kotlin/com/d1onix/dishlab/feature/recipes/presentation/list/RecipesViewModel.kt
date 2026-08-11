@@ -57,13 +57,15 @@ class RecipesViewModel(
             is RecipeListAction.RecipeClicked -> router.openRecipe(action.id)
             RecipeListAction.BackClicked -> router.goBack()
             RecipeListAction.RetryClicked -> launch("retryRecipes") { load(session.products.value) }
+            RecipeListAction.LoadNextPage -> loadNextPage()
         }
     }
 
     private suspend fun load(ids: List<com.d1onix.dishlab.domain.model.ProductId>) {
         _uiState.update { it.copy(isLoading = true, loadError = false) }
         try {
-            val recipes = if (ids.isEmpty()) emptyList() else getRecipesForProducts(ids)
+            val result = if (ids.isEmpty()) null else getRecipesForProducts(ids, page = 1, pageSize = PAGE_SIZE)
+            val recipes = result?.items.orEmpty()
             val products = getProducts(recipes.flatMap { it.productIds }.distinct())
             _uiState.update {
                 it.copy(
@@ -71,6 +73,8 @@ class RecipesViewModel(
                     products = products.associateBy { product -> product.id },
                     isLoading = false,
                     loadError = false,
+                    hasNextPage = result?.hasNextPage == true,
+                    isLoadingMore = false,
                 ).refiltered()
             }
         } catch (_: Throwable) {
@@ -80,6 +84,31 @@ class RecipesViewModel(
         }
     }
 
+    private fun loadNextPage() {
+        val state = _uiState.value
+        if (state.isLoading || state.isLoadingMore || !state.hasNextPage) return
+        launch("loadMoreRecipes") {
+            _uiState.update { it.copy(isLoadingMore = true) }
+            try {
+                val page = getRecipesForProducts(session.products.value, state.all.size / PAGE_SIZE + 1, PAGE_SIZE)
+                val all = (state.all + page.items).distinctBy { it.id }
+                val products = getProducts(page.items.flatMap { it.productIds }.distinct())
+                _uiState.update {
+                    it.copy(
+                        all = all,
+                        products = it.products + products.associateBy { product -> product.id },
+                        hasNextPage = page.hasNextPage,
+                        isLoadingMore = false,
+                    ).refiltered()
+                }
+            } catch (_: Throwable) {
+                _uiState.update { it.copy(isLoadingMore = false) }
+            }
+        }
+    }
+
     private fun RecipeListUiState.refiltered(): RecipeListUiState =
         copy(visible = filterRecipes(all, filters))
+
+    private companion object { const val PAGE_SIZE = 20 }
 }
