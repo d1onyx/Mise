@@ -1,7 +1,14 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
+val localProperties = Properties().apply {
+    rootProject.file("local.properties")
+        .takeIf { it.isFile }
+        ?.inputStream()
+        ?.use(::load)
+}
 val backendUrl = providers.gradleProperty("dishLabApiUrl")
-    .orElse("http://10.0.2.2:8080/")
+    .orElse(localProperties.getProperty("dishLabApiUrl") ?: "http://10.0.2.2:8080/")
     .get()
 val admobAppId = providers.gradleProperty("dishLabAdmobAppId")
     .orElse("ca-app-pub-3940256099942544~3347511713")
