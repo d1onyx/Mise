@@ -93,7 +93,6 @@ class GraphViewModel(
                 )
             }
             GraphAction.ConnectionOverviewClicked -> router.openConnectionOverview()
-            GraphAction.ComparisonClicked -> router.openComparison()
             GraphAction.EmptySpaceClicked -> {
                 if (_uiState.value.isEditingConnections) {
                     _uiState.update { it.copy(pendingConnectionId = null) }
@@ -106,7 +105,7 @@ class GraphViewModel(
             GraphAction.SavedClicked -> router.openSavedRecipes()
             GraphAction.BackClicked -> router.goBack()
             GraphAction.SheetDismissed -> _uiState.update { it.copy(selectedId = null) }
-            GraphAction.ProfileClicked -> router.openProfile()
+            GraphAction.SettingsClicked -> router.openSettings()
         }
     }
 

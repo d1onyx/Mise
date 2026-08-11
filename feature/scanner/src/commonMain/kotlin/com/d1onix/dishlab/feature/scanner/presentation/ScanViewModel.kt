@@ -3,9 +3,7 @@ package com.d1onix.dishlab.feature.scanner.presentation
 import com.d1onix.dishlab.domain.GetProductByBarcodeUseCase
 import com.d1onix.dishlab.domain.RecordScanUseCase
 import com.d1onix.dishlab.domain.model.Product
-import com.d1onix.dishlab.domain.repository.ProductComparisonStore
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
-import com.d1onix.dishlab.feature.scanner.navigation.ScanTarget
 import com.d1onix.dishlab.feature.scanner.navigation.ScannerRouter
 import com.d1onyx.core.presentation.CommonDependencies
 import com.d1onyx.core.presentation.WithMviState
@@ -22,15 +20,14 @@ import kotlinx.coroutines.flow.update
 @AssistedInject
 class ScanViewModel(
     dependencies: CommonDependencies,
-    @Assisted private val target: ScanTarget,
+    @Assisted private val showBackNavigation: Boolean,
     private val getProductByBarcode: GetProductByBarcodeUseCase,
     private val recordScan: RecordScanUseCase,
     private val session: ScanSessionStore,
-    private val comparison: ProductComparisonStore,
     private val router: ScannerRouter,
 ) : AbstractViewModel(dependencies), WithMviState<ScanUiState> {
 
-    private val _uiState = MutableStateFlow(ScanUiState(target = target))
+    private val _uiState = MutableStateFlow(ScanUiState())
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
     fun onAction(action: ScanAction) {
@@ -70,7 +67,6 @@ class ScanViewModel(
             ScanAction.ManualBarcodeSubmitted -> submitManualBarcode()
             ScanAction.RetryResolutionClicked -> retryResolution()
             ScanAction.AddReviewedProductClicked -> addReviewedProduct()
-            ScanAction.CompareWithAnotherClicked -> compareWithAnother()
             ScanAction.ReviewedProductSkipped -> skipReviewedProduct()
             ScanAction.ReviewBackClicked -> _uiState.update {
                 it.copy(
@@ -125,7 +121,7 @@ class ScanViewModel(
             val product = getProductByBarcode(barcode)
             if (product == null) {
                 _uiState.update { it.copy(isResolving = false, detectedBarcode = null) }
-                router.openNotFound(barcode, target)
+                router.openNotFound(barcode, showBackNavigation)
             } else {
                 present(product)
             }
@@ -158,11 +154,7 @@ class ScanViewModel(
                 manualBarcode = "",
                 detectedBarcode = null,
                 reviewedProduct = product,
-                reviewedProductAlreadyAdded = product.id in if (target == ScanTarget.Comparison) {
-                    comparison.products.value
-                } else {
-                    session.products.value
-                },
+                reviewedProductAlreadyAdded = product.id in session.products.value,
             )
         }
         // History persistence must not hold the recognised product card behind
@@ -174,29 +166,8 @@ class ScanViewModel(
         val state = _uiState.value
         val product = state.reviewedProduct ?: return
         launch("addReviewedProduct") {
-            if (target == ScanTarget.Comparison) {
-                comparison.add(product.id)
-                router.openComparison()
-            } else {
-                if (!state.reviewedProductAlreadyAdded) session.add(product.id)
-                router.openCombinationGraph()
-            }
-            clearReview()
-        }
-    }
-
-    /**
-     * Comparison is intentionally separate from the persisted graph. Starting
-     * it from a newly reviewed product replaces any earlier comparison session,
-     * then returns directly to the scanner for the second product.
-     */
-    private fun compareWithAnother() {
-        if (target == ScanTarget.Comparison) return
-        val product = _uiState.value.reviewedProduct ?: return
-        launch("startComparison") {
-            comparison.clear()
-            comparison.add(product.id)
-            router.openScanner(ScanTarget.Comparison)
+            if (!state.reviewedProductAlreadyAdded) session.add(product.id)
+            router.openCombinationGraph()
             clearReview()
         }
     }
@@ -219,6 +190,6 @@ class ScanViewModel(
 
     @AssistedFactory
     fun interface Factory {
-        fun create(target: ScanTarget): ScanViewModel
+        fun create(showBackNavigation: Boolean): ScanViewModel
     }
 }
