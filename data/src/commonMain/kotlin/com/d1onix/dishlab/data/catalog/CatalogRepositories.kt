@@ -230,6 +230,9 @@ internal fun ClientProductSnapshotDto.toBackendProduct(): BackendProductDto {
         imageUrl = imageFrontSmallUrl.ifBlank { imageFrontUrl },
         packageQuantity = productQuantity?.toInt() ?: 0,
         nutritionGrade = nutritionGrade,
+        // When canonicalization is temporarily unavailable, Open Food Facts
+        // category tags still let pantry-match return useful recipes.
+        canonicalTags = categories.filter { it.startsWith("en:") },
     )
 }
 
