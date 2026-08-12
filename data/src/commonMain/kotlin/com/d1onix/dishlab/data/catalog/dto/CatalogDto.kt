@@ -54,5 +54,4 @@ data class IngredientDto(
 data class RecipeStepDto(
     val title: String,
     val description: String,
-    val timerSeconds: Int? = null,
 )

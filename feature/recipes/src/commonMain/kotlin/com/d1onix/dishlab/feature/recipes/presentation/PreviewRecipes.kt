@@ -8,7 +8,7 @@ import com.d1onix.dishlab.domain.model.RecipeDifficulty
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.domain.model.RecipeStep
 
-/** Fixtures for previews only — one recipe per difficulty, with and without timers. */
+/** Fixtures for previews only — one recipe per difficulty. */
 internal fun previewRecipes(): List<Recipe> = listOf(previewBowl, previewMeatballs)
 
 internal val previewProducts: List<Product> = listOf(
@@ -55,7 +55,7 @@ internal val previewBowl = Recipe(
         Ingredient("1", "Ripe banana"),
     ),
     steps = listOf(
-        RecipeStep("Simmer the oats", "Bring oats and milk to a gentle simmer.", timerSeconds = 120),
+        RecipeStep("Simmer the oats", "Bring oats and milk to a gentle simmer."),
         RecipeStep("Slice the banana", "Slice the banana into thin rounds."),
         RecipeStep("Assemble & finish", "Top with banana, honey and cinnamon."),
     ),
@@ -75,6 +75,6 @@ internal val previewMeatballs = Recipe(
     ),
     steps = listOf(
         RecipeStep("Mix the mince", "Combine chicken, oats, egg and seasoning."),
-        RecipeStep("Sear", "Brown in a hot pan on all sides.", timerSeconds = 300),
+        RecipeStep("Sear", "Brown in a hot pan on all sides."),
     ),
 )

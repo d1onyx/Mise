@@ -94,7 +94,6 @@ data class CatalogIngredientDto(
 data class CatalogRecipeStepDto(
     val position: Int,
     val text: String,
-    val timerSeconds: Int? = null,
 )
 
 fun PantryMatchedRecipeDto.toDomain(): Recipe = recipe.toDomain()
@@ -108,7 +107,5 @@ fun CatalogRecipeDto.toDomain(): Recipe = Recipe(
     productIds = emptyList(),
     description = description.orEmpty(),
     ingredients = ingredients.map { Ingredient(quantity = it.quantity.orEmpty(), name = it.name) },
-    steps = steps.sortedBy(CatalogRecipeStepDto::position).map {
-        RecipeStep(title = "", description = it.text, timerSeconds = it.timerSeconds)
-    },
+    steps = steps.sortedBy(CatalogRecipeStepDto::position).map { RecipeStep(title = "", description = it.text) },
 )

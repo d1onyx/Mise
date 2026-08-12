@@ -28,7 +28,6 @@ sealed interface RecipeDetailAction {
     data object BackClicked : RecipeDetailAction
     data object RetryClicked : RecipeDetailAction
     data object SaveClicked : RecipeDetailAction
-    data object StartCookingClicked : RecipeDetailAction
 }
 
 @Immutable
@@ -71,7 +70,6 @@ class RecipeDetailViewModel(
             RecipeDetailAction.BackClicked -> router.goBack()
             RecipeDetailAction.RetryClicked -> launch("reloadRecipe") { loadRecipe() }
             RecipeDetailAction.SaveClicked -> launch("toggleSaved") { toggleSaved(recipeId) }
-            RecipeDetailAction.StartCookingClicked -> router.openCookingMode(recipeId)
         }
     }
 

@@ -7,7 +7,6 @@ import com.d1onix.dishlab.domain.model.ScoreVerdict
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 /** Guards the shape of the bundled catalogue against the domain model. */
 class CatalogMappersTest {
@@ -52,7 +51,7 @@ class CatalogMappersTest {
     }
 
     @Test
-    fun `a recipe decodes with its steps and timers`() {
+    fun `a recipe decodes with its steps`() {
         val dto = json.decodeFromString<RecipeDto>(
             """
             {
@@ -65,7 +64,7 @@ class CatalogMappersTest {
               "description": "Creamy oats.",
               "ingredients": [{ "quantity": "50 g", "name": "Rolled oats" }],
               "steps": [
-                { "title": "Simmer", "description": "Simmer the oats", "timerSeconds": 120 },
+                { "title": "Simmer", "description": "Simmer the oats" },
                 { "title": "Serve", "description": "Plate it" }
               ]
             }
@@ -76,8 +75,8 @@ class CatalogMappersTest {
 
         assertEquals(RecipeDifficulty.Easy, recipe.difficulty)
         assertEquals(listOf("oats", "banana"), recipe.productIds.map { it.value })
-        assertEquals(120, recipe.steps.first().timerSeconds)
-        assertNull(recipe.steps.last().timerSeconds)
+        assertEquals("Simmer the oats", recipe.steps.first().description)
+        assertEquals("Plate it", recipe.steps.last().description)
     }
 
     @Test

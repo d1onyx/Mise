@@ -45,10 +45,7 @@ import com.d1onix.dishlab.feature.recipes.resources.recipe_unavailable
 import com.d1onix.dishlab.feature.recipes.resources.recipe_retry
 import com.d1onix.dishlab.feature.recipes.resources.recipe_ingredients
 import com.d1onix.dishlab.feature.recipes.resources.recipe_save
-import com.d1onix.dishlab.feature.recipes.resources.recipe_start_cooking
 import com.d1onix.dishlab.feature.recipes.resources.recipe_steps
-import com.d1onix.dishlab.feature.recipes.resources.recipe_timer_minutes
-import com.d1onix.dishlab.feature.recipes.resources.recipe_timer_seconds
 import com.d1onix.dishlab.feature.recipes.resources.recipe_unsave
 import com.d1onix.dishlab.feature.recipes.resources.recipes_minutes
 import org.jetbrains.compose.resources.stringResource
@@ -227,43 +224,11 @@ internal fun RecipeDetailContent(
                                     color = colors.text.copy(alpha = 0.65f),
                                     modifier = Modifier.padding(top = 3.dp),
                                 )
-                                val timer = step.timerSeconds
-                                if (timer != null) {
-                                    Text(
-                                        text = if (timer >= 60) {
-                                            stringResource(Res.string.recipe_timer_minutes, timer / 60)
-                                        } else {
-                                            stringResource(Res.string.recipe_timer_seconds, timer)
-                                        },
-                                        style = MiseTheme.typography.monoSmall,
-                                        color = colors.cyan,
-                                        modifier = Modifier.padding(top = 6.dp),
-                                    )
-                                }
                             }
                         }
                     }
                 }
             }
-        }
-
-        Box(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color.Transparent, colors.background, colors.background),
-                    )
-                )
-                .safeDrawingPadding()
-                .padding(horizontal = 20.dp, vertical = 14.dp),
-        ) {
-            MisePrimaryButton(
-                text = stringResource(Res.string.recipe_start_cooking),
-                onClick = { onAction(RecipeDetailAction.StartCookingClicked) },
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
     }
 }

@@ -7,7 +7,6 @@ import com.d1onix.dishlab.feature.products.presentation.graph.GraphViewModel
 import com.d1onix.dishlab.feature.products.presentation.comparison.ComparisonViewModel
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryViewModel
 import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewViewModel
-import com.d1onix.dishlab.feature.recipes.presentation.cooking.CookingViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.detail.RecipeDetailViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.list.RecipesViewModel
 import com.d1onix.dishlab.feature.recipes.presentation.list.DiscoverRecipesViewModel
@@ -50,5 +49,4 @@ interface AppGraph {
     // Screens with an argument build their view-model through an assisted factory.
     val scanNotFoundViewModelFactory: ScanNotFoundViewModel.Factory
     val recipeDetailViewModelFactory: RecipeDetailViewModel.Factory
-    val cookingViewModelFactory: CookingViewModel.Factory
 }

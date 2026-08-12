@@ -5,7 +5,6 @@ import com.d1onix.dishlab.designsystem.preview.MiseScreenPreviews
 import com.d1onix.dishlab.designsystem.preview.MiseWidthPreviews
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.feature.recipes.presentation.components.RecipeCard
-import com.d1onix.dishlab.feature.recipes.presentation.cooking.CookingContent
 import com.d1onix.dishlab.feature.recipes.presentation.detail.RecipeDetailContent
 import com.d1onix.dishlab.feature.recipes.presentation.list.RecipeListContent
 import com.d1onix.dishlab.feature.recipes.resources.Res
@@ -54,30 +53,6 @@ private fun RecipeDetailContentPreview() {
 private fun RecipeDetailContentSavedPreview() {
     MiseTheme {
         RecipeDetailContent(state = RecipeDetailPreviewStates.Saved, onAction = {})
-    }
-}
-
-@MiseScreenPreviews
-@Composable
-private fun CookingContentPreview() {
-    MiseTheme {
-        CookingContent(state = CookingPreviewStates.Default, onAction = {})
-    }
-}
-
-@MiseScreenPreviews
-@Composable
-private fun CookingContentRunningTimerPreview() {
-    MiseTheme {
-        CookingContent(state = CookingPreviewStates.RunningTimer, onAction = {})
-    }
-}
-
-@MiseScreenPreviews
-@Composable
-private fun CookingContentLastStepPreview() {
-    MiseTheme {
-        CookingContent(state = CookingPreviewStates.LastStep, onAction = {})
     }
 }
 

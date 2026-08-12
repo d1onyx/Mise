@@ -29,12 +29,10 @@ import com.d1onix.dishlab.feature.products.presentation.graph.GraphScreen
 import com.d1onix.dishlab.feature.products.presentation.comparison.ComparisonScreen
 import com.d1onix.dishlab.feature.products.presentation.history.HistoryScreen
 import com.d1onix.dishlab.feature.products.presentation.connections.ConnectionOverviewScreen
-import com.d1onix.dishlab.feature.recipes.navigation.CookingRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipeDetailRoute
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRoute
 import com.d1onix.dishlab.feature.recipes.navigation.DiscoverRecipesRoute
 import com.d1onix.dishlab.feature.recipes.navigation.SavedRoute
-import com.d1onix.dishlab.feature.recipes.presentation.cooking.CookingScreen
 import com.d1onix.dishlab.feature.recipes.presentation.detail.RecipeDetailScreen
 import com.d1onix.dishlab.feature.recipes.presentation.list.RecipesScreen
 import com.d1onix.dishlab.feature.recipes.presentation.list.DiscoverRecipesScreen
@@ -137,10 +135,6 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
                 )
             }
 
-            composable<CookingRoute> { entry ->
-                val recipeId = RecipeId(entry.toRoute<CookingRoute>().recipeId)
-                CookingScreen(viewModel { graph.cookingViewModelFactory.create(recipeId) })
-            }
         }
 
         PlatformBackHandler {
