@@ -52,7 +52,6 @@ data class CatalogRecipeResponse(
     val nutrition: CatalogNutritionResponse,
     val ingredients: List<CatalogRecipeIngredientResponse>,
     val steps: List<CatalogRecipeStepResponse>,
-    val bookmarked: Boolean,
 )
 
 @Serializable
@@ -80,7 +79,6 @@ fun CatalogRecipe.toCatalogResponse(): CatalogRecipeResponse = CatalogRecipeResp
         CatalogRecipeIngredientResponse(it.name, it.quantity, it.canonicalTags)
     },
     steps = steps.map { CatalogRecipeStepResponse(it.position, it.text, it.timerSeconds) },
-    bookmarked = bookmarked,
 )
 
 fun CatalogRecipePage.toResponse(): CatalogRecipePageResponse = CatalogRecipePageResponse(
@@ -90,7 +88,7 @@ fun CatalogRecipePage.toResponse(): CatalogRecipePageResponse = CatalogRecipePag
     total = total,
 )
 
-fun Recipe.toCatalogResponse(viewerUserId: java.util.UUID): CatalogRecipeResponse =
+fun Recipe.toCatalogResponse(): CatalogRecipeResponse =
     CatalogRecipeResponse(
         id = id.toString(),
         title = currentVersion.title,
@@ -110,7 +108,6 @@ fun Recipe.toCatalogResponse(viewerUserId: java.util.UUID): CatalogRecipeRespons
         steps = currentVersion.steps.map {
             CatalogRecipeStepResponse(it.position, it.text, it.timerSeconds)
         },
-        bookmarked = viewerUserId in bookmarkedByUserIds,
     )
 
 @Serializable

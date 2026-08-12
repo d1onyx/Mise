@@ -32,7 +32,6 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
                     replaceSubData(conn, v)
                 }
                 setCurrentVersionId(conn, recipe.id, recipe.currentVersion.id)
-                replaceBookmarks(conn, recipe.id, recipe.bookmarkedByUserIds)
                 conn.commit()
             } catch (e: Exception) {
                 conn.rollback()
@@ -58,8 +57,7 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
             val row = queryOne(conn, "SELECT * FROM recipes WHERE id = ?", id) { readRecipeRow(it) }
                 ?: return null
             val versions = loadVersions(conn, listOf(id))
-            val bookmarks = loadBookmarks(conn, listOf(id))
-            return assemble(row, versions[id].orEmpty(), bookmarks[id].orEmpty())
+            return assemble(row, versions[id].orEmpty())
         }
     }
 
@@ -69,9 +67,8 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
             if (rows.isEmpty()) return emptyList()
             val ids = rows.map { it.id }
             val versions = loadVersions(conn, ids)
-            val bookmarks = loadBookmarks(conn, ids)
             return rows.mapNotNull { row ->
-                runCatching { assemble(row, versions[row.id].orEmpty(), bookmarks[row.id].orEmpty()) }.getOrNull()
+                runCatching { assemble(row, versions[row.id].orEmpty()) }.getOrNull()
             }
         }
     }
@@ -253,19 +250,6 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
         }
     }
 
-    private fun replaceBookmarks(conn: Connection, recipeId: UUID, userIds: Set<UUID>) {
-        exec(conn, "DELETE FROM recipe_bookmarks WHERE recipe_id = ?", recipeId)
-        userIds.forEach { userId ->
-            conn.prepareStatement(
-                "INSERT INTO recipe_bookmarks (recipe_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING",
-            ).use { ps ->
-                ps.setObject(1, recipeId)
-                ps.setObject(2, userId)
-                ps.executeUpdate()
-            }
-        }
-    }
-
     // ── batch load ─────────────────────────────────────────────────────────────
 
     private fun loadVersions(conn: Connection, recipeIds: List<UUID>): Map<UUID, List<RecipeVersion>> {
@@ -376,19 +360,6 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
         }
     }
 
-    private fun loadBookmarks(conn: Connection, recipeIds: List<UUID>): Map<UUID, Set<UUID>> {
-        if (recipeIds.isEmpty()) return emptyMap()
-        val ph = recipeIds.inPlaceholders()
-        val result = mutableMapOf<UUID, MutableSet<UUID>>()
-        conn.prepareStatement("SELECT recipe_id, user_id FROM recipe_bookmarks WHERE recipe_id IN $ph").use { ps ->
-            recipeIds.forEachIndexed { i, id -> ps.setObject(i + 1, id) }
-            ps.executeQuery().use { rs ->
-                while (rs.next()) result.getOrPut(rs.uuid("recipe_id")) { mutableSetOf() }.add(rs.uuid("user_id"))
-            }
-        }
-        return result
-    }
-
     // ── row readers ────────────────────────────────────────────────────────────
 
     private data class RecipeRow(
@@ -430,7 +401,7 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
         createdAt = rs.instant("created_at"),
     )
 
-    private fun assemble(row: RecipeRow, versions: List<RecipeVersion>, bookmarks: Set<UUID>): Recipe {
+    private fun assemble(row: RecipeRow, versions: List<RecipeVersion>): Recipe {
         val current = versions.find { it.id == row.currentVersionId }
             ?: versions.maxByOrNull { it.versionNumber }
             ?: error("Recipe ${row.id} has no versions in the database")
@@ -442,7 +413,6 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
             visibility = row.visibility,
             currentVersion = current,
             versions = versions,
-            bookmarkedByUserIds = bookmarks,
             createdAt = row.createdAt,
             updatedAt = row.updatedAt,
             publishedAt = row.publishedAt,

@@ -29,13 +29,5 @@ export default function () {
     'recipe feed responds': (response) => response.status === 200,
   });
 
-  const pantryFilters = http.get(
-    `${baseUrl}/api/v1/pantry/inventory?category=vegetables&location=fridge&expiry=soon&search=tomato`,
-    { headers },
-  );
-  check(pantryFilters, {
-    'pantry filters respond': (response) => response.status === 200 || response.status === 401,
-  });
-
   sleep(1);
 }

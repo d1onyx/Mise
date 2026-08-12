@@ -47,7 +47,6 @@ data class Recipe(
     val visibility: RecipeVisibility,
     val currentVersion: RecipeVersion,
     val versions: List<RecipeVersion>,
-    val bookmarkedByUserIds: Set<UUID> = emptySet(),
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now(),
     val publishedAt: Instant? = null,
