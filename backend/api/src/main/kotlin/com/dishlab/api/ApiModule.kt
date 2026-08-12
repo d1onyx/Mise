@@ -13,25 +13,19 @@ import com.dishlab.api.middleware.pathForMetrics
 import com.dishlab.api.middleware.respondRateLimited
 import com.dishlab.api.routes.ProductionMetrics
 import com.dishlab.api.routes.aiCommandRoutes
-import com.dishlab.api.routes.cookingRoutes
 import com.dishlab.api.routes.authDebugRoutes
 import com.dishlab.api.routes.healthRoutes
-import com.dishlab.api.routes.healthJournalRoutes
 import com.dishlab.api.routes.ingredientRoutes
 import com.dishlab.api.routes.mediaRoutes
 import com.dishlab.api.routes.meRoutes
 import com.dishlab.api.routes.openapiRoutes
-import com.dishlab.api.routes.pantryRoutes
 import com.dishlab.api.routes.recipeRoutes
 import com.dishlab.api.routes.recipeCatalogRoutes
 import com.dishlab.api.routes.productCatalogRoutes
 import com.dishlab.application.service.AiCommandService
-import com.dishlab.application.service.CookingService
-import com.dishlab.application.service.HealthService
 import com.dishlab.application.service.IdentityService
 import com.dishlab.application.service.IngredientService
 import com.dishlab.application.service.CurrentUserResolver
-import com.dishlab.application.service.PantryService
 import com.dishlab.application.service.RecipeService
 import com.dishlab.application.service.RecipeCatalogService
 import com.dishlab.application.service.ProductCatalogService
@@ -59,9 +53,6 @@ fun Application.configureApi(
     recipeService: RecipeService,
     recipeCatalogService: RecipeCatalogService?,
     productCatalogService: ProductCatalogService,
-    pantryService: PantryService,
-    cookingService: CookingService,
-    healthService: HealthService,
     aiCommandService: AiCommandService,
     baseUrl: String = System.getenv("BASE_URL") ?: "http://10.0.1.12:8080",
 ) {
@@ -110,9 +101,6 @@ fun Application.configureApi(
             recipeCatalogRoutes(authVerifier, it, currentUserResolver, recipeService)
         }
         productCatalogRoutes(authVerifier, productCatalogService)
-        pantryRoutes(authVerifier, pantryService)
-        cookingRoutes(authVerifier, cookingService)
-        healthJournalRoutes(authVerifier, healthService)
         aiCommandRoutes(authVerifier, aiCommandService)
         mediaRoutes(authVerifier, baseUrl)
         staticFiles("/uploads", File("uploads"))

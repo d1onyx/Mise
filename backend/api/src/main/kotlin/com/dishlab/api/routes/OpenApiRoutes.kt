@@ -42,10 +42,7 @@ private val OPENAPI_SPEC =
         "/api/v1/recipe-catalog/{recipeId}": { "get": { "summary": "Imported recipe details" } },
         "/api/v1/products/barcode/{barcode}": { "get": { "summary": "Resolve a barcode through the server" } },
         "/api/v1/products/search": { "get": { "summary": "Search products through the server" } },
-        "/api/v1/products/normalize": { "post": { "summary": "Normalize scanned products to recipe ingredient tags" } },
-        "/api/v1/pantry/inventory": { "get": { "summary": "Pantry filters" }, "post": { "summary": "Create pantry item" } },
-        "/api/v1/cooking/sessions": { "post": { "summary": "Start cooking session" } },
-        "/api/v1/health/nutrition-logs": { "get": { "summary": "Nutrition logs" }, "post": { "summary": "Create nutrition log" } }
+        "/api/v1/products/normalize": { "post": { "summary": "Normalize scanned products to recipe ingredient tags" } }
       },
       "components": {
         "securitySchemes": {

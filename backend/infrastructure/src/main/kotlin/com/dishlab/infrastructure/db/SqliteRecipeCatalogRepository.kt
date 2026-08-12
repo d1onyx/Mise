@@ -28,19 +28,6 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                 statement.execute("PRAGMA foreign_keys = ON")
                 statement.execute("PRAGMA busy_timeout = 5000")
                 statement.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS catalog_bookmarks (
-                        firebase_uid TEXT NOT NULL,
-                        recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
-                        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        PRIMARY KEY (firebase_uid, recipe_id)
-                    )
-                    """.trimIndent(),
-                )
-                statement.execute(
-                    "CREATE INDEX IF NOT EXISTS idx_catalog_bookmarks_user ON catalog_bookmarks(firebase_uid, recipe_id)",
-                )
-                statement.execute(
                     "CREATE INDEX IF NOT EXISTS idx_recipes_category_name ON recipes(category, name COLLATE NOCASE)",
                 )
                 runCatching {
@@ -95,21 +82,16 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         val offset = (page - 1) * pageSize
         val sql =
             """
-            SELECT r.*,
-                   EXISTS(
-                       SELECT 1 FROM catalog_bookmarks b
-                       WHERE b.firebase_uid = ? AND b.recipe_id = r.id
-                   ) AS bookmarked
+            SELECT r.*
             FROM recipes r
             $where
             ORDER BY r.aggregated_rating IS NULL, r.aggregated_rating DESC, r.id
             LIMIT ? OFFSET ?
             """.trimIndent()
         val items = conn.prepareStatement(sql).use { statement ->
-            statement.setString(1, firebaseUid)
-            statement.bind(parameters, startIndex = 2)
-            statement.setInt(parameters.size + 2, pageSize)
-            statement.setInt(parameters.size + 3, offset)
+            statement.bind(parameters, startIndex = 1)
+            statement.setInt(parameters.size + 1, pageSize)
+            statement.setInt(parameters.size + 2, offset)
             statement.executeQuery().use { rows ->
                 buildList {
                     while (rows.next()) add(rows.toRecipe())
@@ -122,17 +104,12 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
     override fun findById(firebaseUid: String, recipeId: Long): CatalogRecipe? = connection().use { conn ->
         val loaded = conn.prepareStatement(
             """
-            SELECT r.*,
-                   EXISTS(
-                       SELECT 1 FROM catalog_bookmarks b
-                       WHERE b.firebase_uid = ? AND b.recipe_id = r.id
-                   ) AS bookmarked
+            SELECT r.*
             FROM recipes r
             WHERE r.id = ? AND r.is_active = 1
             """.trimIndent(),
         ).use { statement ->
-            statement.setString(1, firebaseUid)
-            statement.setLong(2, recipeId)
+            statement.setLong(1, recipeId)
             statement.executeQuery().use { rows ->
                 if (rows.next()) {
                     LoadedRecipe(
@@ -281,11 +258,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                  )
             SELECT r.*,
                    COALESCE(t.total_count, 0) AS total_count,
-                   COALESCE(m.matched_count, 0) AS matched_count,
-                   EXISTS(
-                       SELECT 1 FROM catalog_bookmarks b
-                       WHERE b.firebase_uid = ? AND b.recipe_id = r.id
-                   ) AS bookmarked
+                   COALESCE(m.matched_count, 0) AS matched_count
             FROM recipes r
             LEFT JOIN matched m ON m.recipe_id = r.id
             LEFT JOIN totals t ON t.recipe_id = r.id
@@ -313,7 +286,6 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             var idx = 1
             normalizedNames.forEach { stmt.setString(idx++, it) }
             matchedIngredientIds.forEach { stmt.setLong(idx++, it) }
-            stmt.setString(idx++, firebaseUid)
             condParams.forEach { stmt.setObject(idx++, it) }
             stmt.setInt(idx++, pageSize)
             stmt.setInt(idx, offset)
@@ -340,21 +312,6 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         ).use { statement ->
             statement.executeQuery().use { rows ->
                 buildList { while (rows.next()) add(rows.getString("category")) }
-            }
-        }
-    }
-
-    override fun setBookmarked(firebaseUid: String, recipeId: Long, bookmarked: Boolean) {
-        connection().use { conn ->
-            val sql = if (bookmarked) {
-                "INSERT OR IGNORE INTO catalog_bookmarks(firebase_uid, recipe_id) VALUES (?, ?)"
-            } else {
-                "DELETE FROM catalog_bookmarks WHERE firebase_uid = ? AND recipe_id = ?"
-            }
-            conn.prepareStatement(sql).use { statement ->
-                statement.setString(1, firebaseUid)
-                statement.setLong(2, recipeId)
-                statement.executeUpdate()
             }
         }
     }
@@ -440,7 +397,6 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                 sugar = nullableDouble("sugar_content"),
                 protein = nullableDouble("protein_content"),
             ),
-            bookmarked = getInt("bookmarked") == 1,
         )
     }
 

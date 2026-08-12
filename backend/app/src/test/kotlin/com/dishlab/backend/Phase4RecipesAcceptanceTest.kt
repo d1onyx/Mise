@@ -1,7 +1,6 @@
 package com.dishlab.backend
 
 import io.ktor.client.call.body
-import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.patch
@@ -161,16 +160,10 @@ class Phase4RecipesAcceptanceTest {
     }
 
     @Test
-    fun `bookmark fork reviews reports and media upload policy are supported`() = testApplication {
+    fun `fork reviews reports and media upload policy are supported`() = testApplication {
         application { testModule() }
 
         val recipeId = createPublishableRecipe(title = "Запечені овочі", tag = "vegetables")
-
-        val bookmark = client.post("/api/v1/recipes/$recipeId/bookmark") {
-            header(HttpHeaders.Authorization, token)
-        }
-        assertEquals(HttpStatusCode.OK, bookmark.status)
-        assertTrue(bookmark.body<String>().contains("\"bookmarked\":true"))
 
         val fork = client.post("/api/v1/recipes/$recipeId/fork") {
             header(HttpHeaders.Authorization, "Bearer :phase4-fork-user")
@@ -219,12 +212,6 @@ class Phase4RecipesAcceptanceTest {
         }
         assertEquals(HttpStatusCode.BadRequest, tooLarge.status)
         assertTrue(tooLarge.body<String>().contains("MEDIA_FILE_TOO_LARGE"))
-
-        val unbookmark = client.delete("/api/v1/recipes/$recipeId/bookmark") {
-            header(HttpHeaders.Authorization, token)
-        }
-        assertEquals(HttpStatusCode.OK, unbookmark.status)
-        assertTrue(unbookmark.body<String>().contains("\"bookmarked\":false"))
     }
 
     private suspend fun io.ktor.server.testing.ApplicationTestBuilder.createDraftRecipe(title: String): String {

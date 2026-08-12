@@ -96,7 +96,6 @@ data class RecipeResponse(
     val tags: List<String>,
     val equipment: List<String>,
     val imageUrl: String? = null,
-    val bookmarked: Boolean,
     val difficulty: String,
     val createdAt: String,
     val updatedAt: String,
@@ -138,9 +137,6 @@ data class RecipeCompareResponse(
     val toVersionNumber: Int,
     val changedFields: List<String>,
 )
-
-@Serializable
-data class BookmarkResponse(val recipeId: String, val bookmarked: Boolean)
 
 @Serializable
 data class CreateRecipeReviewRequest(val rating: Int, val comment: String? = null)
@@ -422,7 +418,6 @@ fun Recipe.toResponse(viewerUserId: UUID? = null): RecipeResponse = RecipeRespon
     tags = currentVersion.tags,
     equipment = currentVersion.equipment,
     imageUrl = currentVersion.imageUrl,
-    bookmarked = viewerUserId != null && bookmarkedByUserIds.contains(viewerUserId),
     difficulty = currentVersion.steps.size.toDifficulty(),
     createdAt = createdAt.toString(),
     updatedAt = updatedAt.toString(),
