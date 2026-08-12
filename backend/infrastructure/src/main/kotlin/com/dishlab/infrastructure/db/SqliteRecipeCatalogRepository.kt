@@ -356,7 +356,10 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                         add(
                             CatalogRecipeIngredient(
                                 name = rows.getString("original_text"),
-                                quantity = rows.getString("quantity"),
+                                quantity = IngredientQuantityNormalizer.normalize(
+                                    rows.getString("quantity"),
+                                    rows.getString("original_text"),
+                                ),
                                 canonicalTags = listOf(canonicalTag).filter(String::isNotBlank),
                             ),
                         )
@@ -465,6 +468,69 @@ private object RVectorParser {
             result += item.toString()
         }
         return result
+    }
+}
+
+// Ingestion sources (see scripts/build_recipe_catalog.py, t-91) store the bare numeric
+// quantity ("0.5") separately from the unit, which only survives in original_text ("0.5
+// cup flour"). The mobile client cannot guess the unit back out of a raw fraction, so this
+// re-attaches it at read time — the catalogue is the source of truth, not the client (t-94).
+private object IngredientQuantityNormalizer {
+    private val word = Regex("[a-zA-Z]+")
+
+    // weight, volume, and standard kitchen-measure units this dataset actually uses,
+    // mapped to a single canonical spelling.
+    private val units: Map<String, String> = mapOf(
+        "g" to "g", "gram" to "g", "grams" to "g",
+        "kg" to "kg", "kilogram" to "kg", "kilograms" to "kg",
+        "oz" to "oz", "ounce" to "oz", "ounces" to "oz",
+        "lb" to "lb", "lbs" to "lb", "pound" to "lb", "pounds" to "lb",
+        "ml" to "ml", "milliliter" to "ml", "milliliters" to "ml",
+        "l" to "l", "liter" to "l", "liters" to "l",
+        "cup" to "cup", "cups" to "cup",
+        "tsp" to "tsp", "teaspoon" to "tsp", "teaspoons" to "tsp",
+        "tbsp" to "tbsp", "tablespoon" to "tbsp", "tablespoons" to "tbsp",
+        "pint" to "pint", "pints" to "pint",
+        "quart" to "quart", "quarts" to "quart",
+        "gallon" to "gallon", "gallons" to "gallon",
+        "clove" to "clove", "cloves" to "clove",
+        "slice" to "slice", "slices" to "slice",
+        "piece" to "piece", "pieces" to "piece",
+        "pinch" to "pinch", "dash" to "dash",
+        "stalk" to "stalk", "stalks" to "stalk",
+        "sprig" to "sprig", "sprigs" to "sprig",
+        "can" to "can", "cans" to "can",
+        "jar" to "jar", "jars" to "jar",
+        "package" to "package", "packages" to "package", "pkg" to "package",
+        "bag" to "bag", "bags" to "bag",
+        "stick" to "stick", "sticks" to "stick",
+        "bunch" to "bunch", "bunches" to "bunch",
+        "head" to "head", "heads" to "head",
+        "container" to "container", "containers" to "container",
+    )
+
+    /**
+     * Re-attaches an explicit unit to [quantity] by scanning [originalText] for the first
+     * recognised unit word. A quantity with no discernible unit (e.g. "2 eggs") still gets
+     * a meaningful one — "pcs" — rather than being left as an ambiguous bare number.
+     */
+    fun normalize(quantity: String?, originalText: String?): String? {
+        val trimmed = quantity?.trim()
+        if (trimmed.isNullOrEmpty()) return quantity
+        if (word.find(trimmed) != null) return trimmed // already carries a unit (defensive)
+        val unit = word.findAll(originalText.orEmpty())
+            .take(6)
+            .firstNotNullOfOrNull { unitFor(it.value) }
+        return "$trimmed ${unit ?: "pcs"}"
+    }
+
+    // "t"/"T" only resolve case-sensitively — this dataset's own convention for teaspoon vs.
+    // tablespoon (see "1 T cornstarch", "2 t cold water" in dataset_clean.csv) — a
+    // case-insensitive single letter would be too easy to collide with unrelated text.
+    private fun unitFor(rawWord: String): String? = when (rawWord) {
+        "t" -> "tsp"
+        "T" -> "tbsp"
+        else -> units[rawWord.lowercase()]
     }
 }
 
