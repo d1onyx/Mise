@@ -13,6 +13,8 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 fun Route.recipeCatalogRoutes(
     authVerifier: FirebaseAuthVerifier,
@@ -27,14 +29,16 @@ fun Route.recipeCatalogRoutes(
             val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
             val query = call.request.queryParameters["q"]
             val category = call.request.queryParameters["category"]
-            val catalog = service.search(
-                firebaseUid = user.uid,
-                query = query,
-                category = category,
-                ingredient = call.request.queryParameters["ingredient"],
-                page = page,
-                pageSize = pageSize,
-            )
+            val catalog = withContext(Dispatchers.IO) {
+                service.search(
+                    firebaseUid = user.uid,
+                    query = query,
+                    category = category,
+                    ingredient = call.request.queryParameters["ingredient"],
+                    page = page,
+                    pageSize = pageSize,
+                )
+            }
             val userRecipes = recipeService.list(
                 firebaseUid = user.uid,
                 tag = category,
@@ -70,18 +74,20 @@ fun Route.recipeCatalogRoutes(
                 .filter { it.isNotEmpty() }
             val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
             val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
-            val result = service.findByPantryIngredients(
-                firebaseUid = "anonymous",
-                ingredientNames = ingredients,
-                category = category,
-                tags = tags,
-                strictTags = strictTags,
-                page = page,
-                pageSize = pageSize,
-                partialMatchOnly = partialMatchOnly,
-                exactMatch = exactMatch,
-                exactProductGroups = exactProductGroups,
-            )
+            val result = withContext(Dispatchers.IO) {
+                service.findByPantryIngredients(
+                    firebaseUid = "anonymous",
+                    ingredientNames = ingredients,
+                    category = category,
+                    tags = tags,
+                    strictTags = strictTags,
+                    page = page,
+                    pageSize = pageSize,
+                    partialMatchOnly = partialMatchOnly,
+                    exactMatch = exactMatch,
+                    exactProductGroups = exactProductGroups,
+                )
+            }
             call.respond(result.toResponse())
         }
 
@@ -91,7 +97,8 @@ fun Route.recipeCatalogRoutes(
             // The detail route has to resolve whichever one the client got from that list.
             val rawId = call.parameters["recipeId"] ?: throw NotFoundError("Рецепт не знайдено")
             if (rawId.startsWith("catalog:")) {
-                call.respond(service.get("anonymous", call.catalogRecipeId()).toCatalogResponse())
+                val recipe = withContext(Dispatchers.IO) { service.get("anonymous", call.catalogRecipeId()) }
+                call.respond(recipe.toCatalogResponse())
             } else {
                 val recipeId = rawId.toUuidOrNull() ?: throw NotFoundError("Рецепт не знайдено")
                 call.respond(recipeService.get("anonymous", recipeId).toCatalogResponse())
