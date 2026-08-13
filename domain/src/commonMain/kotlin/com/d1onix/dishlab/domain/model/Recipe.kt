@@ -69,3 +69,11 @@ data class RecipeFilters(
     val isEmpty: Boolean
         get() = query.isBlank() && difficulties.isEmpty() && categories.isEmpty() && times.isEmpty()
 }
+
+/** Values advertised by the recipe catalogue for its filter UI. */
+data class RecipeCatalogFilters(
+    val categories: List<String> = emptyList(),
+    val cuisines: List<String> = emptyList(),
+    val equipment: List<String> = emptyList(),
+    val techniques: List<String> = emptyList(),
+)

@@ -5,6 +5,7 @@ import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeDifficulty
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.domain.model.RecipeStep
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilters
 import com.d1onyx.core.essentials.di.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -22,11 +23,13 @@ class PantryMatchDataSource(
     suspend fun match(
         ingredients: List<String>,
         exactGroups: List<List<String>> = emptyList(),
+        category: String? = null,
         page: Int = 1,
         pageSize: Int = 20,
     ): PantryMatchPageDto = client.get("api/v1/recipe-catalog/pantry-match") {
         ingredients.forEach { parameter("ingredient", it) }
         exactGroups.forEach { group -> parameter("exactGroup", group.joinToString(",")) }
+        category?.takeIf(String::isNotBlank)?.let { parameter("category", it) }
         parameter("page", page)
         parameter("pageSize", pageSize)
     }.body()
@@ -42,11 +45,14 @@ class RecipeCatalogRemoteDataSource(
     suspend fun recipe(id: RecipeId): CatalogRecipeDto =
         client.get("api/v1/recipe-catalog/${id.value}").body()
 
-    suspend fun recipes(page: Int, pageSize: Int): CatalogRecipePageDto =
+    suspend fun recipes(page: Int, pageSize: Int, category: String? = null): CatalogRecipePageDto =
         client.get("api/v1/recipe-catalog") {
             parameter("page", page)
             parameter("pageSize", pageSize)
+            category?.takeIf(String::isNotBlank)?.let { parameter("category", it) }
         }.body()
+
+    suspend fun filters(): CatalogFiltersDto = client.get("api/v1/recipe-catalog/filters").body()
 }
 
 @Serializable
@@ -63,6 +69,14 @@ data class CatalogRecipePageDto(
     val page: Int,
     val pageSize: Int,
     val total: Int,
+)
+
+@Serializable
+data class CatalogFiltersDto(
+    val categories: List<String> = emptyList(),
+    val cuisines: List<String> = emptyList(),
+    val equipment: List<String> = emptyList(),
+    val techniques: List<String> = emptyList(),
 )
 
 @Serializable
@@ -108,4 +122,11 @@ fun CatalogRecipeDto.toDomain(): Recipe = Recipe(
     description = description.orEmpty(),
     ingredients = ingredients.map { Ingredient(quantity = it.quantity.orEmpty(), name = it.name) },
     steps = steps.sortedBy(CatalogRecipeStepDto::position).map { RecipeStep(title = "", description = it.text) },
+)
+
+fun CatalogFiltersDto.toDomain(): RecipeCatalogFilters = RecipeCatalogFilters(
+    categories = categories,
+    cuisines = cuisines,
+    equipment = equipment,
+    techniques = techniques,
 )

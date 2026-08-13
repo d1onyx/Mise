@@ -17,6 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.EmptyState
+import com.d1onix.dishlab.designsystem.component.FilterChipBar
+import com.d1onix.dishlab.designsystem.component.FilterGroup
+import com.d1onix.dishlab.designsystem.component.FilterOption
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
@@ -26,6 +29,7 @@ import com.d1onix.dishlab.feature.recipes.resources.discover_empty
 import com.d1onix.dishlab.feature.recipes.resources.discover_title
 import com.d1onix.dishlab.feature.recipes.resources.recipes_empty
 import com.d1onix.dishlab.feature.recipes.resources.recipes_title
+import com.d1onix.dishlab.feature.recipes.resources.filter_group_category
 import com.d1onix.dishlab.feature.recipes.resources.recipes_error
 import com.d1onix.dishlab.feature.recipes.resources.recipes_loading
 import com.d1onix.dishlab.feature.recipes.resources.recipes_retry
@@ -66,6 +70,7 @@ fun DiscoverRecipesScreen(viewModel: DiscoverRecipesViewModel) {
         emptyText = Res.string.discover_empty,
         state = state,
         onAction = viewModel::onAction,
+        showCatalogCategoryFilter = true,
     )
 }
 
@@ -80,6 +85,7 @@ internal fun RecipeListContent(
     state: RecipeListUiState,
     onAction: (RecipeListAction) -> Unit,
     showBanner: Boolean = false,
+    showCatalogCategoryFilter: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -101,6 +107,27 @@ internal fun RecipeListContent(
             onBackClick = { onAction(RecipeListAction.BackClicked) },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
         )
+
+        if (showCatalogCategoryFilter && state.categoryOptions.isNotEmpty()) {
+            FilterChipBar(
+                groups = listOf(
+                    FilterGroup(
+                        id = FilterGroupId.Category.name,
+                        name = stringResource(Res.string.filter_group_category),
+                        options = state.categoryOptions.map { category ->
+                            FilterOption(id = category, label = category)
+                        },
+                        selected = state.filters.categories,
+                    ),
+                ),
+                expandedGroupId = state.expandedGroup?.name,
+                onGroupClick = { onAction(RecipeListAction.GroupClicked(FilterGroupId.Category)) },
+                onOptionClick = { _, category ->
+                    onAction(RecipeListAction.OptionClicked(FilterGroupId.Category, category))
+                },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
+            )
+        }
 
         if (state.isLoading) {
             EmptyState(stringResource(Res.string.recipes_loading), Modifier.fillMaxWidth())

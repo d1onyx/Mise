@@ -25,6 +25,8 @@ data class RecipeListUiState(
     val loadError: Boolean = false,
     val isLoadingMore: Boolean = false,
     val hasNextPage: Boolean = false,
+    /** Categories come from the catalogue endpoint, never from client constants. */
+    val catalogCategories: List<String> = emptyList(),
 ) {
 
     fun productsOf(recipe: Recipe): List<Product> = recipe.productIds.mapNotNull(products::get)
@@ -34,7 +36,7 @@ data class RecipeListUiState(
         get() = RecipeDifficulty.entries.filter { difficulty -> all.any { it.difficulty == difficulty } }
 
     val categoryOptions: List<String>
-        get() = all.flatMap { it.categories }.distinct()
+        get() = catalogCategories
 
     val timeOptions: List<TimeBucket> get() = TimeBucket.entries
 }

@@ -35,11 +35,13 @@ class PantryMatchDataSourceTest {
         val result = PantryMatchDataSource(client).match(
             ingredients = listOf("en:oats"),
             exactGroups = listOf(listOf("en:oats", "en:rolled-oats")),
+            category = "Breakfast",
         )
 
         assertEquals("/api/v1/recipe-catalog/pantry-match", path)
         assertEquals(listOf("en:oats"), parameters["ingredient"])
         assertEquals(listOf("en:oats,en:rolled-oats"), parameters["exactGroup"])
+        assertEquals(listOf("Breakfast"), parameters["category"])
         assertEquals("Oat Bowl", result.items.single().toDomain().name)
     }
 
@@ -68,6 +70,37 @@ class PantryMatchDataSourceTest {
 }
 
 class RecipeCatalogRemoteDataSourceTest {
+    @Test
+    fun `catalog filters are decoded and category is sent with catalogue requests`() = runTest {
+        var path = ""
+        var category: String? = null
+        val client = createHttpClient(
+            config = NetworkConfig(baseUrl = "https://api.example.com/", isDebug = true),
+            logger = DefaultLogger(RecordingLogSink()),
+            engine = MockEngine { request ->
+                path = request.url.encodedPath
+                category = request.url.parameters["category"]
+                val content = when (path) {
+                    "/api/v1/recipe-catalog/filters" ->
+                        """{"categories":["Breakfast"],"cuisines":["Mexican"],"equipment":["oven"],"techniques":["bake"]}"""
+                    else -> """{"items":[],"page":1,"page_size":20,"total":0}"""
+                }
+                respond(content, HttpStatusCode.OK, headersOf("Content-Type", "application/json"))
+            },
+        )
+        val source = RecipeCatalogRemoteDataSource(client)
+
+        val filters = source.filters().toDomain()
+        assertEquals(listOf("Breakfast"), filters.categories)
+        assertEquals(listOf("Mexican"), filters.cuisines)
+        assertEquals(listOf("oven"), filters.equipment)
+        assertEquals(listOf("bake"), filters.techniques)
+
+        source.recipes(page = 1, pageSize = 20, category = "Breakfast")
+        assertEquals("/api/v1/recipe-catalog", path)
+        assertEquals("Breakfast", category)
+    }
+
     @Test
     fun `recipe detail requests catalog recipe id and preserves preparation steps`() = runTest {
         var path = ""
