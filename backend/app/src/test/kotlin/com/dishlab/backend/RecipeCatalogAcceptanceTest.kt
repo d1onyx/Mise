@@ -238,4 +238,15 @@ class RecipeCatalogAcceptanceTest {
         assertTrue(body.contains("Egg-only omelette"), body)
         assertTrue(!body.contains("Flour-only flatbread"), body)
     }
+
+    @Test
+    fun `filters endpoint exposes categories actually present in the catalog`() = testApplication {
+        application { testModule() }
+
+        val response = client.get("/api/v1/recipe-catalog/filters")
+        val body = response.bodyAsText()
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertTrue(body.contains("\"categories\":[\"Dessert\"]"), body)
+    }
 }

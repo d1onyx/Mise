@@ -1,6 +1,7 @@
 package com.dishlab.api.routes
 
 import com.dishlab.api.dto.PantryMatchPageResponse
+import com.dishlab.api.dto.RecipeCatalogFiltersResponse
 import com.dishlab.api.dto.toCatalogResponse
 import com.dishlab.api.dto.toResponse
 import com.dishlab.api.middleware.requireFirebaseUser
@@ -60,6 +61,16 @@ fun Route.recipeCatalogRoutes(
             )
         }
 
+        get("/filters") {
+            // Categories actually present in the active catalog + any tags used by
+            // published user-authored recipes — the client filters against this list
+            // instead of hardcoding its own.
+            val filters = withContext(Dispatchers.IO) {
+                service.getCategories(firebaseUid = "anonymous", userRecipeTags = recipeService.listTags())
+            }
+            call.respond(RecipeCatalogFiltersResponse(categories = filters))
+        }
+
         get("/pantry-match") {
             val ingredients = call.request.queryParameters.getAll("ingredient").orEmpty()
             val category = call.request.queryParameters["category"]
@@ -74,6 +85,12 @@ fun Route.recipeCatalogRoutes(
                 .filter { it.isNotEmpty() }
             val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
             val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
+            // Relevance criterion when ingredients is empty (no scanned products yet): no
+            // pantry-based WHERE clause is applied (see repository), so every active recipe
+            // is a candidate and matched_count is 0 for all of them — the ORDER BY's
+            // matched/total ratio term is therefore a no-op tie, and results fall through
+            // to aggregated_rating DESC. So the "no products" default is highest-rated
+            // recipes first, not catalog/insertion order.
             val result = withContext(Dispatchers.IO) {
                 service.findByPantryIngredients(
                     firebaseUid = "anonymous",

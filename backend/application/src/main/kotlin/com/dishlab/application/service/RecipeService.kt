@@ -255,6 +255,13 @@ class RecipeService(
         return recipes.findById(recipeId) ?: throw NotFoundError("Рецепт не знайдено")
     }
 
+    fun listTags(): List<String> =
+        recipes.list()
+            .filter { it.status == RecipeStatus.PUBLISHED }
+            .flatMap { it.currentVersion.tags }
+            .filter(String::isNotBlank)
+            .distinct()
+
     fun list(
         firebaseUid: String,
         tag: String?,
