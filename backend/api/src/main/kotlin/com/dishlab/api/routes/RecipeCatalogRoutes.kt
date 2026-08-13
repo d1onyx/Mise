@@ -29,34 +29,49 @@ fun Route.recipeCatalogRoutes(
             val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
             val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
             val query = call.request.queryParameters["q"]
-            val category = call.request.queryParameters["category"]
+            val categories = call.request.queryParameters.getAll("category").orEmpty()
+            val cuisines = call.request.queryParameters.getAll("cuisine").orEmpty()
+            val equipment = call.request.queryParameters.getAll("equipment").orEmpty()
+            val techniques = call.request.queryParameters.getAll("technique").orEmpty()
             val catalog = withContext(Dispatchers.IO) {
                 service.search(
                     firebaseUid = user.uid,
                     query = query,
-                    category = category,
+                    categories = categories,
+                    cuisines = cuisines,
+                    equipment = equipment,
+                    techniques = techniques,
                     ingredient = call.request.queryParameters["ingredient"],
                     page = page,
                     pageSize = pageSize,
                 )
             }
-            val userRecipes = recipeService.list(
-                firebaseUid = user.uid,
-                tag = category,
-                query = query,
-                sort = null,
-                page = page,
-                pageSize = pageSize,
-            )
+            // User-authored recipes only carry a flat `tags` list (RecipeService.list's single
+            // `tag` param) — they have no cuisine/equipment/technique dimension to filter on the
+            // way the SQLite catalog's keywords do. Once any of those groups is active, merging
+            // in unfiltered user recipes would silently ignore the filter for half the results,
+            // so skip that half entirely rather than show results that didn't match.
+            val userRecipes = if (cuisines.isEmpty() && equipment.isEmpty() && techniques.isEmpty()) {
+                recipeService.list(
+                    firebaseUid = user.uid,
+                    tag = categories.firstOrNull(),
+                    query = query,
+                    sort = null,
+                    page = page,
+                    pageSize = pageSize,
+                )
+            } else {
+                null
+            }
             call.respond(
                 com.dishlab.api.dto.CatalogRecipePageResponse(
                     items = (
-                        userRecipes.items.map { it.toCatalogResponse() } +
+                        userRecipes?.items.orEmpty().map { it.toCatalogResponse() } +
                             catalog.items.map { it.toCatalogResponse() }
                         ).take(pageSize),
                     page = page,
                     pageSize = pageSize,
-                    total = userRecipes.total + catalog.total,
+                    total = (userRecipes?.total ?: 0) + catalog.total,
                 ),
             )
         }
@@ -82,7 +97,10 @@ fun Route.recipeCatalogRoutes(
 
         get("/pantry-match") {
             val ingredients = call.request.queryParameters.getAll("ingredient").orEmpty()
-            val category = call.request.queryParameters["category"]
+            val categories = call.request.queryParameters.getAll("category").orEmpty()
+            val cuisines = call.request.queryParameters.getAll("cuisine").orEmpty()
+            val equipment = call.request.queryParameters.getAll("equipment").orEmpty()
+            val techniques = call.request.queryParameters.getAll("technique").orEmpty()
             val tags = call.request.queryParameters.getAll("tag").orEmpty()
             val strictTags = call.request.queryParameters["strictTags"]?.toBooleanStrictOrNull() ?: false
             val partialMatchOnly = call.request.queryParameters["partialMatchOnly"]?.toBooleanStrictOrNull() ?: false
@@ -104,7 +122,10 @@ fun Route.recipeCatalogRoutes(
                 service.findByPantryIngredients(
                     firebaseUid = "anonymous",
                     ingredientNames = ingredients,
-                    category = category,
+                    categories = categories,
+                    cuisines = cuisines,
+                    equipment = equipment,
+                    techniques = techniques,
                     tags = tags,
                     strictTags = strictTags,
                     page = page,

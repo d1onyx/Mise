@@ -35,7 +35,10 @@ interface RecipeCatalogRepository {
     fun search(
         firebaseUid: String,
         query: String?,
-        category: String?,
+        categories: List<String> = emptyList(),
+        cuisines: List<String> = emptyList(),
+        equipment: List<String> = emptyList(),
+        techniques: List<String> = emptyList(),
         ingredient: String?,
         page: Int,
         pageSize: Int,
@@ -44,7 +47,10 @@ interface RecipeCatalogRepository {
     fun findByPantryIngredients(
         firebaseUid: String,
         ingredientNames: List<String>,
-        category: String?,
+        categories: List<String> = emptyList(),
+        cuisines: List<String> = emptyList(),
+        equipment: List<String> = emptyList(),
+        techniques: List<String> = emptyList(),
         tags: List<String>,
         strictTags: Boolean,
         page: Int,
@@ -64,14 +70,20 @@ class RecipeCatalogService(
     fun search(
         firebaseUid: String,
         query: String?,
-        category: String?,
+        categories: List<String> = emptyList(),
+        cuisines: List<String> = emptyList(),
+        equipment: List<String> = emptyList(),
+        techniques: List<String> = emptyList(),
         ingredient: String?,
         page: Int,
         pageSize: Int,
     ): CatalogRecipePage = repository.search(
         firebaseUid = firebaseUid,
         query = query?.trim()?.takeIf(String::isNotBlank),
-        category = category?.trim()?.takeIf(String::isNotBlank),
+        categories = categories.cleaned(),
+        cuisines = cuisines.cleaned(),
+        equipment = equipment.cleaned(),
+        techniques = techniques.cleaned(),
         ingredient = ingredient?.trim()?.takeIf(String::isNotBlank),
         page = page.coerceAtLeast(1),
         pageSize = pageSize.coerceIn(1, 100),
@@ -90,7 +102,10 @@ class RecipeCatalogService(
     fun findByPantryIngredients(
         firebaseUid: String,
         ingredientNames: List<String>,
-        category: String?,
+        categories: List<String> = emptyList(),
+        cuisines: List<String> = emptyList(),
+        equipment: List<String> = emptyList(),
+        techniques: List<String> = emptyList(),
         tags: List<String>,
         strictTags: Boolean,
         page: Int,
@@ -101,7 +116,10 @@ class RecipeCatalogService(
     ): PantryMatchPage = repository.findByPantryIngredients(
         firebaseUid = firebaseUid,
         ingredientNames = ingredientNames.map { it.trim() }.filter { it.isNotBlank() },
-        category = category?.trim()?.takeIf(String::isNotBlank),
+        categories = categories.cleaned(),
+        cuisines = cuisines.cleaned(),
+        equipment = equipment.cleaned(),
+        techniques = techniques.cleaned(),
         tags = tags.map { it.trim() }.filter { it.isNotBlank() },
         strictTags = strictTags,
         page = page.coerceAtLeast(1),
@@ -113,3 +131,5 @@ class RecipeCatalogService(
             .filter { it.isNotEmpty() },
     )
 }
+
+private fun List<String>.cleaned(): List<String> = map { it.trim() }.filter { it.isNotBlank() }.distinct()
