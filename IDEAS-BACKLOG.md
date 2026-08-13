@@ -36,3 +36,17 @@ floating-point значенням з інджесту — наприклад
 Джерело — t-91 (міграція каталогу на `dataset_clean.csv`), не сама t-94.
 Варто округлювати/нормалізувати число в `IngredientQuantityNormalizer`
 (`SqliteRecipeCatalogRepository.kt`) до розумної точності (2 знаки або дріб).
+
+### 2026-08-13 — Swagger UI вантажить статику з unpkg.com
+- Від: backender
+- Тип: зауваження
+- Кому: backender
+
+У межах t-95 бекенд перейшов на офіційний Ktor OpenAPI compiler plugin:
+`GET /swagger` тепер реальна інтерактивна документація, `GET /swagger/openapi.json`
+— живий спек, згенерований рефлексією з дерева роутів (а не вручну підтримуваний
+JSON, як було раніше). Але сторінка `/swagger` за замовчуванням тягне
+`swagger-ui-bundle.js`/`swagger-ui.css` з `unpkg.com` — на VPS за файрволом або
+офлайн це не відрендериться (сам `/swagger/openapi.json` працює незалежно).
+Якщо колись знадобиться `/swagger` саме як робочий UI на проді — варто
+самохостити swagger-ui асети (`packageLocation` у `SwaggerConfig`) замість CDN.
