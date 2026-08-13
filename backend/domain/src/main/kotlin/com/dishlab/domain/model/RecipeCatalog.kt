@@ -21,7 +21,6 @@ data class CatalogRecipeIngredient(
 data class CatalogRecipeStep(
     val position: Int,
     val text: String,
-    val timerSeconds: Int? = null,
 )
 
 data class CatalogRecipe(

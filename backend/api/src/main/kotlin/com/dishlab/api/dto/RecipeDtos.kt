@@ -33,7 +33,6 @@ data class RecipeIngredientDto(
 data class RecipeStepDto(
     val position: Int,
     val text: String,
-    val timerSeconds: Int? = null,
 )
 
 @Serializable
@@ -355,7 +354,7 @@ private val UNIT_MAP: Map<String, String> = buildMap {
     put("serving", "serving"); put("servings", "serving")
 }
 
-fun RecipeStepDto.toDomain(): RecipeStep = RecipeStep(position = position, text = text, timerSeconds = timerSeconds)
+fun RecipeStepDto.toDomain(): RecipeStep = RecipeStep(position = position, text = text)
 
 fun RecipeIngredient.toDto(): RecipeIngredientDto = RecipeIngredientDto(
     ingredientId = ingredientId?.toString(),
@@ -377,7 +376,7 @@ internal fun String.ingredientCanonicalTag(): String? {
     return toEnglishIngredientTaxonomyTag().takeIf(String::isNotBlank)
 }
 
-fun RecipeStep.toDto(): RecipeStepDto = RecipeStepDto(position = position, text = text, timerSeconds = timerSeconds)
+fun RecipeStep.toDto(): RecipeStepDto = RecipeStepDto(position = position, text = text)
 
 private fun Int.toDifficulty(): String = when {
     this < 5 -> "easy"

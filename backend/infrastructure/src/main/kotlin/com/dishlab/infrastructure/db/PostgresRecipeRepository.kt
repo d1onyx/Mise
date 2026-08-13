@@ -13,7 +13,6 @@ import java.math.BigDecimal
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.Timestamp
-import java.sql.Types
 import java.time.Instant
 import java.util.UUID
 import javax.sql.DataSource
@@ -207,14 +206,12 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
         exec(conn, "DELETE FROM recipe_steps WHERE recipe_version_id = ?", v.id)
         v.steps.forEach { step ->
             conn.prepareStatement(
-                "INSERT INTO recipe_steps (id, recipe_version_id, position, text, timer_seconds) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO recipe_steps (id, recipe_version_id, position, text) VALUES (?, ?, ?, ?)",
             ).use { ps ->
                 ps.setObject(1, UUID.randomUUID())
                 ps.setObject(2, v.id)
                 ps.setInt(3, step.position)
                 ps.setString(4, step.text)
-                val timer = step.timerSeconds
-                if (timer != null) ps.setInt(5, timer) else ps.setNull(5, Types.INTEGER)
                 ps.executeUpdate()
             }
         }
@@ -316,7 +313,6 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
                         RecipeStep(
                             position = rs.getInt("position"),
                             text = rs.getString("text"),
-                            timerSeconds = rs.getInt("timer_seconds").takeIf { !rs.wasNull() },
                         ),
                     )
                 }

@@ -54,10 +54,10 @@ class Phase0AcceptanceTest {
     fun `open api base is exposed`() = testApplication {
         application { testModule() }
 
-        val response = client.get("/openapi.json")
+        val response = client.get("/swagger/openapi.json")
         val body = response.body<String>()
 
         assertEquals(HttpStatusCode.OK, response.status)
-        assertTrue(body.contains("\"title\":\"Smart Cooking Ecosystem API\""), body)
+        assertTrue(body.contains("\"title\":\"DishLab Backend API\""), body)
     }
 }
