@@ -27,6 +27,12 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             conn.createStatement().use { statement ->
                 statement.execute("PRAGMA foreign_keys = ON")
                 statement.execute("PRAGMA busy_timeout = 5000")
+                // WAL persists in the file header, so every later connection() call
+                // inherits it — without it, concurrent readers serialize on the
+                // rollback-journal file lock (each opening a fresh connection under
+                // load queued up behind busy_timeout, capping throughput regardless
+                // of how many threads issue the query).
+                statement.execute("PRAGMA journal_mode = WAL")
                 statement.execute(
                     "CREATE INDEX IF NOT EXISTS idx_recipes_category_name ON recipes(category, name COLLATE NOCASE)",
                 )
