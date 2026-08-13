@@ -10,6 +10,14 @@ import com.dishlab.domain.model.toEnglishIngredientTaxonomyTag
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class RecipeCatalogFiltersResponse(
+    val categories: List<String>,
+    val cuisines: List<String>,
+    val equipment: List<String>,
+    val techniques: List<String>,
+)
+
+@Serializable
 data class CatalogNutritionResponse(
     val calories: Double? = null,
     val fat: Double? = null,

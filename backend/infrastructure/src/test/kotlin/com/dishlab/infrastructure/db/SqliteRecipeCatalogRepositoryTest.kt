@@ -7,6 +7,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SqliteRecipeCatalogRepositoryTest {
     private val dbFile = Files.createTempFile("recipe-catalog-test", ".db")
@@ -172,5 +173,42 @@ class SqliteRecipeCatalogRepositoryTest {
         assertEquals("", byPosition.getValue("water to taste").quantity)
         // The dataset's own "T" = tablespoon / "t" = teaspoon convention resolves case-sensitively.
         assertEquals("1 tbsp", byPosition.getValue("1 T cornstarch").quantity)
+    }
+
+    @Test
+    fun `getFilters groups categories cuisines equipment and techniques, and refreshes only after the catalog changes`() {
+        DriverManager.getConnection("jdbc:sqlite:${dbFile.absolutePathString()}").use { conn ->
+            conn.createStatement().use { statement ->
+                statement.execute(
+                    "UPDATE recipes SET category = 'Dinner', " +
+                        "keywords = 'c(\"Dinner\", \"Mexican\", \"oven\", \"bake\")' WHERE id = 1",
+                )
+            }
+        }
+
+        val first = repository.getFilters()
+        assertEquals(listOf("Dinner"), first.categories)
+        assertEquals(listOf("Mexican"), first.cuisines)
+        assertEquals(listOf("oven"), first.equipment)
+        assertEquals(listOf("bake"), first.techniques)
+
+        // Second call with nothing changed must be served from cache: same instance, no rescan.
+        assertTrue(first === repository.getFilters())
+
+        // A write through a completely separate connection still bumps PRAGMA data_version, which
+        // is the whole point of keying the cache on it instead of an in-process write counter.
+        DriverManager.getConnection("jdbc:sqlite:${dbFile.absolutePathString()}").use { conn ->
+            conn.createStatement().use { statement ->
+                statement.execute(
+                    "UPDATE recipes SET keywords = 'c(\"Dinner\", \"Thai\", \"wok\", \"stir-fry\")' WHERE id = 2",
+                )
+            }
+        }
+
+        val second = repository.getFilters()
+        assertTrue(second !== first)
+        assertTrue(second.cuisines.contains("Thai"), second.cuisines.toString())
+        assertTrue(second.equipment.contains("wok"), second.equipment.toString())
+        assertTrue(second.techniques.contains("stir-fry"), second.techniques.toString())
     }
 }

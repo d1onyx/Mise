@@ -18,6 +18,19 @@ data class PantryMatchPage(
     val total: Int,
 )
 
+/**
+ * Catalog keywords are one flat tag pool (dish type, cuisine, equipment, technique all mixed
+ * together in the source dataset) — [CatalogFilters] is that pool split into the groups a filter
+ * UI actually wants, so the client renders a "cuisine" chip row separately from an "equipment"
+ * chip row instead of one undifferentiated list.
+ */
+data class CatalogFilters(
+    val categories: List<String>,
+    val cuisines: List<String>,
+    val equipment: List<String>,
+    val techniques: List<String>,
+)
+
 interface RecipeCatalogRepository {
     fun search(
         firebaseUid: String,
@@ -42,7 +55,7 @@ interface RecipeCatalogRepository {
     ): PantryMatchPage
 
     fun findById(firebaseUid: String, recipeId: Long): CatalogRecipe?
-    fun getCategories(): List<String>
+    fun getFilters(): CatalogFilters
 }
 
 class RecipeCatalogService(
@@ -67,11 +80,12 @@ class RecipeCatalogService(
     fun get(firebaseUid: String, recipeId: Long): CatalogRecipe =
         repository.findById(firebaseUid, recipeId) ?: throw NotFoundError("Рецепт не знайдено")
 
-    fun getCategories(firebaseUid: String, userRecipeTags: List<String> = emptyList()): List<String> =
-        (repository.getCategories() + userRecipeTags)
-            .filter(String::isNotBlank)
-            .distinct()
-            .sorted()
+    fun getFilters(firebaseUid: String, userRecipeTags: List<String> = emptyList()): CatalogFilters {
+        val filters = repository.getFilters()
+        return filters.copy(
+            categories = (filters.categories + userRecipeTags).filter(String::isNotBlank).distinct().sorted(),
+        )
+    }
 
     fun findByPantryIngredients(
         firebaseUid: String,
