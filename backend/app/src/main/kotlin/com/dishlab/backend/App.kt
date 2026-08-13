@@ -1,14 +1,11 @@
 package com.dishlab.backend
 
 import com.dishlab.api.configureApi
-import com.dishlab.application.service.AiCommandService
 import com.dishlab.application.service.CurrentUserResolver
-import com.dishlab.application.service.FakeAiCommandProvider
 import com.dishlab.application.service.IdentityService
 import com.dishlab.application.service.InMemoryIngredientRepository
 import com.dishlab.application.service.InMemoryRecipeRepository
 import com.dishlab.application.service.InMemoryUserAccountRepository
-import com.dishlab.infrastructure.ai.OpenRouterAiCommandProvider
 import com.dishlab.infrastructure.ai.OpenRouterProductNameNormalizer
 import com.dishlab.infrastructure.ai.OpenRouterRecipeIngredientValidator
 import com.dishlab.infrastructure.ai.OpenRouterRecipeValidationProvider
@@ -204,13 +201,6 @@ fun Application.appModule(
         tagValidator = tagValidator,
         tagCategorizationProvider = tagCategorizationProvider,
     )
-    val aiCommandProvider = if (openRouterApiKey != null) {
-        OpenRouterAiCommandProvider(apiKey = openRouterApiKey)
-    } else {
-        FakeAiCommandProvider()
-    }
-    val aiCommandService = AiCommandService(provider = aiCommandProvider)
-
     configureApi(
         authVerifier = authVerifier,
         identityService = identityService,
@@ -220,6 +210,5 @@ fun Application.appModule(
         recipeService = recipeService,
         recipeCatalogService = recipeCatalogService,
         productCatalogService = productCatalogService,
-        aiCommandService = aiCommandService,
     )
 }

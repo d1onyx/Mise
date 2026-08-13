@@ -115,7 +115,6 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                     LoadedRecipe(
                         recipe = rows.toRecipe(),
                         instructions = rows.getString("instructions"),
-                        instructionTimes = rows.getString("instruction_times_seconds"),
                     )
                 } else {
                     null
@@ -125,7 +124,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
 
         loaded.recipe.copy(
             ingredients = loadIngredients(conn, recipeId),
-            steps = loadSteps(loaded.instructions, loaded.instructionTimes),
+            steps = loadSteps(loaded.instructions),
         )
     }
 
@@ -368,11 +367,10 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             }
         }
 
-    private fun loadSteps(instructionText: String?, instructionTimes: String?): List<CatalogRecipeStep> {
+    private fun loadSteps(instructionText: String?): List<CatalogRecipeStep> {
         val instructions = RVectorParser.parse(instructionText)
-        val timers = parseTimers(instructionTimes)
         return instructions.mapIndexed { index, text ->
-            CatalogRecipeStep(index + 1, text, timers.getOrNull(index))
+            CatalogRecipeStep(index + 1, text)
         }
     }
 
@@ -415,17 +413,9 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
     private fun escapeLike(value: String): String =
         value.replace("!", "!!").replace("%", "!%").replace("_", "!_")
 
-    private fun parseTimers(value: String?): List<Int?> {
-        if (value.isNullOrBlank()) return emptyList()
-        return value.removePrefix("(").removeSuffix(")")
-            .split(',')
-            .map { token -> token.trim().takeUnless { it.equals("null", true) || it.isEmpty() }?.toIntOrNull() }
-    }
-
     private data class LoadedRecipe(
         val recipe: CatalogRecipe,
         val instructions: String?,
-        val instructionTimes: String?,
     )
 }
 

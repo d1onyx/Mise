@@ -19,7 +19,6 @@ data class RecipeIngredient(
 data class RecipeStep(
     val position: Int,
     val text: String,
-    val timerSeconds: Int? = null,
 )
 
 data class RecipeVersion(

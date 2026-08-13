@@ -12,7 +12,6 @@ import com.dishlab.api.middleware.newRequestId
 import com.dishlab.api.middleware.pathForMetrics
 import com.dishlab.api.middleware.respondRateLimited
 import com.dishlab.api.routes.ProductionMetrics
-import com.dishlab.api.routes.aiCommandRoutes
 import com.dishlab.api.routes.authDebugRoutes
 import com.dishlab.api.routes.healthRoutes
 import com.dishlab.api.routes.ingredientRoutes
@@ -22,7 +21,6 @@ import com.dishlab.api.routes.openapiRoutes
 import com.dishlab.api.routes.recipeRoutes
 import com.dishlab.api.routes.recipeCatalogRoutes
 import com.dishlab.api.routes.productCatalogRoutes
-import com.dishlab.application.service.AiCommandService
 import com.dishlab.application.service.IdentityService
 import com.dishlab.application.service.IngredientService
 import com.dishlab.application.service.CurrentUserResolver
@@ -53,7 +51,6 @@ fun Application.configureApi(
     recipeService: RecipeService,
     recipeCatalogService: RecipeCatalogService?,
     productCatalogService: ProductCatalogService,
-    aiCommandService: AiCommandService,
     baseUrl: String = System.getenv("BASE_URL") ?: "http://10.0.1.12:8080",
 ) {
     val appLog = environment.log
@@ -101,7 +98,6 @@ fun Application.configureApi(
             recipeCatalogRoutes(authVerifier, it, currentUserResolver, recipeService)
         }
         productCatalogRoutes(authVerifier, productCatalogService)
-        aiCommandRoutes(authVerifier, aiCommandService)
         mediaRoutes(authVerifier, baseUrl)
         staticFiles("/uploads", File("uploads"))
     }

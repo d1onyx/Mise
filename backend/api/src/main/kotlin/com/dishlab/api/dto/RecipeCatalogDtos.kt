@@ -33,7 +33,6 @@ data class CatalogRecipeIngredientResponse(
 data class CatalogRecipeStepResponse(
     val position: Int,
     val text: String,
-    val timerSeconds: Int? = null,
 )
 
 @Serializable
@@ -74,7 +73,7 @@ fun CatalogRecipe.toCatalogResponse(): CatalogRecipeResponse = CatalogRecipeResp
     ingredients = ingredients.map {
         CatalogRecipeIngredientResponse(it.name, it.quantity, it.canonicalTags)
     },
-    steps = steps.map { CatalogRecipeStepResponse(it.position, it.text, it.timerSeconds) },
+    steps = steps.map { CatalogRecipeStepResponse(it.position, it.text) },
 )
 
 fun CatalogRecipePage.toResponse(): CatalogRecipePageResponse = CatalogRecipePageResponse(
@@ -101,7 +100,7 @@ fun Recipe.toCatalogResponse(): CatalogRecipeResponse =
             )
         },
         steps = currentVersion.steps.map {
-            CatalogRecipeStepResponse(it.position, it.text, it.timerSeconds)
+            CatalogRecipeStepResponse(it.position, it.text)
         },
     )
 
