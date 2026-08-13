@@ -144,7 +144,16 @@ class SqliteRecipeCatalogRepositoryTest {
         // Inactive recipe 5 never appears even though its ingredients are a full match.
         // Recipe 6 (unrelated quantity-normalization fixture, see below) is active with its
         // own ingredients, so it surfaces here too — with zero overlap against this pantry.
-        assertEquals(listOf(1L, 2L, 3L, 4L, 6L), page.items.map { it.recipe.id })
+        // Recipe 4 (zero recorded ingredients) sorts dead last, after recipe 6 (real
+        // ingredients, just none matched) — a recipe with no ingredient data at all is a worse
+        // result than one that simply doesn't match this pantry. (Pre-t-98, this comparison used
+        // a `totals` CTE column also literally named `total_count`; ORDER BY's bare `total_count`
+        // resolved to that raw joined column — NULL for recipe 4 — instead of the SELECT list's
+        // COALESCE(...,0) alias, so `CASE WHEN total_count = 0` was UNKNOWN, not TRUE, for recipe
+        // 4 specifically. That accidental short-circuit is what put it ahead of recipe 6, not the
+        // documented "zero-ingredient recipes sort last" intent — t-98's r.ingredient_count column
+        // has no such name collision, so it now sorts by what the CASE expression actually says.)
+        assertEquals(listOf(1L, 2L, 3L, 6L, 4L), page.items.map { it.recipe.id })
         assertEquals(5, page.total)
 
         val byId = page.items.associateBy { it.recipe.id }
