@@ -107,7 +107,10 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
     override fun search(
         firebaseUid: String,
         query: String?,
-        category: String?,
+        categories: List<String>,
+        cuisines: List<String>,
+        equipment: List<String>,
+        techniques: List<String>,
         ingredient: String?,
         page: Int,
         pageSize: Int,
@@ -125,11 +128,16 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             parameters += pattern
             parameters += pattern
         }
-        if (category != null) {
-            conditions += "(r.category = ? COLLATE NOCASE OR r.keywords LIKE ? ESCAPE '!' COLLATE NOCASE)"
-            parameters += category
-            parameters += "%${escapeLike(category)}%"
+        if (categories.isNotEmpty()) {
+            val or = categories.joinToString(" OR ") {
+                "(r.category = ? COLLATE NOCASE OR r.keywords LIKE ? ESCAPE '!' COLLATE NOCASE)"
+            }
+            conditions += "($or)"
+            categories.forEach { value -> parameters += value; parameters += "%${escapeLike(value)}%" }
         }
+        addKeywordGroup(conditions, parameters, cuisines)
+        addKeywordGroup(conditions, parameters, equipment)
+        addKeywordGroup(conditions, parameters, techniques)
         if (ingredientId != null) {
             conditions += "EXISTS (SELECT 1 FROM recipe_ingredients ri WHERE ri.recipe_id = r.id AND ri.ingredient_id = ?)"
             parameters += ingredientId
@@ -192,7 +200,10 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
     override fun findByPantryIngredients(
         firebaseUid: String,
         ingredientNames: List<String>,
-        category: String?,
+        categories: List<String>,
+        cuisines: List<String>,
+        equipment: List<String>,
+        techniques: List<String>,
         tags: List<String>,
         strictTags: Boolean,
         page: Int,
@@ -206,11 +217,16 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         // Build WHERE conditions for category / tags filtering
         val conditions = mutableListOf("r.is_active = 1")
         val condParams = mutableListOf<Any>()
-        if (category != null) {
-            conditions += "(LOWER(r.category) = LOWER(?) OR r.keywords LIKE ? ESCAPE '!' COLLATE NOCASE)"
-            condParams += category
-            condParams += "%${escapeLike(category)}%"
+        if (categories.isNotEmpty()) {
+            val or = categories.joinToString(" OR ") {
+                "(LOWER(r.category) = LOWER(?) OR r.keywords LIKE ? ESCAPE '!' COLLATE NOCASE)"
+            }
+            conditions += "($or)"
+            categories.forEach { value -> condParams += value; condParams += "%${escapeLike(value)}%" }
         }
+        addKeywordGroup(conditions, condParams, cuisines)
+        addKeywordGroup(conditions, condParams, equipment)
+        addKeywordGroup(conditions, condParams, techniques)
         if (tags.isNotEmpty()) {
             if (strictTags) {
                 // All selected tags must appear somewhere in keywords / category
@@ -517,6 +533,18 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
 
     private fun escapeLike(value: String): String =
         value.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+
+    // Cuisine/equipment/technique have no dedicated column — they're tokens inside the same
+    // `keywords` R-vector as everything else (see getFilters/computeFilters), so filtering on
+    // them means the same keywords LIKE pattern used for category's fuzzy half. Values within one
+    // group OR together (recipe matches if it has ANY of the selected cuisines, say); each group
+    // called from search()/findByPantryIngredients() ANDs into the shared `conditions` list.
+    private fun addKeywordGroup(conditions: MutableList<String>, parameters: MutableList<Any>, values: List<String>) {
+        if (values.isEmpty()) return
+        val or = values.joinToString(" OR ") { "r.keywords LIKE ? ESCAPE '!' COLLATE NOCASE" }
+        conditions += "($or)"
+        values.forEach { value -> parameters += "%${escapeLike(value)}%" }
+    }
 
     private data class LoadedRecipe(
         val recipe: CatalogRecipe,
