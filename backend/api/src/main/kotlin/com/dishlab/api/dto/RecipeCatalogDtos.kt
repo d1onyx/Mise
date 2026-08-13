@@ -40,7 +40,6 @@ data class CatalogRecipeStepResponse(
 data class CatalogRecipeResponse(
     val id: String,
     val title: String,
-    val authorName: String? = null,
     val cookTime: String? = null,
     val prepTime: String? = null,
     val totalTime: String? = null,
@@ -48,7 +47,6 @@ data class CatalogRecipeResponse(
     val images: List<String>,
     val category: String? = null,
     val tags: List<String>,
-    val rating: Double? = null,
     val nutrition: CatalogNutritionResponse,
     val ingredients: List<CatalogRecipeIngredientResponse>,
     val steps: List<CatalogRecipeStepResponse>,
@@ -65,7 +63,6 @@ data class CatalogRecipePageResponse(
 fun CatalogRecipe.toCatalogResponse(): CatalogRecipeResponse = CatalogRecipeResponse(
     id = "catalog:$id",
     title = title,
-    authorName = authorName,
     cookTime = cookTime,
     prepTime = prepTime,
     totalTime = totalTime,
@@ -73,7 +70,6 @@ fun CatalogRecipe.toCatalogResponse(): CatalogRecipeResponse = CatalogRecipeResp
     images = images,
     category = category,
     tags = tags,
-    rating = rating,
     nutrition = nutrition.toResponse(),
     ingredients = ingredients.map {
         CatalogRecipeIngredientResponse(it.name, it.quantity, it.canonicalTags)
@@ -96,7 +92,6 @@ fun Recipe.toCatalogResponse(): CatalogRecipeResponse =
         images = listOfNotNull(currentVersion.imageUrl),
         category = currentVersion.tags.firstOrNull(),
         tags = currentVersion.tags,
-        rating = null,
         nutrition = CatalogNutritionResponse(),
         ingredients = currentVersion.ingredients.map {
             CatalogRecipeIngredientResponse(

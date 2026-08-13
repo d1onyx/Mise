@@ -75,12 +75,17 @@ class SqliteRecipeCatalogRepositoryTest {
                 statement.execute("INSERT INTO recipes (id, name, is_active) VALUES (3, 'No Match Cake', 1)")
                 statement.execute("INSERT INTO recipes (id, name, is_active) VALUES (4, 'Empty Ingredients Mystery', 1)")
                 statement.execute("INSERT INTO recipes (id, name, is_active) VALUES (5, 'Inactive Full Match', 0)")
+                statement.execute("INSERT INTO recipes (id, name, is_active) VALUES (6, 'Quantity Normalization Muffins', 1)")
 
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (1, 'flour')")
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (2, 'water')")
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (3, 'egg')")
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (4, 'sugar')")
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (5, 'cocoa')")
+                statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (6, 'quantity-test-flour')")
+                statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (7, 'quantity-test-egg')")
+                statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (8, 'quantity-test-water')")
+                statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (9, 'quantity-test-cornstarch')")
 
                 fun link(recipeId: Int, position: Int, ingredientId: Int) {
                     statement.execute(
@@ -97,6 +102,19 @@ class SqliteRecipeCatalogRepositoryTest {
                 // recipe 4: no recipe_ingredients rows at all
                 // recipe 5: same ingredients as recipe 1, but inactive -> excluded entirely
                 link(5, 1, 1); link(5, 2, 2); link(5, 3, 3)
+
+                // recipe 6: quantities as ingestion actually stores them (t-91) — a bare
+                // fraction/number in `quantity`, the unit only surviving in `original_text`.
+                fun linkWithQuantity(position: Int, ingredientId: Int, quantity: String, originalText: String) {
+                    statement.execute(
+                        "INSERT INTO recipe_ingredients (recipe_id, position, ingredient_id, original_text, quantity) " +
+                            "VALUES (6, $position, $ingredientId, '$originalText', '$quantity')",
+                    )
+                }
+                linkWithQuantity(1, 6, "0.5", "0.5 cup flour")
+                linkWithQuantity(2, 7, "2", "2 eggs")
+                linkWithQuantity(3, 8, "", "water to taste")
+                linkWithQuantity(4, 9, "1", "1 T cornstarch")
             }
         }
         repository = SqliteRecipeCatalogRepository(dbFile)
@@ -123,8 +141,10 @@ class SqliteRecipeCatalogRepositoryTest {
         )
 
         // Inactive recipe 5 never appears even though its ingredients are a full match.
-        assertEquals(listOf(1L, 2L, 3L, 4L), page.items.map { it.recipe.id })
-        assertEquals(4, page.total)
+        // Recipe 6 (unrelated quantity-normalization fixture, see below) is active with its
+        // own ingredients, so it surfaces here too — with zero overlap against this pantry.
+        assertEquals(listOf(1L, 2L, 3L, 4L, 6L), page.items.map { it.recipe.id })
+        assertEquals(5, page.total)
 
         val byId = page.items.associateBy { it.recipe.id }
         assertEquals(3, byId.getValue(1L).matchedCount)
@@ -135,5 +155,22 @@ class SqliteRecipeCatalogRepositoryTest {
         assertEquals(2, byId.getValue(3L).totalIngredients)
         assertEquals(0, byId.getValue(4L).matchedCount)
         assertEquals(0, byId.getValue(4L).totalIngredients)
+        assertEquals(0, byId.getValue(6L).matchedCount)
+        assertEquals(4, byId.getValue(6L).totalIngredients)
+    }
+
+    @Test
+    fun `recipe detail attaches an explicit unit to a raw fractional quantity`() {
+        val recipe = requireNotNull(repository.findById(firebaseUid = "anonymous", recipeId = 6))
+        val byPosition = recipe.ingredients.associateBy { it.name }
+
+        // A bare fraction with a real unit in the source text gets that unit back.
+        assertEquals("0.5 cup", byPosition.getValue("0.5 cup flour").quantity)
+        // A bare count with no recognisable unit still gets a meaningful one, not a raw number.
+        assertEquals("2 pcs", byPosition.getValue("2 eggs").quantity)
+        // An empty quantity (nothing to normalize) stays empty rather than gaining a fake unit.
+        assertEquals("", byPosition.getValue("water to taste").quantity)
+        // The dataset's own "T" = tablespoon / "t" = teaspoon convention resolves case-sensitively.
+        assertEquals("1 tbsp", byPosition.getValue("1 T cornstarch").quantity)
     }
 }
