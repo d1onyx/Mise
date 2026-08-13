@@ -1,21 +1,12 @@
 package com.dishlab.backend
 
 import com.dishlab.api.configureApi
-import com.dishlab.application.service.AiCommandService
 import com.dishlab.application.service.CurrentUserResolver
-import com.dishlab.application.service.CookingService
-import com.dishlab.application.service.FakeAiCommandProvider
-import com.dishlab.application.service.HealthService
 import com.dishlab.application.service.IdentityService
 import com.dishlab.application.service.InMemoryIngredientRepository
-import com.dishlab.application.service.InMemoryCookingRepository
-import com.dishlab.application.service.InMemoryPantryRepository
-import com.dishlab.application.service.InMemoryHealthRepository
 import com.dishlab.application.service.InMemoryRecipeRepository
 import com.dishlab.application.service.InMemoryUserAccountRepository
-import com.dishlab.infrastructure.ai.OpenRouterAiCommandProvider
 import com.dishlab.infrastructure.ai.OpenRouterProductNameNormalizer
-import com.dishlab.infrastructure.ai.OpenRouterProductValidationProvider
 import com.dishlab.infrastructure.ai.OpenRouterRecipeIngredientValidator
 import com.dishlab.infrastructure.ai.OpenRouterRecipeValidationProvider
 import com.dishlab.infrastructure.ai.OpenRouterTagCategorizationProvider
@@ -32,7 +23,6 @@ import com.dishlab.infrastructure.catalog.IngredientNameCatalog
 import com.dishlab.infrastructure.catalog.CatalogProductNameNormalizer
 import com.dishlab.application.service.IngredientService
 import com.dishlab.infrastructure.firebase.FirebaseInitializer
-import com.dishlab.application.service.PantryService
 import com.dishlab.application.service.RecipeService
 import com.dishlab.application.service.RecipeCatalogService
 import com.dishlab.application.service.RecipeCatalogRepository
@@ -211,34 +201,6 @@ fun Application.appModule(
         tagValidator = tagValidator,
         tagCategorizationProvider = tagCategorizationProvider,
     )
-    val productValidationModel = env("OPENROUTER_PRODUCT_VALIDATION_MODEL")
-    val productValidationProvider = if (openRouterApiKey != null && productValidationModel != null) {
-        OpenRouterProductValidationProvider(apiKey = openRouterApiKey, model = productValidationModel)
-    } else {
-        com.dishlab.application.service.NoOpProductValidationProvider()
-    }
-    val pantryService = PantryService(
-        currentUserResolver = currentUserResolver,
-        pantry = InMemoryPantryRepository(),
-        productValidationProvider = productValidationProvider,
-    )
-    val cookingService = CookingService(
-        currentUserResolver = currentUserResolver,
-        recipeService = recipeService,
-        pantryService = pantryService,
-        repository = InMemoryCookingRepository(),
-    )
-    val healthService = HealthService(
-        currentUserResolver = currentUserResolver,
-        repository = InMemoryHealthRepository(),
-    )
-    val aiCommandProvider = if (openRouterApiKey != null) {
-        OpenRouterAiCommandProvider(apiKey = openRouterApiKey)
-    } else {
-        FakeAiCommandProvider()
-    }
-    val aiCommandService = AiCommandService(provider = aiCommandProvider)
-
     configureApi(
         authVerifier = authVerifier,
         identityService = identityService,
@@ -248,9 +210,5 @@ fun Application.appModule(
         recipeService = recipeService,
         recipeCatalogService = recipeCatalogService,
         productCatalogService = productCatalogService,
-        pantryService = pantryService,
-        cookingService = cookingService,
-        healthService = healthService,
-        aiCommandService = aiCommandService,
     )
 }

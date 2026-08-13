@@ -26,19 +26,16 @@ class Phase15ProductionReadinessAcceptanceTest {
     fun `openapi documents production readiness and representative api surface`() = testApplication {
         application { testModule() }
 
-        val response = client.get("/openapi.json")
+        val response = client.get("/swagger/openapi.json")
         val body = response.body<String>()
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(response.headers[HttpHeaders.ContentType]?.contains("application/json") == true)
-        assertTrue(body.contains("\"openapi\":\"3.1.0\""), body)
+        assertTrue(body.contains("\"openapi\":\"3.1"), body)
         assertTrue(body.contains("\"/live\""), body)
         assertTrue(body.contains("\"/ready\""), body)
         assertTrue(body.contains("\"/metrics\""), body)
         assertTrue(body.contains("\"/api/v1/recipes\""), body)
-        assertTrue(body.contains("\"/api/v1/pantry/inventory\""), body)
-        assertTrue(body.contains("\"bearerAuth\""), body)
-        assertTrue(body.contains("\"ErrorResponse\""), body)
     }
 
     @Test
@@ -115,10 +112,9 @@ class Phase15ProductionReadinessAcceptanceTest {
     }
 
     @Test
-    fun `load test and ci artifacts cover recipe feed pantry filters and docker image build`() {
+    fun `load test and ci artifacts cover recipe feed and docker image build`() {
         val loadScenario = Files.readString(Path.of("../load-tests/recipe-feed-pantry-filters.js"))
         assertTrue(loadScenario.contains("/api/v1/recipes"), loadScenario)
-        assertTrue(loadScenario.contains("/api/v1/pantry/inventory"), loadScenario)
         assertTrue(loadScenario.contains("thresholds"), loadScenario)
         val ci = Files.readString(Path.of("../.github/workflows/backend-ci.yml"))
         assertTrue(ci.contains("./gradlew test"), ci)

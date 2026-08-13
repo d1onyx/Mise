@@ -1,6 +1,5 @@
 package com.dishlab.api.routes
 
-import com.dishlab.api.dto.BookmarkResponse
 import com.dishlab.api.dto.PantryMatchPageResponse
 import com.dishlab.api.dto.toCatalogResponse
 import com.dishlab.api.dto.toResponse
@@ -12,9 +11,7 @@ import com.dishlab.domain.error.NotFoundError
 import com.dishlab.infrastructure.firebase.FirebaseAuthVerifier
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
-import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
-import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 
 fun Route.recipeCatalogRoutes(
@@ -38,7 +35,6 @@ fun Route.recipeCatalogRoutes(
                 page = page,
                 pageSize = pageSize,
             )
-            val viewer = currentUserResolver.resolve(user.uid)
             val userRecipes = recipeService.list(
                 firebaseUid = user.uid,
                 tag = category,
@@ -50,7 +46,7 @@ fun Route.recipeCatalogRoutes(
             call.respond(
                 com.dishlab.api.dto.CatalogRecipePageResponse(
                     items = (
-                        userRecipes.items.map { it.toCatalogResponse(viewer.id) } +
+                        userRecipes.items.map { it.toCatalogResponse() } +
                             catalog.items.map { it.toCatalogResponse() }
                         ).take(pageSize),
                     page = page,
@@ -98,19 +94,8 @@ fun Route.recipeCatalogRoutes(
                 call.respond(service.get("anonymous", call.catalogRecipeId()).toCatalogResponse())
             } else {
                 val recipeId = rawId.toUuidOrNull() ?: throw NotFoundError("Рецепт не знайдено")
-                val viewerId = currentUserResolver.resolve("anonymous").id
-                call.respond(recipeService.get("anonymous", recipeId).toCatalogResponse(viewerId))
+                call.respond(recipeService.get("anonymous", recipeId).toCatalogResponse())
             }
-        }
-
-        post("/{recipeId}/bookmark") {
-            val user = call.requireFirebaseUser(authVerifier) ?: return@post
-            call.respond(call.bookmark(user.uid, service, recipeService, bookmarked = true))
-        }
-
-        delete("/{recipeId}/bookmark") {
-            val user = call.requireFirebaseUser(authVerifier) ?: return@delete
-            call.respond(call.bookmark(user.uid, service, recipeService, bookmarked = false))
         }
     }
 }
@@ -121,25 +106,4 @@ private fun io.ktor.server.application.ApplicationCall.catalogRecipeId(): Long =
         ?.toLongOrNull()
         ?: throw NotFoundError("Рецепт не знайдено")
 
-private fun Long.catalogId(): String = "catalog:$this"
-
 private fun String.toUuidOrNull(): java.util.UUID? = runCatching { java.util.UUID.fromString(this) }.getOrNull()
-
-// Same catalog:<long> vs raw-uuid dispatch as GET /{recipeId} — the client bookmarks whichever
-// id shape the catalog list gave it, so this has to resolve both id spaces too.
-private fun io.ktor.server.application.ApplicationCall.bookmark(
-    firebaseUid: String,
-    service: RecipeCatalogService,
-    recipeService: RecipeService,
-    bookmarked: Boolean,
-): BookmarkResponse {
-    val rawId = parameters["recipeId"] ?: throw NotFoundError("Рецепт не знайдено")
-    return if (rawId.startsWith("catalog:")) {
-        val recipe = service.setBookmarked(firebaseUid, catalogRecipeId(), bookmarked)
-        BookmarkResponse(recipe.id.catalogId(), bookmarked)
-    } else {
-        val recipeId = rawId.toUuidOrNull() ?: throw NotFoundError("Рецепт не знайдено")
-        val recipe = recipeService.bookmark(firebaseUid, recipeId, bookmarked)
-        BookmarkResponse(recipe.id.toString(), bookmarked)
-    }
-}

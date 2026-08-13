@@ -13,7 +13,6 @@ import java.math.BigDecimal
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.Timestamp
-import java.sql.Types
 import java.time.Instant
 import java.util.UUID
 import javax.sql.DataSource
@@ -32,7 +31,6 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
                     replaceSubData(conn, v)
                 }
                 setCurrentVersionId(conn, recipe.id, recipe.currentVersion.id)
-                replaceBookmarks(conn, recipe.id, recipe.bookmarkedByUserIds)
                 conn.commit()
             } catch (e: Exception) {
                 conn.rollback()
@@ -58,8 +56,7 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
             val row = queryOne(conn, "SELECT * FROM recipes WHERE id = ?", id) { readRecipeRow(it) }
                 ?: return null
             val versions = loadVersions(conn, listOf(id))
-            val bookmarks = loadBookmarks(conn, listOf(id))
-            return assemble(row, versions[id].orEmpty(), bookmarks[id].orEmpty())
+            return assemble(row, versions[id].orEmpty())
         }
     }
 
@@ -69,9 +66,8 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
             if (rows.isEmpty()) return emptyList()
             val ids = rows.map { it.id }
             val versions = loadVersions(conn, ids)
-            val bookmarks = loadBookmarks(conn, ids)
             return rows.mapNotNull { row ->
-                runCatching { assemble(row, versions[row.id].orEmpty(), bookmarks[row.id].orEmpty()) }.getOrNull()
+                runCatching { assemble(row, versions[row.id].orEmpty()) }.getOrNull()
             }
         }
     }
@@ -210,14 +206,12 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
         exec(conn, "DELETE FROM recipe_steps WHERE recipe_version_id = ?", v.id)
         v.steps.forEach { step ->
             conn.prepareStatement(
-                "INSERT INTO recipe_steps (id, recipe_version_id, position, text, timer_seconds) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO recipe_steps (id, recipe_version_id, position, text) VALUES (?, ?, ?, ?)",
             ).use { ps ->
                 ps.setObject(1, UUID.randomUUID())
                 ps.setObject(2, v.id)
                 ps.setInt(3, step.position)
                 ps.setString(4, step.text)
-                val timer = step.timerSeconds
-                if (timer != null) ps.setInt(5, timer) else ps.setNull(5, Types.INTEGER)
                 ps.executeUpdate()
             }
         }
@@ -250,19 +244,6 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
             ps.setObject(1, versionId)
             ps.setObject(2, recipeId)
             ps.executeUpdate()
-        }
-    }
-
-    private fun replaceBookmarks(conn: Connection, recipeId: UUID, userIds: Set<UUID>) {
-        exec(conn, "DELETE FROM recipe_bookmarks WHERE recipe_id = ?", recipeId)
-        userIds.forEach { userId ->
-            conn.prepareStatement(
-                "INSERT INTO recipe_bookmarks (recipe_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING",
-            ).use { ps ->
-                ps.setObject(1, recipeId)
-                ps.setObject(2, userId)
-                ps.executeUpdate()
-            }
         }
     }
 
@@ -332,7 +313,6 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
                         RecipeStep(
                             position = rs.getInt("position"),
                             text = rs.getString("text"),
-                            timerSeconds = rs.getInt("timer_seconds").takeIf { !rs.wasNull() },
                         ),
                     )
                 }
@@ -376,19 +356,6 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
         }
     }
 
-    private fun loadBookmarks(conn: Connection, recipeIds: List<UUID>): Map<UUID, Set<UUID>> {
-        if (recipeIds.isEmpty()) return emptyMap()
-        val ph = recipeIds.inPlaceholders()
-        val result = mutableMapOf<UUID, MutableSet<UUID>>()
-        conn.prepareStatement("SELECT recipe_id, user_id FROM recipe_bookmarks WHERE recipe_id IN $ph").use { ps ->
-            recipeIds.forEachIndexed { i, id -> ps.setObject(i + 1, id) }
-            ps.executeQuery().use { rs ->
-                while (rs.next()) result.getOrPut(rs.uuid("recipe_id")) { mutableSetOf() }.add(rs.uuid("user_id"))
-            }
-        }
-        return result
-    }
-
     // ── row readers ────────────────────────────────────────────────────────────
 
     private data class RecipeRow(
@@ -430,7 +397,7 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
         createdAt = rs.instant("created_at"),
     )
 
-    private fun assemble(row: RecipeRow, versions: List<RecipeVersion>, bookmarks: Set<UUID>): Recipe {
+    private fun assemble(row: RecipeRow, versions: List<RecipeVersion>): Recipe {
         val current = versions.find { it.id == row.currentVersionId }
             ?: versions.maxByOrNull { it.versionNumber }
             ?: error("Recipe ${row.id} has no versions in the database")
@@ -442,7 +409,6 @@ class PostgresRecipeRepository(private val ds: DataSource) : RecipeRepository {
             visibility = row.visibility,
             currentVersion = current,
             versions = versions,
-            bookmarkedByUserIds = bookmarks,
             createdAt = row.createdAt,
             updatedAt = row.updatedAt,
             publishedAt = row.publishedAt,

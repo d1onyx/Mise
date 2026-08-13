@@ -1,6 +1,5 @@
 package com.dishlab.api.routes
 
-import com.dishlab.api.dto.BookmarkResponse
 import com.dishlab.api.dto.CompareRecipeVersionRequest
 import com.dishlab.api.dto.CreateRecipeReportRequest
 import com.dishlab.api.dto.CreateRecipeReviewRequest
@@ -123,18 +122,6 @@ fun Route.recipeRoutes(
             val user = call.requireFirebaseUser(authVerifier) ?: return@post
             val request = call.receive<CompareRecipeVersionRequest>()
             call.respond(recipeService.compare(user.uid, call.recipeId(), call.versionId(), request.targetVersionNumber).toResponse())
-        }
-
-        post("/{recipeId}/bookmark") {
-            val user = call.requireFirebaseUser(authVerifier) ?: return@post
-            val recipe = recipeService.bookmark(user.uid, call.recipeId(), bookmarked = true)
-            call.respond(BookmarkResponse(recipe.id.toString(), bookmarked = true))
-        }
-
-        delete("/{recipeId}/bookmark") {
-            val user = call.requireFirebaseUser(authVerifier) ?: return@delete
-            val recipe = recipeService.bookmark(user.uid, call.recipeId(), bookmarked = false)
-            call.respond(BookmarkResponse(recipe.id.toString(), bookmarked = false))
         }
 
         get("/{recipeId}/reviews") {

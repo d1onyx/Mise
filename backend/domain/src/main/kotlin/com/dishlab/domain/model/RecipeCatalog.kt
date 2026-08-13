@@ -21,7 +21,6 @@ data class CatalogRecipeIngredient(
 data class CatalogRecipeStep(
     val position: Int,
     val text: String,
-    val timerSeconds: Int? = null,
 )
 
 data class CatalogRecipe(
@@ -39,7 +38,6 @@ data class CatalogRecipe(
     val nutrition: CatalogNutrition = CatalogNutrition(),
     val ingredients: List<CatalogRecipeIngredient> = emptyList(),
     val steps: List<CatalogRecipeStep> = emptyList(),
-    val bookmarked: Boolean = false,
 )
 
 data class PantryMatchedRecipe(

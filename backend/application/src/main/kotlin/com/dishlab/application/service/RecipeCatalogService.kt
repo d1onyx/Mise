@@ -42,7 +42,6 @@ interface RecipeCatalogRepository {
     ): PantryMatchPage
 
     fun findById(firebaseUid: String, recipeId: Long): CatalogRecipe?
-    fun setBookmarked(firebaseUid: String, recipeId: Long, bookmarked: Boolean)
     fun getCategories(): List<String>
 }
 
@@ -67,12 +66,6 @@ class RecipeCatalogService(
 
     fun get(firebaseUid: String, recipeId: Long): CatalogRecipe =
         repository.findById(firebaseUid, recipeId) ?: throw NotFoundError("Рецепт не знайдено")
-
-    fun setBookmarked(firebaseUid: String, recipeId: Long, bookmarked: Boolean): CatalogRecipe {
-        get(firebaseUid, recipeId)
-        repository.setBookmarked(firebaseUid, recipeId, bookmarked)
-        return get(firebaseUid, recipeId)
-    }
 
     fun getCategories(firebaseUid: String, userRecipeTags: List<String> = emptyList()): List<String> =
         (repository.getCategories() + userRecipeTags)

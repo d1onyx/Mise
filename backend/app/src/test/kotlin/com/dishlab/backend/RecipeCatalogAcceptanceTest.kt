@@ -1,6 +1,5 @@
 package com.dishlab.backend
 
-import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.patch
@@ -65,7 +64,7 @@ class RecipeCatalogAcceptanceTest {
     }
 
     @Test
-    fun `public catalog details never expose another users bookmark`() = testApplication {
+    fun `public catalog details expose full recipe payload`() = testApplication {
         application { testModule() }
 
         val search = client.get("/api/v1/recipe-catalog?q=berry&pageSize=2") {
@@ -85,22 +84,6 @@ class RecipeCatalogAcceptanceTest {
         assertTrue(detailsBody.contains("\"ingredients\":"), detailsBody)
         assertTrue(detailsBody.contains("\"canonical_tags\":[\"en:"), detailsBody)
         assertTrue(detailsBody.contains("\"steps\":"), detailsBody)
-
-        assertEquals(
-            HttpStatusCode.OK,
-            client.post("/api/v1/recipe-catalog/catalog:38/bookmark") {
-                header(HttpHeaders.Authorization, token)
-            }.status,
-        )
-        val publicDetails = client.get("/api/v1/recipe-catalog/catalog:38").bodyAsText()
-        assertTrue(publicDetails.contains("\"bookmarked\":false"), publicDetails)
-
-        assertEquals(
-            HttpStatusCode.OK,
-            client.delete("/api/v1/recipe-catalog/catalog:38/bookmark") {
-                header(HttpHeaders.Authorization, token)
-            }.status,
-        )
     }
 
     @Test
@@ -208,32 +191,6 @@ class RecipeCatalogAcceptanceTest {
             }
             assertEquals(HttpStatusCode.NotFound, garbage.status)
         }
-
-    @Test
-    fun `bookmark routes resolve user-authored uuid ids the same way as detail`() = testApplication {
-        application { testModule() }
-
-        val recipeId = createPublishableRecipe("UUID Bookmark Regression Stew")
-
-        val bookmarked = client.post("/api/v1/recipe-catalog/$recipeId/bookmark") {
-            header(HttpHeaders.Authorization, token)
-        }
-        assertEquals(HttpStatusCode.OK, bookmarked.status, bookmarked.bodyAsText())
-        assertTrue(bookmarked.bodyAsText().contains("\"bookmarked\":true"), bookmarked.bodyAsText())
-
-        // GET /{recipeId} is public (t-11: uid is always "anonymous"), so it never reflects any
-        // caller's bookmark — same contract as catalog:* ids, now also true for uuid ids.
-        val details = client.get("/api/v1/recipe-catalog/$recipeId") {
-            header(HttpHeaders.Authorization, token)
-        }.bodyAsText()
-        assertTrue(details.contains("\"bookmarked\":false"), details)
-
-        val unbookmarked = client.delete("/api/v1/recipe-catalog/$recipeId/bookmark") {
-            header(HttpHeaders.Authorization, token)
-        }
-        assertEquals(HttpStatusCode.OK, unbookmarked.status, unbookmarked.bodyAsText())
-        assertTrue(unbookmarked.bodyAsText().contains("\"bookmarked\":false"), unbookmarked.bodyAsText())
-    }
 
     private suspend fun io.ktor.server.testing.ApplicationTestBuilder.createPublishableRecipe(title: String): String {
         val draft = client.post("/api/v1/recipes") {
