@@ -173,23 +173,8 @@ internal fun RecipeDetailContent(
                         .fillMaxWidth()
                         .border(1.dp, colors.border, RoundedCornerShape(16.dp)),
                 ) {
-                    recipe.ingredients.forEach { ingredient ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .background(colors.panel)
-                                .padding(horizontal = 15.dp, vertical = 13.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Text(
-                                ingredient.quantity,
-                                style = MiseTheme.typography.mono,
-                                color = colors.lime,
-                                modifier = Modifier.size(width = 60.dp, height = 18.dp),
-                            )
-                            Text(ingredient.name, style = MiseTheme.typography.body, color = colors.text)
-                        }
+                    recipe.ingredients.forEachIndexed { index, ingredient ->
+                        RecipeIngredientRow(index + 1, ingredient.name, ingredient.quantity)
                     }
                 }
 
@@ -264,6 +249,45 @@ internal fun RecipeDetailContent(
                 onClick = { onAction(RecipeDetailAction.StartCookingClicked) },
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+    }
+}
+
+@Composable
+private fun RecipeIngredientRow(number: Int, name: String, quantity: String) {
+    val colors = MiseTheme.colors
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(colors.panel)
+            .padding(horizontal = 15.dp, vertical = 13.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .background(colors.background, RoundedCornerShape(12.dp))
+                .border(1.dp, colors.border, RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("$number", style = MiseTheme.typography.monoTiny, color = colors.lime)
+        }
+        Column(Modifier.weight(1f)) {
+            Text(text = name, style = MiseTheme.typography.body, color = colors.text)
+            if (quantity.isNotBlank()) {
+                Text(
+                    text = quantity,
+                    style = MiseTheme.typography.mono,
+                    color = colors.lime,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(top = 8.dp)
+                        .background(colors.background, RoundedCornerShape(8.dp))
+                        .border(1.dp, colors.border, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+            }
         }
     }
 }
