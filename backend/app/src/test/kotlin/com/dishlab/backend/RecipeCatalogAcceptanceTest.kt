@@ -240,7 +240,7 @@ class RecipeCatalogAcceptanceTest {
     }
 
     @Test
-    fun `filters endpoint exposes categories actually present in the catalog`() = testApplication {
+    fun `filters endpoint groups categories cuisines equipment and techniques separately`() = testApplication {
         application { testModule() }
 
         val response = client.get("/api/v1/recipe-catalog/filters")
@@ -248,5 +248,8 @@ class RecipeCatalogAcceptanceTest {
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(body.contains("\"categories\":[\"Dessert\"]"), body)
+        assertTrue(body.contains("\"cuisines\":[\"American\"]"), body)
+        assertTrue(body.contains("\"equipment\":[\"oven\"]"), body)
+        assertTrue(body.contains("\"techniques\":[\"bake\"]"), body)
     }
 }

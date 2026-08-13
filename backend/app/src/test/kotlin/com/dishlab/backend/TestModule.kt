@@ -1,6 +1,7 @@
 package com.dishlab.backend
 
 import com.dishlab.infrastructure.firebase.DevFirebaseAuthVerifier
+import com.dishlab.application.service.CatalogFilters
 import com.dishlab.application.service.CatalogRecipePage
 import com.dishlab.application.service.PantryMatchPage
 import com.dishlab.application.service.RecipeCatalogRepository
@@ -48,6 +49,11 @@ private class TestRecipeCatalogRepository : RecipeCatalogRepository {
     }
 
     override fun findById(firebaseUid: String, recipeId: Long) = recipes.find { it.id == recipeId }
-    override fun getCategories() = listOf("Dessert")
+    override fun getFilters() = CatalogFilters(
+        categories = listOf("Dessert"),
+        cuisines = listOf("American"),
+        equipment = listOf("oven"),
+        techniques = listOf("bake"),
+    )
     private fun recipe(id: Long, title: String, names: List<String>) = CatalogRecipe(id, title, category = "Dessert", ingredients = names.map { CatalogRecipeIngredient(it, canonicalTags = listOf("en:$it")) }, steps = listOf(CatalogRecipeStep(1, "Mix")))
 }

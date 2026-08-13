@@ -62,13 +62,22 @@ fun Route.recipeCatalogRoutes(
         }
 
         get("/filters") {
-            // Categories actually present in the active catalog + any tags used by
-            // published user-authored recipes — the client filters against this list
-            // instead of hardcoding its own.
+            // Categories/cuisines/equipment/techniques actually present in the active catalog
+            // (grouped server-side — see CatalogFilters — so the client renders separate filter
+            // groups instead of one flat list) + any tags used by published user-authored
+            // recipes. Cached in the repository keyed on SQLite's data_version, so this does not
+            // rescan the catalog on every call — see SqliteRecipeCatalogRepository.getFilters.
             val filters = withContext(Dispatchers.IO) {
-                service.getCategories(firebaseUid = "anonymous", userRecipeTags = recipeService.listTags())
+                service.getFilters(firebaseUid = "anonymous", userRecipeTags = recipeService.listTags())
             }
-            call.respond(RecipeCatalogFiltersResponse(categories = filters))
+            call.respond(
+                RecipeCatalogFiltersResponse(
+                    categories = filters.categories,
+                    cuisines = filters.cuisines,
+                    equipment = filters.equipment,
+                    techniques = filters.techniques,
+                ),
+            )
         }
 
         get("/pantry-match") {

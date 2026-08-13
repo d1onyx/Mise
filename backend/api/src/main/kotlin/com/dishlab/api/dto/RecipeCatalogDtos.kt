@@ -12,6 +12,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RecipeCatalogFiltersResponse(
     val categories: List<String>,
+    val cuisines: List<String>,
+    val equipment: List<String>,
+    val techniques: List<String>,
 )
 
 @Serializable

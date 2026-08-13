@@ -1,5 +1,6 @@
 package com.dishlab.infrastructure.db
 
+import com.dishlab.application.service.CatalogFilters
 import com.dishlab.application.service.CatalogRecipePage
 import com.dishlab.application.service.PantryMatchPage
 import com.dishlab.application.service.RecipeCatalogRepository
@@ -18,6 +19,26 @@ import java.util.Locale
 
 class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepository {
     private val jdbcUrl = "jdbc:sqlite:${databasePath.toAbsolutePath()}"
+
+    // Cache keyed on SQLite's own change counter (PRAGMA data_version bumps whenever any
+    // connection — this process or another — commits a write to the file). Computing filters
+    // means scanning every active recipe's keywords, so re-running that per request under load
+    // (e.g. 1000 clients hitting /filters) would be a full-table scan per request; instead it
+    // runs once per actual data change and is served from memory otherwise. The lock only
+    // guards the recompute-and-store step, so concurrent readers on a warm cache never block.
+    //
+    // data_version is only meaningful when polled from the SAME connection over time — a brand
+    // new connection's first read establishes its own snapshot and does not reliably compare
+    // against another connection's value. So this needs one dedicated, never-closed connection
+    // just for the version check, separate from the short-lived per-query connections below.
+    private val versionConnection: Connection = DriverManager.getConnection(jdbcUrl)
+    private val filtersCacheLock = Any()
+    @Volatile private var filtersCache: Pair<Long, CatalogFilters>? = null
+
+    private fun currentDataVersion(): Long =
+        versionConnection.createStatement().use { statement ->
+            statement.executeQuery("PRAGMA data_version").use { rows -> rows.next(); rows.getLong(1) }
+        }
 
     init {
         require(databasePath.toFile().isFile) {
@@ -311,14 +332,61 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         PantryMatchPage(items, page, pageSize, total)
     }
 
-    override fun getCategories(): List<String> = connection().use { conn ->
-        conn.prepareStatement(
+    override fun getFilters(): CatalogFilters {
+        val dataVersion = currentDataVersion()
+        filtersCache?.let { (cachedVersion, cached) -> if (cachedVersion == dataVersion) return cached }
+        return synchronized(filtersCacheLock) {
+            filtersCache?.let { (cachedVersion, cached) -> if (cachedVersion == dataVersion) return@synchronized cached }
+            connection().use { conn ->
+                val computed = computeFilters(conn)
+                filtersCache = dataVersion to computed
+                computed
+            }
+        }
+    }
+
+    private fun computeFilters(conn: Connection): CatalogFilters {
+        val categories = conn.prepareStatement(
             "SELECT DISTINCT category FROM recipes WHERE is_active = 1 AND category IS NOT NULL AND trim(category) != '' ORDER BY category"
         ).use { statement ->
             statement.executeQuery().use { rows ->
                 buildList { while (rows.next()) add(rows.getString("category")) }
             }
         }
+        val categoryKeys = categories.mapTo(mutableSetOf()) { it.lowercase() }
+
+        val keywordTokens = mutableSetOf<String>()
+        conn.prepareStatement(
+            "SELECT DISTINCT keywords FROM recipes WHERE is_active = 1 AND keywords IS NOT NULL AND trim(keywords) != ''"
+        ).use { statement ->
+            statement.executeQuery().use { rows ->
+                while (rows.next()) {
+                    RVectorParser.parse(rows.getString("keywords")).forEach { token ->
+                        token.trim().takeIf(String::isNotBlank)?.let(keywordTokens::add)
+                    }
+                }
+            }
+        }
+
+        val cuisines = mutableListOf<String>()
+        val equipmentFound = mutableListOf<String>()
+        val techniquesFound = mutableListOf<String>()
+        keywordTokens.forEach { token ->
+            val key = token.lowercase()
+            when {
+                key in categoryKeys -> Unit // already surfaced under `categories`
+                key in KITCHEN_EQUIPMENT -> equipmentFound += token
+                key in COOKING_TECHNIQUES -> techniquesFound += token
+                else -> cuisines += token
+            }
+        }
+
+        return CatalogFilters(
+            categories = categories,
+            cuisines = cuisines.sorted(),
+            equipment = equipmentFound.sorted(),
+            techniques = techniquesFound.sorted(),
+        )
     }
 
     private fun connection(): Connection = DriverManager.getConnection(jdbcUrl)
@@ -423,6 +491,31 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         val recipe: CatalogRecipe,
         val instructions: String?,
     )
+
+    companion object {
+        // The dataset's `keywords` column mixes dish type (already covered by the `category`
+        // column), cuisine/region, kitchen tools, and cooking methods into one flat R-vector —
+        // these two sets are how getFilters() tells them apart. Built by scanning every distinct
+        // token actually present in data/recipe-catalog.db (see t-92 commit for the analysis);
+        // anything not in either set and not a known category falls into `cuisines`, since the
+        // remainder of the vocabulary is overwhelmingly demonyms/regions ("Mexican", "Thai
+        // Inspired", "U.S.", …) plus a handful of loose descriptors ("Copycat", "Fusion").
+        private val KITCHEN_EQUIPMENT = setOf(
+            "oven", "skillet", "pan", "saucepan", "pot", "stockpot", "whisk", "baking sheet",
+            "baking dish", "mixer", "grill", "blender", "microwave", "thermometer", "knife",
+            "food processor", "spatula", "slow cooker", "pressure cooker", "casserole dish",
+            "dutch oven", "roasting pan", "cutting board", "wok", "colander", "strainer",
+            "frying pan", "griddle", "tongs", "steamer", "measuring cup", "measuring spoon",
+            "rolling pin", "mortar", "mallet", "waffle iron", "paring knife", "piping bag",
+            "pizza cutter", "grater", "tenderizer", "mandoline", "juicer", "salad spinner",
+            "baster", "zester", "ladle",
+        )
+        private val COOKING_TECHNIQUES = setOf(
+            "bake", "boil", "simmer", "reduce", "fry", "roast", "sauté", "steam", "broil",
+            "toast", "smoke", "sear", "stir-fry", "char", "blanch", "poach", "pressure cook",
+            "slow cook", "braise", "cure",
+        )
+    }
 }
 
 private object RVectorParser {
