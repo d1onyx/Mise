@@ -77,3 +77,11 @@ data class RecipeCatalogFilters(
     val equipment: List<String> = emptyList(),
     val techniques: List<String> = emptyList(),
 )
+
+/** Selected remote catalogue filters. Each set is sent as repeated query parameters. */
+data class RecipeCatalogFilterSelection(
+    val categories: Set<String> = emptySet(),
+    val cuisines: Set<String> = emptySet(),
+    val equipment: Set<String> = emptySet(),
+    val techniques: Set<String> = emptySet(),
+)

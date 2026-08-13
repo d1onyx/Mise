@@ -4,6 +4,7 @@ import com.d1onix.dishlab.domain.FilterRecipesUseCase
 import com.d1onix.dishlab.domain.GetAllRecipesUseCase
 import com.d1onix.dishlab.domain.GetRecipeCatalogFiltersUseCase
 import com.d1onix.dishlab.domain.GetProductsUseCase
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilterSelection
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRouter
 import com.d1onyx.core.presentation.CommonDependencies
 import com.d1onyx.core.presentation.WithMviState
@@ -32,9 +33,9 @@ class DiscoverRecipesViewModel(
 
     private fun loadFirstPage() = launch("loadRecipeCatalogue") {
         try {
-            val category = mutableState.value.filters.categories.singleOrNull()
-            val page = getAllRecipes(1, PAGE_SIZE, category)
-            val catalogCategories = runCatching { getCatalogFilters().categories }.getOrDefault(emptyList())
+            val selectedFilters = mutableState.value.catalogFilterSelection
+            val page = getAllRecipes(1, PAGE_SIZE, selectedFilters)
+            val catalogFilters = runCatching { getCatalogFilters() }.getOrNull()
             val recipes = page.items
             val products = getProducts(recipes.flatMap { it.productIds }.distinct())
             mutableState.update {
@@ -42,7 +43,7 @@ class DiscoverRecipesViewModel(
                     all = recipes,
                     products = products.associateBy { product -> product.id },
                     hasNextPage = page.hasNextPage,
-                    catalogCategories = catalogCategories.ifEmpty { it.catalogCategories },
+                    catalogFilters = catalogFilters ?: it.catalogFilters,
                     isLoading = false,
                     loadError = false,
                 )
@@ -61,20 +62,19 @@ class DiscoverRecipesViewModel(
             is RecipeListAction.GroupClicked -> mutableState.update {
                 it.copy(expandedGroup = if (it.expandedGroup == action.group) null else action.group)
             }
-            is RecipeListAction.OptionClicked -> when (action.group) {
-                FilterGroupId.Category -> {
-                    mutableState.update { state ->
-                        state.copy(
-                            filters = state.filters.copy(
-                                categories = if (action.option in state.filters.categories) emptySet() else setOf(action.option),
-                            ),
-                        ).refiltered()
-                    }
-                    loadFirstPage()
+            is RecipeListAction.OptionClicked -> mutableState.update {
+                it.copy(filters = it.filters.toggle(action.group, action.option)).refiltered()
+            }
+            is RecipeListAction.CatalogFilterGroupClicked -> mutableState.update {
+                it.copy(
+                    expandedCatalogFilterGroup = if (it.expandedCatalogFilterGroup == action.group) null else action.group,
+                )
+            }
+            is RecipeListAction.CatalogFilterOptionClicked -> {
+                mutableState.update { state ->
+                    state.copy(catalogFilterSelection = state.catalogFilterSelection.toggle(action.group, action.option))
                 }
-                else -> mutableState.update {
-                    it.copy(filters = it.filters.toggle(action.group, action.option)).refiltered()
-                }
+                loadFirstPage()
             }
             is RecipeListAction.RecipeClicked -> router.openRecipe(action.id)
             RecipeListAction.BackClicked -> router.goBack()
@@ -93,7 +93,7 @@ class DiscoverRecipesViewModel(
         val page = getAllRecipes(
             state.all.size / PAGE_SIZE + 1,
             PAGE_SIZE,
-            state.filters.categories.singleOrNull(),
+            state.catalogFilterSelection,
         )
         mutableState.update {
             it.copy(
@@ -106,3 +106,16 @@ class DiscoverRecipesViewModel(
 
     private companion object { const val PAGE_SIZE = 20 }
 }
+
+private fun RecipeCatalogFilterSelection.toggle(
+    group: RecipeCatalogFilterGroup,
+    option: String,
+): RecipeCatalogFilterSelection = when (group) {
+    RecipeCatalogFilterGroup.Category -> copy(categories = categories.flip(option))
+    RecipeCatalogFilterGroup.Cuisine -> copy(cuisines = cuisines.flip(option))
+    RecipeCatalogFilterGroup.Equipment -> copy(equipment = equipment.flip(option))
+    RecipeCatalogFilterGroup.Technique -> copy(techniques = techniques.flip(option))
+}
+
+private fun Set<String>.flip(option: String): Set<String> =
+    if (option in this) this - option else this + option

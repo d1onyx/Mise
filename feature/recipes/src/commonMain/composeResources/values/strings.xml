@@ -15,6 +15,9 @@
 
     <string name="filter_group_difficulty">Difficulty</string>
     <string name="filter_group_category">Category</string>
+    <string name="filter_group_cuisine">Cuisine</string>
+    <string name="filter_group_equipment">Equipment</string>
+    <string name="filter_group_technique">Technique</string>
     <string name="filter_group_time">Time</string>
     <string name="difficulty_easy">Easy</string>
     <string name="difficulty_medium">Medium</string>

@@ -54,6 +54,10 @@ class RecipesViewModel(
                 it.copy(filters = it.filters.toggle(action.group, action.option)).refiltered()
             }
 
+            is RecipeListAction.CatalogFilterGroupClicked,
+            is RecipeListAction.CatalogFilterOptionClicked,
+            -> Unit
+
             is RecipeListAction.RecipeClicked -> router.openRecipe(action.id)
             RecipeListAction.BackClicked -> router.goBack()
             RecipeListAction.RetryClicked -> launch("retryRecipes") { load(session.products.value) }

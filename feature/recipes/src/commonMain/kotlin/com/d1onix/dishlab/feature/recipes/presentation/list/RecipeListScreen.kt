@@ -30,6 +30,9 @@ import com.d1onix.dishlab.feature.recipes.resources.discover_title
 import com.d1onix.dishlab.feature.recipes.resources.recipes_empty
 import com.d1onix.dishlab.feature.recipes.resources.recipes_title
 import com.d1onix.dishlab.feature.recipes.resources.filter_group_category
+import com.d1onix.dishlab.feature.recipes.resources.filter_group_cuisine
+import com.d1onix.dishlab.feature.recipes.resources.filter_group_equipment
+import com.d1onix.dishlab.feature.recipes.resources.filter_group_technique
 import com.d1onix.dishlab.feature.recipes.resources.recipes_error
 import com.d1onix.dishlab.feature.recipes.resources.recipes_loading
 import com.d1onix.dishlab.feature.recipes.resources.recipes_retry
@@ -108,22 +111,40 @@ internal fun RecipeListContent(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
         )
 
-        if (showCatalogCategoryFilter && state.categoryOptions.isNotEmpty()) {
+        if (showCatalogCategoryFilter && state.catalogFilters.hasOptions) {
             FilterChipBar(
-                groups = listOf(
-                    FilterGroup(
-                        id = FilterGroupId.Category.name,
-                        name = stringResource(Res.string.filter_group_category),
-                        options = state.categoryOptions.map { category ->
-                            FilterOption(id = category, label = category)
-                        },
-                        selected = state.filters.categories,
+                groups = listOfNotNull(
+                    state.catalogFilters.categories.toFilterGroup(
+                        RecipeCatalogFilterGroup.Category,
+                        stringResource(Res.string.filter_group_category),
+                        state.catalogFilterSelection.categories,
+                    ),
+                    state.catalogFilters.cuisines.toFilterGroup(
+                        RecipeCatalogFilterGroup.Cuisine,
+                        stringResource(Res.string.filter_group_cuisine),
+                        state.catalogFilterSelection.cuisines,
+                    ),
+                    state.catalogFilters.equipment.toFilterGroup(
+                        RecipeCatalogFilterGroup.Equipment,
+                        stringResource(Res.string.filter_group_equipment),
+                        state.catalogFilterSelection.equipment,
+                    ),
+                    state.catalogFilters.techniques.toFilterGroup(
+                        RecipeCatalogFilterGroup.Technique,
+                        stringResource(Res.string.filter_group_technique),
+                        state.catalogFilterSelection.techniques,
                     ),
                 ),
-                expandedGroupId = state.expandedGroup?.name,
-                onGroupClick = { onAction(RecipeListAction.GroupClicked(FilterGroupId.Category)) },
-                onOptionClick = { _, category ->
-                    onAction(RecipeListAction.OptionClicked(FilterGroupId.Category, category))
+                expandedGroupId = state.expandedCatalogFilterGroup?.name,
+                onGroupClick = { groupId ->
+                    RecipeCatalogFilterGroup.entries
+                        .firstOrNull { it.name == groupId }
+                        ?.let { onAction(RecipeListAction.CatalogFilterGroupClicked(it)) }
+                },
+                onOptionClick = { groupId, option ->
+                    RecipeCatalogFilterGroup.entries
+                        .firstOrNull { it.name == groupId }
+                        ?.let { onAction(RecipeListAction.CatalogFilterOptionClicked(it, option)) }
                 },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
             )
@@ -159,4 +180,20 @@ internal fun RecipeListContent(
             }
         }
     }
+}
+
+private val com.d1onix.dishlab.domain.model.RecipeCatalogFilters.hasOptions: Boolean
+    get() = categories.isNotEmpty() || cuisines.isNotEmpty() || equipment.isNotEmpty() || techniques.isNotEmpty()
+
+private fun List<String>.toFilterGroup(
+    group: RecipeCatalogFilterGroup,
+    label: String,
+    selected: Set<String>,
+): FilterGroup? = takeIf(List<String>::isNotEmpty)?.let { options ->
+    FilterGroup(
+        id = group.name,
+        name = label,
+        options = options.map { FilterOption(id = it, label = it) },
+        selected = selected,
+    )
 }

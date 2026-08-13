@@ -13,6 +13,7 @@ import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeCatalogFilters
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilterSelection
 import com.d1onix.dishlab.domain.model.RecipeFilters
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.domain.model.RecipePage
@@ -38,8 +39,11 @@ class GetRecipesForProductsUseCaseImpl(
 class GetAllRecipesUseCaseImpl(
     private val recipes: RecipeRepository,
 ) : GetAllRecipesUseCase {
-    override suspend fun invoke(page: Int, pageSize: Int, category: String?): RecipePage =
-        recipes.allPage(page, pageSize, category)
+    override suspend fun invoke(
+        page: Int,
+        pageSize: Int,
+        filters: RecipeCatalogFilterSelection,
+    ): RecipePage = recipes.allPage(page, pageSize, filters)
 }
 
 @ContributesBinding(AppScope::class)
