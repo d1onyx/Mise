@@ -15,9 +15,15 @@ independent Gradle build and requires JDK 21.
 | `app` | Dependency wiring and Netty entry point |
 | `migrations` | Flyway PostgreSQL migrations |
 
-The imported Food.com catalog lives at `data/recipe-catalog.db` and contains
-522,517 recipes with 4,129,433 normalized recipe-ingredient links. The database
-is copied for local development but intentionally ignored by Git.
+The recipe catalog lives at `data/recipe-catalog.db` and is built from
+`dataset_clean.csv` by `scripts/build_recipe_catalog.py` (t-91). The current
+build holds 50,509 recipes with 478,177 normalized recipe-ingredient links.
+Both the CSV and the database are local artifacts, intentionally ignored by
+Git — rebuild with:
+
+```bash
+python3 scripts/build_recipe_catalog.py --csv dataset_clean.csv --out data/recipe-catalog.db
+```
 
 ## Run Locally
 

@@ -28,19 +28,6 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                 statement.execute("PRAGMA foreign_keys = ON")
                 statement.execute("PRAGMA busy_timeout = 5000")
                 statement.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS catalog_bookmarks (
-                        firebase_uid TEXT NOT NULL,
-                        recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
-                        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        PRIMARY KEY (firebase_uid, recipe_id)
-                    )
-                    """.trimIndent(),
-                )
-                statement.execute(
-                    "CREATE INDEX IF NOT EXISTS idx_catalog_bookmarks_user ON catalog_bookmarks(firebase_uid, recipe_id)",
-                )
-                statement.execute(
                     "CREATE INDEX IF NOT EXISTS idx_recipes_category_name ON recipes(category, name COLLATE NOCASE)",
                 )
                 runCatching {
@@ -95,21 +82,16 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         val offset = (page - 1) * pageSize
         val sql =
             """
-            SELECT r.*,
-                   EXISTS(
-                       SELECT 1 FROM catalog_bookmarks b
-                       WHERE b.firebase_uid = ? AND b.recipe_id = r.id
-                   ) AS bookmarked
+            SELECT r.*
             FROM recipes r
             $where
             ORDER BY r.aggregated_rating IS NULL, r.aggregated_rating DESC, r.id
             LIMIT ? OFFSET ?
             """.trimIndent()
         val items = conn.prepareStatement(sql).use { statement ->
-            statement.setString(1, firebaseUid)
-            statement.bind(parameters, startIndex = 2)
-            statement.setInt(parameters.size + 2, pageSize)
-            statement.setInt(parameters.size + 3, offset)
+            statement.bind(parameters, startIndex = 1)
+            statement.setInt(parameters.size + 1, pageSize)
+            statement.setInt(parameters.size + 2, offset)
             statement.executeQuery().use { rows ->
                 buildList {
                     while (rows.next()) add(rows.toRecipe())
@@ -122,23 +104,17 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
     override fun findById(firebaseUid: String, recipeId: Long): CatalogRecipe? = connection().use { conn ->
         val loaded = conn.prepareStatement(
             """
-            SELECT r.*,
-                   EXISTS(
-                       SELECT 1 FROM catalog_bookmarks b
-                       WHERE b.firebase_uid = ? AND b.recipe_id = r.id
-                   ) AS bookmarked
+            SELECT r.*
             FROM recipes r
             WHERE r.id = ? AND r.is_active = 1
             """.trimIndent(),
         ).use { statement ->
-            statement.setString(1, firebaseUid)
-            statement.setLong(2, recipeId)
+            statement.setLong(1, recipeId)
             statement.executeQuery().use { rows ->
                 if (rows.next()) {
                     LoadedRecipe(
                         recipe = rows.toRecipe(),
                         instructions = rows.getString("instructions"),
-                        instructionTimes = rows.getString("instruction_times_seconds"),
                     )
                 } else {
                     null
@@ -148,7 +124,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
 
         loaded.recipe.copy(
             ingredients = loadIngredients(conn, recipeId),
-            steps = loadSteps(loaded.instructions, loaded.instructionTimes),
+            steps = loadSteps(loaded.instructions),
         )
     }
 
@@ -281,11 +257,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                  )
             SELECT r.*,
                    COALESCE(t.total_count, 0) AS total_count,
-                   COALESCE(m.matched_count, 0) AS matched_count,
-                   EXISTS(
-                       SELECT 1 FROM catalog_bookmarks b
-                       WHERE b.firebase_uid = ? AND b.recipe_id = r.id
-                   ) AS bookmarked
+                   COALESCE(m.matched_count, 0) AS matched_count
             FROM recipes r
             LEFT JOIN matched m ON m.recipe_id = r.id
             LEFT JOIN totals t ON t.recipe_id = r.id
@@ -313,7 +285,6 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             var idx = 1
             normalizedNames.forEach { stmt.setString(idx++, it) }
             matchedIngredientIds.forEach { stmt.setLong(idx++, it) }
-            stmt.setString(idx++, firebaseUid)
             condParams.forEach { stmt.setObject(idx++, it) }
             stmt.setInt(idx++, pageSize)
             stmt.setInt(idx, offset)
@@ -340,21 +311,6 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         ).use { statement ->
             statement.executeQuery().use { rows ->
                 buildList { while (rows.next()) add(rows.getString("category")) }
-            }
-        }
-    }
-
-    override fun setBookmarked(firebaseUid: String, recipeId: Long, bookmarked: Boolean) {
-        connection().use { conn ->
-            val sql = if (bookmarked) {
-                "INSERT OR IGNORE INTO catalog_bookmarks(firebase_uid, recipe_id) VALUES (?, ?)"
-            } else {
-                "DELETE FROM catalog_bookmarks WHERE firebase_uid = ? AND recipe_id = ?"
-            }
-            conn.prepareStatement(sql).use { statement ->
-                statement.setString(1, firebaseUid)
-                statement.setLong(2, recipeId)
-                statement.executeUpdate()
             }
         }
     }
@@ -399,7 +355,10 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                         add(
                             CatalogRecipeIngredient(
                                 name = rows.getString("original_text"),
-                                quantity = rows.getString("quantity"),
+                                quantity = IngredientQuantityNormalizer.normalize(
+                                    rows.getString("quantity"),
+                                    rows.getString("original_text"),
+                                ),
                                 canonicalTags = listOf(canonicalTag).filter(String::isNotBlank),
                             ),
                         )
@@ -408,11 +367,10 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             }
         }
 
-    private fun loadSteps(instructionText: String?, instructionTimes: String?): List<CatalogRecipeStep> {
+    private fun loadSteps(instructionText: String?): List<CatalogRecipeStep> {
         val instructions = RVectorParser.parse(instructionText)
-        val timers = parseTimers(instructionTimes)
         return instructions.mapIndexed { index, text ->
-            CatalogRecipeStep(index + 1, text, timers.getOrNull(index))
+            CatalogRecipeStep(index + 1, text)
         }
     }
 
@@ -440,7 +398,6 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                 sugar = nullableDouble("sugar_content"),
                 protein = nullableDouble("protein_content"),
             ),
-            bookmarked = getInt("bookmarked") == 1,
         )
     }
 
@@ -456,17 +413,9 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
     private fun escapeLike(value: String): String =
         value.replace("!", "!!").replace("%", "!%").replace("_", "!_")
 
-    private fun parseTimers(value: String?): List<Int?> {
-        if (value.isNullOrBlank()) return emptyList()
-        return value.removePrefix("(").removeSuffix(")")
-            .split(',')
-            .map { token -> token.trim().takeUnless { it.equals("null", true) || it.isEmpty() }?.toIntOrNull() }
-    }
-
     private data class LoadedRecipe(
         val recipe: CatalogRecipe,
         val instructions: String?,
-        val instructionTimes: String?,
     )
 }
 
@@ -509,6 +458,69 @@ private object RVectorParser {
             result += item.toString()
         }
         return result
+    }
+}
+
+// Ingestion sources (see scripts/build_recipe_catalog.py, t-91) store the bare numeric
+// quantity ("0.5") separately from the unit, which only survives in original_text ("0.5
+// cup flour"). The mobile client cannot guess the unit back out of a raw fraction, so this
+// re-attaches it at read time — the catalogue is the source of truth, not the client (t-94).
+private object IngredientQuantityNormalizer {
+    private val word = Regex("[a-zA-Z]+")
+
+    // weight, volume, and standard kitchen-measure units this dataset actually uses,
+    // mapped to a single canonical spelling.
+    private val units: Map<String, String> = mapOf(
+        "g" to "g", "gram" to "g", "grams" to "g",
+        "kg" to "kg", "kilogram" to "kg", "kilograms" to "kg",
+        "oz" to "oz", "ounce" to "oz", "ounces" to "oz",
+        "lb" to "lb", "lbs" to "lb", "pound" to "lb", "pounds" to "lb",
+        "ml" to "ml", "milliliter" to "ml", "milliliters" to "ml",
+        "l" to "l", "liter" to "l", "liters" to "l",
+        "cup" to "cup", "cups" to "cup",
+        "tsp" to "tsp", "teaspoon" to "tsp", "teaspoons" to "tsp",
+        "tbsp" to "tbsp", "tablespoon" to "tbsp", "tablespoons" to "tbsp",
+        "pint" to "pint", "pints" to "pint",
+        "quart" to "quart", "quarts" to "quart",
+        "gallon" to "gallon", "gallons" to "gallon",
+        "clove" to "clove", "cloves" to "clove",
+        "slice" to "slice", "slices" to "slice",
+        "piece" to "piece", "pieces" to "piece",
+        "pinch" to "pinch", "dash" to "dash",
+        "stalk" to "stalk", "stalks" to "stalk",
+        "sprig" to "sprig", "sprigs" to "sprig",
+        "can" to "can", "cans" to "can",
+        "jar" to "jar", "jars" to "jar",
+        "package" to "package", "packages" to "package", "pkg" to "package",
+        "bag" to "bag", "bags" to "bag",
+        "stick" to "stick", "sticks" to "stick",
+        "bunch" to "bunch", "bunches" to "bunch",
+        "head" to "head", "heads" to "head",
+        "container" to "container", "containers" to "container",
+    )
+
+    /**
+     * Re-attaches an explicit unit to [quantity] by scanning [originalText] for the first
+     * recognised unit word. A quantity with no discernible unit (e.g. "2 eggs") still gets
+     * a meaningful one — "pcs" — rather than being left as an ambiguous bare number.
+     */
+    fun normalize(quantity: String?, originalText: String?): String? {
+        val trimmed = quantity?.trim()
+        if (trimmed.isNullOrEmpty()) return quantity
+        if (word.find(trimmed) != null) return trimmed // already carries a unit (defensive)
+        val unit = word.findAll(originalText.orEmpty())
+            .take(6)
+            .firstNotNullOfOrNull { unitFor(it.value) }
+        return "$trimmed ${unit ?: "pcs"}"
+    }
+
+    // "t"/"T" only resolve case-sensitively — this dataset's own convention for teaspoon vs.
+    // tablespoon (see "1 T cornstarch", "2 t cold water" in dataset_clean.csv) — a
+    // case-insensitive single letter would be too easy to collide with unrelated text.
+    private fun unitFor(rawWord: String): String? = when (rawWord) {
+        "t" -> "tsp"
+        "T" -> "tbsp"
+        else -> units[rawWord.lowercase()]
     }
 }
 

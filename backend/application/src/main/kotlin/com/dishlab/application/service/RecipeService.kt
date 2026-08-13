@@ -330,13 +330,6 @@ class RecipeService(
         return RecipeCompareResult(from.versionNumber, to.versionNumber, changed)
     }
 
-    fun bookmark(firebaseUid: String, recipeId: UUID, bookmarked: Boolean): Recipe {
-        val user = currentUserResolver.resolve(firebaseUid)
-        val recipe = get(firebaseUid, recipeId)
-        val bookmarks = if (bookmarked) recipe.bookmarkedByUserIds + user.id else recipe.bookmarkedByUserIds - user.id
-        return recipes.save(recipe.copy(bookmarkedByUserIds = bookmarks, updatedAt = Instant.now()))
-    }
-
     fun fork(firebaseUid: String, recipeId: UUID): Recipe {
         val user = currentUserResolver.resolve(firebaseUid)
         val source = get(firebaseUid, recipeId)

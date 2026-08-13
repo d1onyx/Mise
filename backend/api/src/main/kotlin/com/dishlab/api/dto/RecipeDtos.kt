@@ -33,7 +33,6 @@ data class RecipeIngredientDto(
 data class RecipeStepDto(
     val position: Int,
     val text: String,
-    val timerSeconds: Int? = null,
 )
 
 @Serializable
@@ -96,7 +95,6 @@ data class RecipeResponse(
     val tags: List<String>,
     val equipment: List<String>,
     val imageUrl: String? = null,
-    val bookmarked: Boolean,
     val difficulty: String,
     val createdAt: String,
     val updatedAt: String,
@@ -138,9 +136,6 @@ data class RecipeCompareResponse(
     val toVersionNumber: Int,
     val changedFields: List<String>,
 )
-
-@Serializable
-data class BookmarkResponse(val recipeId: String, val bookmarked: Boolean)
 
 @Serializable
 data class CreateRecipeReviewRequest(val rating: Int, val comment: String? = null)
@@ -359,7 +354,7 @@ private val UNIT_MAP: Map<String, String> = buildMap {
     put("serving", "serving"); put("servings", "serving")
 }
 
-fun RecipeStepDto.toDomain(): RecipeStep = RecipeStep(position = position, text = text, timerSeconds = timerSeconds)
+fun RecipeStepDto.toDomain(): RecipeStep = RecipeStep(position = position, text = text)
 
 fun RecipeIngredient.toDto(): RecipeIngredientDto = RecipeIngredientDto(
     ingredientId = ingredientId?.toString(),
@@ -381,7 +376,7 @@ internal fun String.ingredientCanonicalTag(): String? {
     return toEnglishIngredientTaxonomyTag().takeIf(String::isNotBlank)
 }
 
-fun RecipeStep.toDto(): RecipeStepDto = RecipeStepDto(position = position, text = text, timerSeconds = timerSeconds)
+fun RecipeStep.toDto(): RecipeStepDto = RecipeStepDto(position = position, text = text)
 
 private fun Int.toDifficulty(): String = when {
     this < 5 -> "easy"
@@ -422,7 +417,6 @@ fun Recipe.toResponse(viewerUserId: UUID? = null): RecipeResponse = RecipeRespon
     tags = currentVersion.tags,
     equipment = currentVersion.equipment,
     imageUrl = currentVersion.imageUrl,
-    bookmarked = viewerUserId != null && bookmarkedByUserIds.contains(viewerUserId),
     difficulty = currentVersion.steps.size.toDifficulty(),
     createdAt = createdAt.toString(),
     updatedAt = updatedAt.toString(),

@@ -8,3 +8,4 @@ data/*.db
 data/*.db-*
 data/postgres/
 uploads/
+dataset_clean.csv
