@@ -27,24 +27,54 @@ private class TestRecipeCatalogRepository : RecipeCatalogRepository {
         recipe(778, "Flour-only flatbread", listOf("flour")),
     )
 
-    override fun search(firebaseUid: String, query: String?, category: String?, ingredient: String?, page: Int, pageSize: Int) =
-        CatalogRecipePage(recipes.filter { query.isNullOrBlank() || it.title.contains(query, true) }, page, pageSize, recipes.size)
+    override fun search(
+        firebaseUid: String,
+        query: String?,
+        categories: List<String>,
+        cuisines: List<String>,
+        equipment: List<String>,
+        techniques: List<String>,
+        ingredient: String?,
+        page: Int,
+        pageSize: Int,
+    ): CatalogRecipePage {
+        val filtered = recipes
+            .filter { query.isNullOrBlank() || it.title.contains(query, true) }
+            .filter { categories.isEmpty() || categories.any { c -> c.equals(it.category, ignoreCase = true) } }
+        return CatalogRecipePage(filtered, page, pageSize, filtered.size)
+    }
 
-    override fun findByPantryIngredients(firebaseUid: String, ingredientNames: List<String>, category: String?, tags: List<String>, strictTags: Boolean, page: Int, pageSize: Int, partialMatchOnly: Boolean, exactMatch: Boolean, exactProductGroups: List<List<String>>) : PantryMatchPage {
+    override fun findByPantryIngredients(
+        firebaseUid: String,
+        ingredientNames: List<String>,
+        categories: List<String>,
+        cuisines: List<String>,
+        equipment: List<String>,
+        techniques: List<String>,
+        tags: List<String>,
+        strictTags: Boolean,
+        page: Int,
+        pageSize: Int,
+        partialMatchOnly: Boolean,
+        exactMatch: Boolean,
+        exactProductGroups: List<List<String>>,
+    ) : PantryMatchPage {
         val selected = (ingredientNames + tags).map { it.removePrefix("en:") }.toSet()
-        val matches = recipes.mapNotNull { raw ->
-            val names = raw.ingredients.flatMap { it.canonicalTags }.map { it.removePrefix("en:") }.toSet()
-            val grouped = exactProductGroups.all { group -> group.any { it.removePrefix("en:") in names } }
-            val plainMatch = selected.any(names::contains)
-            val qualifies = when {
-                exactProductGroups.isNotEmpty() && exactMatch -> grouped
-                exactProductGroups.isNotEmpty() -> grouped || plainMatch
-                exactMatch -> selected.all(names::contains)
-                partialMatchOnly -> plainMatch
-                else -> true
+        val matches = recipes
+            .filter { categories.isEmpty() || categories.any { c -> c.equals(it.category, ignoreCase = true) } }
+            .mapNotNull { raw ->
+                val names = raw.ingredients.flatMap { it.canonicalTags }.map { it.removePrefix("en:") }.toSet()
+                val grouped = exactProductGroups.all { group -> group.any { it.removePrefix("en:") in names } }
+                val plainMatch = selected.any(names::contains)
+                val qualifies = when {
+                    exactProductGroups.isNotEmpty() && exactMatch -> grouped
+                    exactProductGroups.isNotEmpty() -> grouped || plainMatch
+                    exactMatch -> selected.all(names::contains)
+                    partialMatchOnly -> plainMatch
+                    else -> true
+                }
+                if (qualifies) PantryMatchedRecipe(raw, selected.count(names::contains), names.size) else null
             }
-            if (qualifies) PantryMatchedRecipe(raw, selected.count(names::contains), names.size) else null
-        }
         return PantryMatchPage(matches, page, pageSize, matches.size)
     }
 

@@ -131,7 +131,6 @@ class SqliteRecipeCatalogRepositoryTest {
         val page = repository.findByPantryIngredients(
             firebaseUid = "anonymous",
             ingredientNames = listOf("en:flour", "en:water", "en:egg"),
-            category = null,
             tags = emptyList(),
             strictTags = false,
             page = 1,
@@ -144,7 +143,16 @@ class SqliteRecipeCatalogRepositoryTest {
         // Inactive recipe 5 never appears even though its ingredients are a full match.
         // Recipe 6 (unrelated quantity-normalization fixture, see below) is active with its
         // own ingredients, so it surfaces here too — with zero overlap against this pantry.
-        assertEquals(listOf(1L, 2L, 3L, 4L, 6L), page.items.map { it.recipe.id })
+        // Recipe 4 (zero recorded ingredients) sorts dead last, after recipe 6 (real
+        // ingredients, just none matched) — a recipe with no ingredient data at all is a worse
+        // result than one that simply doesn't match this pantry. (Pre-t-98, this comparison used
+        // a `totals` CTE column also literally named `total_count`; ORDER BY's bare `total_count`
+        // resolved to that raw joined column — NULL for recipe 4 — instead of the SELECT list's
+        // COALESCE(...,0) alias, so `CASE WHEN total_count = 0` was UNKNOWN, not TRUE, for recipe
+        // 4 specifically. That accidental short-circuit is what put it ahead of recipe 6, not the
+        // documented "zero-ingredient recipes sort last" intent — t-98's r.ingredient_count column
+        // has no such name collision, so it now sorts by what the CASE expression actually says.)
+        assertEquals(listOf(1L, 2L, 3L, 6L, 4L), page.items.map { it.recipe.id })
         assertEquals(5, page.total)
 
         val byId = page.items.associateBy { it.recipe.id }
@@ -158,6 +166,85 @@ class SqliteRecipeCatalogRepositoryTest {
         assertEquals(0, byId.getValue(4L).totalIngredients)
         assertEquals(0, byId.getValue(6L).matchedCount)
         assertEquals(4, byId.getValue(6L).totalIngredients)
+    }
+
+    @Test
+    fun `search combines multi-select filter groups as OR within a group and AND across groups`() {
+        DriverManager.getConnection("jdbc:sqlite:${dbFile.absolutePathString()}").use { conn ->
+            conn.createStatement().use { statement ->
+                statement.execute(
+                    "UPDATE recipes SET category = 'Dinner', " +
+                        "keywords = 'c(\"Dinner\", \"Mexican\", \"oven\", \"bake\")' WHERE id = 1",
+                )
+                statement.execute(
+                    "UPDATE recipes SET category = 'Dessert', " +
+                        "keywords = 'c(\"Dessert\", \"Thai\", \"wok\", \"stir-fry\")' WHERE id = 2",
+                )
+                statement.execute("UPDATE recipes SET category = 'Breakfast' WHERE id = 3")
+            }
+        }
+
+        // Two categories OR together: both Dinner (1) and Dessert (2) recipes come back.
+        val byCategory = repository.search(
+            firebaseUid = "anonymous", query = null,
+            categories = listOf("Dinner", "Dessert"), ingredient = null, page = 1, pageSize = 10,
+        )
+        assertEquals(setOf(1L, 2L), byCategory.items.map { it.id }.toSet())
+
+        // category AND cuisine: recipe 1 is Dinner but not Thai, recipe 2 is Thai but not
+        // Dinner — no recipe satisfies both groups at once.
+        val crossGroup = repository.search(
+            firebaseUid = "anonymous", query = null,
+            categories = listOf("Dinner"), cuisines = listOf("Thai"), ingredient = null, page = 1, pageSize = 10,
+        )
+        assertTrue(crossGroup.items.isEmpty(), crossGroup.items.toString())
+
+        // equipment filter alone, case-insensitive.
+        val byEquipment = repository.search(
+            firebaseUid = "anonymous", query = null,
+            equipment = listOf("WOK"), ingredient = null, page = 1, pageSize = 10,
+        )
+        assertEquals(listOf(2L), byEquipment.items.map { it.id })
+    }
+
+    @Test
+    fun `pantry-match applies category and technique filter groups alongside ingredient matching`() {
+        DriverManager.getConnection("jdbc:sqlite:${dbFile.absolutePathString()}").use { conn ->
+            conn.createStatement().use { statement ->
+                statement.execute(
+                    "UPDATE recipes SET category = 'Dinner', keywords = 'c(\"bake\")' WHERE id = 1",
+                )
+                statement.execute(
+                    "UPDATE recipes SET category = 'Dessert', keywords = 'c(\"fry\")' WHERE id = 2",
+                )
+            }
+        }
+
+        // Both recipes 1 and 2 have a flour+? overlap with this pantry, but only recipe 1 is
+        // in the selected category group.
+        val page = repository.findByPantryIngredients(
+            firebaseUid = "anonymous",
+            ingredientNames = listOf("en:flour"),
+            categories = listOf("Dinner"),
+            tags = emptyList(),
+            strictTags = false,
+            page = 1,
+            pageSize = 10,
+            partialMatchOnly = true,
+        )
+        assertEquals(listOf(1L), page.items.map { it.recipe.id })
+
+        // technique filter alone narrows to recipe 2 regardless of category.
+        val byTechnique = repository.findByPantryIngredients(
+            firebaseUid = "anonymous",
+            ingredientNames = emptyList(),
+            techniques = listOf("fry"),
+            tags = emptyList(),
+            strictTags = false,
+            page = 1,
+            pageSize = 10,
+        )
+        assertEquals(listOf(2L), byTechnique.items.map { it.recipe.id })
     }
 
     @Test

@@ -252,4 +252,36 @@ class RecipeCatalogAcceptanceTest {
         assertTrue(body.contains("\"equipment\":[\"oven\"]"), body)
         assertTrue(body.contains("\"techniques\":[\"bake\"]"), body)
     }
+
+    @Test
+    fun `repeated category query params are accepted on the catalog list and pantry-match`() = testApplication {
+        application { testModule() }
+
+        // Every fixture recipe is category="Dessert" — a matching repeated-category filter still
+        // returns them, an unmatched one filters everything out. Proves the route actually parses
+        // and forwards multiple `category` values instead of only reading the first/ignoring them.
+        val matching = client.get("/api/v1/recipe-catalog?category=Dessert&category=Snack") {
+            header(HttpHeaders.Authorization, token)
+        }
+        assertEquals(HttpStatusCode.OK, matching.status)
+        assertTrue(matching.bodyAsText().contains("Zebra Cake"), matching.bodyAsText())
+
+        val nonMatching = client.get("/api/v1/recipe-catalog?category=NoSuchCategory") {
+            header(HttpHeaders.Authorization, token)
+        }
+        assertEquals(HttpStatusCode.OK, nonMatching.status)
+        assertTrue(nonMatching.bodyAsText().contains("\"items\":[]"), nonMatching.bodyAsText())
+
+        val pantryMatching = client.get(
+            "/api/v1/recipe-catalog/pantry-match?ingredient=en:flour&category=Dessert&category=Snack",
+        )
+        assertEquals(HttpStatusCode.OK, pantryMatching.status)
+        assertTrue(pantryMatching.bodyAsText().contains("Zebra Cake"), pantryMatching.bodyAsText())
+
+        val pantryNonMatching = client.get(
+            "/api/v1/recipe-catalog/pantry-match?ingredient=en:flour&category=NoSuchCategory",
+        )
+        assertEquals(HttpStatusCode.OK, pantryNonMatching.status)
+        assertTrue(pantryNonMatching.bodyAsText().contains("\"items\":[]"), pantryNonMatching.bodyAsText())
+    }
 }

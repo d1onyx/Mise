@@ -10,6 +10,8 @@ import com.dishlab.domain.model.CatalogRecipeIngredient
 import com.dishlab.domain.model.CatalogRecipeStep
 import com.dishlab.domain.model.PantryMatchedRecipe
 import com.dishlab.domain.model.toEnglishIngredientTaxonomyTag
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import java.nio.file.Path
 import java.sql.Connection
 import java.sql.DriverManager
@@ -19,6 +21,22 @@ import java.util.Locale
 
 class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepository {
     private val jdbcUrl = "jdbc:sqlite:${databasePath.toAbsolutePath()}"
+
+    // Opening a brand-new SQLite connection per request (the previous connection() below) was
+    // the real cost behind the throughput ceiling under load — even after t-98's query fix
+    // removed the extra full-table scan, HTTP p50 stayed far above the query's own SQL time
+    // (~65ms), which only made sense as per-request connection-open overhead. A pool amortizes
+    // that: connections are opened once and reused. Read-only workload, WAL journal mode, so a
+    // pool sized to available cores lets genuinely concurrent readers proceed in parallel.
+    private val pool: HikariDataSource = HikariDataSource(
+        HikariConfig().apply {
+            jdbcUrl = this@SqliteRecipeCatalogRepository.jdbcUrl
+            maximumPoolSize = POOL_SIZE
+            minimumIdle = POOL_SIZE
+            connectionInitSql = "PRAGMA busy_timeout = 5000"
+            poolName = "recipe-catalog-sqlite"
+        },
+    )
 
     // Cache keyed on SQLite's own change counter (PRAGMA data_version bumps whenever any
     // connection — this process or another — commits a write to the file). Computing filters
@@ -66,6 +84,22 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                 statement.execute(
                     "CREATE INDEX IF NOT EXISTS idx_recipes_active_rating ON recipes(is_active, aggregated_rating DESC)",
                 )
+                // How many ingredients a recipe has is a static fact about that recipe, not
+                // something that depends on the caller's pantry selection — findByPantryIngredients
+                // used to recompute it via `GROUP BY recipe_id` over the whole recipe_ingredients
+                // table (478k+ rows) on every single request, which was the actual cost behind the
+                // throughput ceiling t-96 found (not per-recipe N+1 sub-queries, as first assumed —
+                // see t-98). Backfilling it once at startup turns that into a column read.
+                runCatching {
+                    statement.execute("ALTER TABLE recipes ADD COLUMN ingredient_count INTEGER NOT NULL DEFAULT 0")
+                    statement.execute(
+                        """
+                        UPDATE recipes SET ingredient_count = COALESCE((
+                            SELECT COUNT(*) FROM recipe_ingredients WHERE recipe_ingredients.recipe_id = recipes.id
+                        ), 0)
+                        """.trimIndent(),
+                    )
+                }
             }
         }
     }
@@ -73,7 +107,10 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
     override fun search(
         firebaseUid: String,
         query: String?,
-        category: String?,
+        categories: List<String>,
+        cuisines: List<String>,
+        equipment: List<String>,
+        techniques: List<String>,
         ingredient: String?,
         page: Int,
         pageSize: Int,
@@ -91,11 +128,16 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             parameters += pattern
             parameters += pattern
         }
-        if (category != null) {
-            conditions += "(r.category = ? COLLATE NOCASE OR r.keywords LIKE ? ESCAPE '!' COLLATE NOCASE)"
-            parameters += category
-            parameters += "%${escapeLike(category)}%"
+        if (categories.isNotEmpty()) {
+            val or = categories.joinToString(" OR ") {
+                "(r.category = ? COLLATE NOCASE OR r.keywords LIKE ? ESCAPE '!' COLLATE NOCASE)"
+            }
+            conditions += "($or)"
+            categories.forEach { value -> parameters += value; parameters += "%${escapeLike(value)}%" }
         }
+        addKeywordGroup(conditions, parameters, cuisines)
+        addKeywordGroup(conditions, parameters, equipment)
+        addKeywordGroup(conditions, parameters, techniques)
         if (ingredientId != null) {
             conditions += "EXISTS (SELECT 1 FROM recipe_ingredients ri WHERE ri.recipe_id = r.id AND ri.ingredient_id = ?)"
             parameters += ingredientId
@@ -158,7 +200,10 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
     override fun findByPantryIngredients(
         firebaseUid: String,
         ingredientNames: List<String>,
-        category: String?,
+        categories: List<String>,
+        cuisines: List<String>,
+        equipment: List<String>,
+        techniques: List<String>,
         tags: List<String>,
         strictTags: Boolean,
         page: Int,
@@ -172,11 +217,16 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         // Build WHERE conditions for category / tags filtering
         val conditions = mutableListOf("r.is_active = 1")
         val condParams = mutableListOf<Any>()
-        if (category != null) {
-            conditions += "(LOWER(r.category) = LOWER(?) OR r.keywords LIKE ? ESCAPE '!' COLLATE NOCASE)"
-            condParams += category
-            condParams += "%${escapeLike(category)}%"
+        if (categories.isNotEmpty()) {
+            val or = categories.joinToString(" OR ") {
+                "(LOWER(r.category) = LOWER(?) OR r.keywords LIKE ? ESCAPE '!' COLLATE NOCASE)"
+            }
+            conditions += "($or)"
+            categories.forEach { value -> condParams += value; condParams += "%${escapeLike(value)}%" }
         }
+        addKeywordGroup(conditions, condParams, cuisines)
+        addKeywordGroup(conditions, condParams, equipment)
+        addKeywordGroup(conditions, condParams, techniques)
         if (tags.isNotEmpty()) {
             if (strictTags) {
                 // All selected tags must appear somewhere in keywords / category
@@ -278,22 +328,19 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
 
         val sql = """
             WITH pantry_names(norm) AS ($cteValues),
-                 matched(recipe_id, matched_count) AS ($matchedCte),
-                 totals(recipe_id, total_count) AS (
-                     SELECT recipe_id, COUNT(*) FROM recipe_ingredients GROUP BY recipe_id
-                 )
+                 matched(recipe_id, matched_count) AS ($matchedCte)
             SELECT r.*,
-                   COALESCE(t.total_count, 0) AS total_count,
+                   r.ingredient_count AS total_count,
                    COALESCE(m.matched_count, 0) AS matched_count
             FROM recipes r
             LEFT JOIN matched m ON m.recipe_id = r.id
-            LEFT JOIN totals t ON t.recipe_id = r.id
             $where
             ORDER BY
-                CASE WHEN total_count = 0 THEN 1 ELSE 0 END,
-                CASE WHEN total_count = 0 THEN 0.0 ELSE CAST(matched_count AS FLOAT) / total_count END DESC,
+                CASE WHEN r.ingredient_count = 0 THEN 1 ELSE 0 END,
+                CASE WHEN r.ingredient_count = 0 THEN 0.0 ELSE CAST(COALESCE(m.matched_count, 0) AS FLOAT) / r.ingredient_count END DESC,
                 r.aggregated_rating IS NULL,
-                r.aggregated_rating DESC
+                r.aggregated_rating DESC,
+                r.id
         """.trimIndent()
 
         val countSql = """
@@ -389,7 +436,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         )
     }
 
-    private fun connection(): Connection = DriverManager.getConnection(jdbcUrl)
+    private fun connection(): Connection = pool.connection
 
     private fun findIngredientId(conn: Connection, query: String): Long? {
         val normalizedAlias = IngredientNameNormalizer.normalizeAlias(query)
@@ -487,12 +534,26 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
     private fun escapeLike(value: String): String =
         value.replace("!", "!!").replace("%", "!%").replace("_", "!_")
 
+    // Cuisine/equipment/technique have no dedicated column — they're tokens inside the same
+    // `keywords` R-vector as everything else (see getFilters/computeFilters), so filtering on
+    // them means the same keywords LIKE pattern used for category's fuzzy half. Values within one
+    // group OR together (recipe matches if it has ANY of the selected cuisines, say); each group
+    // called from search()/findByPantryIngredients() ANDs into the shared `conditions` list.
+    private fun addKeywordGroup(conditions: MutableList<String>, parameters: MutableList<Any>, values: List<String>) {
+        if (values.isEmpty()) return
+        val or = values.joinToString(" OR ") { "r.keywords LIKE ? ESCAPE '!' COLLATE NOCASE" }
+        conditions += "($or)"
+        values.forEach { value -> parameters += "%${escapeLike(value)}%" }
+    }
+
     private data class LoadedRecipe(
         val recipe: CatalogRecipe,
         val instructions: String?,
     )
 
     companion object {
+        private val POOL_SIZE = (Runtime.getRuntime().availableProcessors() * 2).coerceIn(8, 32)
+
         // The dataset's `keywords` column mixes dish type (already covered by the `category`
         // column), cuisine/region, kitchen tools, and cooking methods into one flat R-vector —
         // these two sets are how getFilters() tells them apart. Built by scanning every distinct
