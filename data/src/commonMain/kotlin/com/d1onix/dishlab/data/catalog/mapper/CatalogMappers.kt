@@ -52,7 +52,6 @@ fun IngredientDto.toDomain(): Ingredient = Ingredient(quantity = quantity, name 
 fun RecipeStepDto.toDomain(): RecipeStep = RecipeStep(
     title = title,
     description = description,
-    timerSeconds = timerSeconds,
 )
 
 /** `"#C8FF4D"` → opaque ARGB. */

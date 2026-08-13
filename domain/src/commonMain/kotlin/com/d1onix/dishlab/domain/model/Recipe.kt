@@ -32,8 +32,6 @@ data class Ingredient(
 data class RecipeStep(
     val title: String,
     val description: String,
-    /** Cooking mode shows a countdown when a step declares one. */
-    val timerSeconds: Int? = null,
 )
 
 /** No display text here — the label is a UI resource, this is only the value. */

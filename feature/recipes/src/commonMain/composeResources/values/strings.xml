@@ -31,16 +31,4 @@
     <string name="recipe_unsave">Remove from saved</string>
     <string name="recipe_ingredients">Ingredients</string>
     <string name="recipe_steps">Steps · %1$d</string>
-    <string name="recipe_timer_minutes">◷ timer %1$d min</string>
-    <string name="recipe_timer_seconds">◷ timer %1$ds</string>
-    <string name="recipe_start_cooking">Start cooking mode</string>
-
-    <string name="cooking_step_counter">Step %1$d / %2$d</string>
-    <string name="cooking_exit">Exit cooking mode</string>
-    <string name="cooking_back">Back</string>
-    <string name="cooking_next">Next step</string>
-    <string name="cooking_finish">Finish ✓</string>
-    <string name="cooking_timer_start">Start</string>
-    <string name="cooking_timer_pause">Pause</string>
-    <string name="cooking_timer_resume">Resume</string>
 </resources>

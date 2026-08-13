@@ -18,11 +18,7 @@ data object SavedRoute : Route
 @Serializable
 data class RecipeDetailRoute(val recipeId: String) : Route
 
-@Serializable
-data class CookingRoute(val recipeId: String) : Route
-
 interface RecipesRouter {
     fun openRecipe(id: RecipeId)
-    fun openCookingMode(id: RecipeId)
     fun goBack()
 }

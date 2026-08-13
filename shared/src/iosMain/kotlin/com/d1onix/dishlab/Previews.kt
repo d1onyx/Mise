@@ -4,7 +4,6 @@ import com.d1onix.dishlab.designsystem.preview.MiseComponentGalleryController
 import com.d1onix.dishlab.feature.products.presentation.graphPreviewController
 import com.d1onix.dishlab.feature.products.presentation.graphSheetPreviewController
 import com.d1onix.dishlab.feature.products.presentation.historyPreviewController
-import com.d1onix.dishlab.feature.recipes.presentation.cookingPreviewController
 import com.d1onix.dishlab.feature.recipes.presentation.recipeDetailPreviewController
 import com.d1onix.dishlab.feature.recipes.presentation.recipeListPreviewController
 import com.d1onix.dishlab.feature.scanner.presentation.scanManualEntryPreviewController
@@ -44,8 +43,6 @@ object DishLabPreviews {
     fun recipeList(): UIViewController = recipeListPreviewController()
 
     fun recipeDetail(): UIViewController = recipeDetailPreviewController()
-
-    fun cooking(): UIViewController = cookingPreviewController()
 
     fun componentGallery(): UIViewController = MiseComponentGalleryController()
 }
