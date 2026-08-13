@@ -1,6 +1,7 @@
 package com.d1onix.dishlab.data.catalog
 
 import com.d1onix.dishlab.domain.model.RecipeId
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilterSelection
 import com.d1onyx.core.essentials.logger.DefaultLogger
 import com.d1onyx.core.essentials.logger.RecordingLogSink
 import com.d1onyx.core.network.NetworkConfig
@@ -35,11 +36,21 @@ class PantryMatchDataSourceTest {
         val result = PantryMatchDataSource(client).match(
             ingredients = listOf("en:oats"),
             exactGroups = listOf(listOf("en:oats", "en:rolled-oats")),
+            filters = RecipeCatalogFilterSelection(
+                categories = setOf("Breakfast", "Brunch"),
+                cuisines = setOf("Mexican"),
+                equipment = setOf("oven"),
+                techniques = setOf("bake"),
+            ),
         )
 
         assertEquals("/api/v1/recipe-catalog/pantry-match", path)
         assertEquals(listOf("en:oats"), parameters["ingredient"])
         assertEquals(listOf("en:oats,en:rolled-oats"), parameters["exactGroup"])
+        assertEquals(listOf("Breakfast", "Brunch"), parameters["category"])
+        assertEquals(listOf("Mexican"), parameters["cuisine"])
+        assertEquals(listOf("oven"), parameters["equipment"])
+        assertEquals(listOf("bake"), parameters["technique"])
         assertEquals("Oat Bowl", result.items.single().toDomain().name)
     }
 
@@ -68,6 +79,49 @@ class PantryMatchDataSourceTest {
 }
 
 class RecipeCatalogRemoteDataSourceTest {
+    @Test
+    fun `catalog filters are decoded and all groups are sent with catalogue requests`() = runTest {
+        var path = ""
+        var parameters = emptyMap<String, List<String>>()
+        val client = createHttpClient(
+            config = NetworkConfig(baseUrl = "https://api.example.com/", isDebug = true),
+            logger = DefaultLogger(RecordingLogSink()),
+            engine = MockEngine { request ->
+                path = request.url.encodedPath
+                parameters = request.url.parameters.entries().associate { it.key to it.value }
+                val content = when (path) {
+                    "/api/v1/recipe-catalog/filters" ->
+                        """{"categories":["Breakfast"],"cuisines":["Mexican"],"equipment":["oven"],"techniques":["bake"]}"""
+                    else -> """{"items":[],"page":1,"page_size":20,"total":0}"""
+                }
+                respond(content, HttpStatusCode.OK, headersOf("Content-Type", "application/json"))
+            },
+        )
+        val source = RecipeCatalogRemoteDataSource(client)
+
+        val filters = source.filters().toDomain()
+        assertEquals(listOf("Breakfast"), filters.categories)
+        assertEquals(listOf("Mexican"), filters.cuisines)
+        assertEquals(listOf("oven"), filters.equipment)
+        assertEquals(listOf("bake"), filters.techniques)
+
+        source.recipes(
+            page = 1,
+            pageSize = 20,
+            filters = RecipeCatalogFilterSelection(
+                categories = setOf("Breakfast", "Brunch"),
+                cuisines = setOf("Mexican"),
+                equipment = setOf("oven"),
+                techniques = setOf("bake"),
+            ),
+        )
+        assertEquals("/api/v1/recipe-catalog", path)
+        assertEquals(listOf("Breakfast", "Brunch"), parameters["category"])
+        assertEquals(listOf("Mexican"), parameters["cuisine"])
+        assertEquals(listOf("oven"), parameters["equipment"])
+        assertEquals(listOf("bake"), parameters["technique"])
+    }
+
     @Test
     fun `recipe detail requests catalog recipe id and preserves preparation steps`() = runTest {
         var path = ""

@@ -17,6 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.EmptyState
+import com.d1onix.dishlab.designsystem.component.FilterChipBar
+import com.d1onix.dishlab.designsystem.component.FilterGroup
+import com.d1onix.dishlab.designsystem.component.FilterOption
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
@@ -26,6 +29,10 @@ import com.d1onix.dishlab.feature.recipes.resources.discover_empty
 import com.d1onix.dishlab.feature.recipes.resources.discover_title
 import com.d1onix.dishlab.feature.recipes.resources.recipes_empty
 import com.d1onix.dishlab.feature.recipes.resources.recipes_title
+import com.d1onix.dishlab.feature.recipes.resources.filter_group_category
+import com.d1onix.dishlab.feature.recipes.resources.filter_group_cuisine
+import com.d1onix.dishlab.feature.recipes.resources.filter_group_equipment
+import com.d1onix.dishlab.feature.recipes.resources.filter_group_technique
 import com.d1onix.dishlab.feature.recipes.resources.recipes_error
 import com.d1onix.dishlab.feature.recipes.resources.recipes_loading
 import com.d1onix.dishlab.feature.recipes.resources.recipes_retry
@@ -66,6 +73,7 @@ fun DiscoverRecipesScreen(viewModel: DiscoverRecipesViewModel) {
         emptyText = Res.string.discover_empty,
         state = state,
         onAction = viewModel::onAction,
+        showCatalogCategoryFilter = true,
     )
 }
 
@@ -80,6 +88,7 @@ internal fun RecipeListContent(
     state: RecipeListUiState,
     onAction: (RecipeListAction) -> Unit,
     showBanner: Boolean = false,
+    showCatalogCategoryFilter: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -101,6 +110,45 @@ internal fun RecipeListContent(
             onBackClick = { onAction(RecipeListAction.BackClicked) },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
         )
+
+        if (showCatalogCategoryFilter && state.catalogFilters.hasOptions) {
+            FilterChipBar(
+                groups = listOfNotNull(
+                    state.catalogFilters.categories.toFilterGroup(
+                        RecipeCatalogFilterGroup.Category,
+                        stringResource(Res.string.filter_group_category),
+                        state.catalogFilterSelection.categories,
+                    ),
+                    state.catalogFilters.cuisines.toFilterGroup(
+                        RecipeCatalogFilterGroup.Cuisine,
+                        stringResource(Res.string.filter_group_cuisine),
+                        state.catalogFilterSelection.cuisines,
+                    ),
+                    state.catalogFilters.equipment.toFilterGroup(
+                        RecipeCatalogFilterGroup.Equipment,
+                        stringResource(Res.string.filter_group_equipment),
+                        state.catalogFilterSelection.equipment,
+                    ),
+                    state.catalogFilters.techniques.toFilterGroup(
+                        RecipeCatalogFilterGroup.Technique,
+                        stringResource(Res.string.filter_group_technique),
+                        state.catalogFilterSelection.techniques,
+                    ),
+                ),
+                expandedGroupId = state.expandedCatalogFilterGroup?.name,
+                onGroupClick = { groupId ->
+                    RecipeCatalogFilterGroup.entries
+                        .firstOrNull { it.name == groupId }
+                        ?.let { onAction(RecipeListAction.CatalogFilterGroupClicked(it)) }
+                },
+                onOptionClick = { groupId, option ->
+                    RecipeCatalogFilterGroup.entries
+                        .firstOrNull { it.name == groupId }
+                        ?.let { onAction(RecipeListAction.CatalogFilterOptionClicked(it, option)) }
+                },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
+            )
+        }
 
         if (state.isLoading) {
             EmptyState(stringResource(Res.string.recipes_loading), Modifier.fillMaxWidth())
@@ -132,4 +180,20 @@ internal fun RecipeListContent(
             }
         }
     }
+}
+
+private val com.d1onix.dishlab.domain.model.RecipeCatalogFilters.hasOptions: Boolean
+    get() = categories.isNotEmpty() || cuisines.isNotEmpty() || equipment.isNotEmpty() || techniques.isNotEmpty()
+
+private fun List<String>.toFilterGroup(
+    group: RecipeCatalogFilterGroup,
+    label: String,
+    selected: Set<String>,
+): FilterGroup? = takeIf(List<String>::isNotEmpty)?.let { options ->
+    FilterGroup(
+        id = group.name,
+        name = label,
+        options = options.map { FilterOption(id = it, label = it) },
+        selected = selected,
+    )
 }

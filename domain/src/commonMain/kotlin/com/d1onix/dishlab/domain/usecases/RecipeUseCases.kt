@@ -4,6 +4,7 @@ import com.d1onix.dishlab.domain.FilterRecipesUseCase
 import com.d1onix.dishlab.domain.FilterRecipesByConnectionsUseCase
 import com.d1onix.dishlab.domain.GetRecipeUseCase
 import com.d1onix.dishlab.domain.GetAllRecipesUseCase
+import com.d1onix.dishlab.domain.GetRecipeCatalogFiltersUseCase
 import com.d1onix.dishlab.domain.GetRecipesForProductsUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipeIdsUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipesUseCase
@@ -11,6 +12,8 @@ import com.d1onix.dishlab.domain.ToggleSavedRecipeUseCase
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.Recipe
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilters
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilterSelection
 import com.d1onix.dishlab.domain.model.RecipeFilters
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.domain.model.RecipePage
@@ -36,7 +39,19 @@ class GetRecipesForProductsUseCaseImpl(
 class GetAllRecipesUseCaseImpl(
     private val recipes: RecipeRepository,
 ) : GetAllRecipesUseCase {
-    override suspend fun invoke(page: Int, pageSize: Int): RecipePage = recipes.allPage(page, pageSize)
+    override suspend fun invoke(
+        page: Int,
+        pageSize: Int,
+        filters: RecipeCatalogFilterSelection,
+    ): RecipePage = recipes.allPage(page, pageSize, filters)
+}
+
+@ContributesBinding(AppScope::class)
+@Inject
+class GetRecipeCatalogFiltersUseCaseImpl(
+    private val recipes: RecipeRepository,
+) : GetRecipeCatalogFiltersUseCase {
+    override suspend fun invoke(): RecipeCatalogFilters = recipes.catalogFilters()
 }
 
 @ContributesBinding(AppScope::class)

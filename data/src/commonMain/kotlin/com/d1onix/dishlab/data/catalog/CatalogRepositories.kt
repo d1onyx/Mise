@@ -11,6 +11,8 @@ import com.d1onix.dishlab.domain.model.RecipePage
 import com.d1onix.dishlab.domain.model.ProductDetails
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeId
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilters
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilterSelection
 import com.d1onix.dishlab.domain.repository.ProductRepository
 import com.d1onix.dishlab.domain.repository.RecipeRepository
 import com.d1onyx.core.datastore.KeyValueStorage
@@ -247,14 +249,20 @@ class CatalogRecipeRepository(
 
     override suspend fun all(): List<Recipe> = catalog.recipes()
 
-    override suspend fun allPage(page: Int, pageSize: Int): RecipePage {
-        val result = remoteCatalog.recipes(page, pageSize)
+    override suspend fun allPage(
+        page: Int,
+        pageSize: Int,
+        filters: RecipeCatalogFilterSelection,
+    ): RecipePage {
+        val result = remoteCatalog.recipes(page, pageSize, filters)
         return RecipePage(
             items = result.items.map(CatalogRecipeDto::toDomain),
             page = result.page,
             hasNextPage = result.page * result.pageSize < result.total,
         )
     }
+
+    override suspend fun catalogFilters(): RecipeCatalogFilters = remoteCatalog.filters().toDomain()
 
     override suspend fun byId(id: RecipeId): Recipe? = try {
         remoteCatalog.recipe(id).toDomain()

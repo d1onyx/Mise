@@ -4,6 +4,8 @@ import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductConnection
 import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.Recipe
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilters
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilterSelection
 import com.d1onix.dishlab.domain.model.RecipeFilters
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.domain.model.RecipePage
@@ -23,7 +25,11 @@ fun interface GetRecipesForProductsUseCase {
 }
 
 fun interface GetAllRecipesUseCase {
-    suspend operator fun invoke(page: Int, pageSize: Int): RecipePage
+    suspend operator fun invoke(page: Int, pageSize: Int, filters: RecipeCatalogFilterSelection): RecipePage
+}
+
+fun interface GetRecipeCatalogFiltersUseCase {
+    suspend operator fun invoke(): RecipeCatalogFilters
 }
 
 fun interface FilterRecipesByConnectionsUseCase {

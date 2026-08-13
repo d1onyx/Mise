@@ -7,6 +7,8 @@ import com.d1onix.dishlab.domain.model.ProductGraphPosition
 import com.d1onix.dishlab.domain.model.ProfileSettings
 import com.d1onix.dishlab.domain.model.CookingPreferences
 import com.d1onix.dishlab.domain.model.Recipe
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilters
+import com.d1onix.dishlab.domain.model.RecipeCatalogFilterSelection
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.domain.model.RecipePage
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +24,12 @@ interface ProductRepository {
 
 interface RecipeRepository {
     suspend fun all(): List<Recipe>
-    suspend fun allPage(page: Int, pageSize: Int): RecipePage
+    suspend fun allPage(
+        page: Int,
+        pageSize: Int,
+        filters: RecipeCatalogFilterSelection = RecipeCatalogFilterSelection(),
+    ): RecipePage
+    suspend fun catalogFilters(): RecipeCatalogFilters
     suspend fun byId(id: RecipeId): Recipe?
     /** Recipes that use at least one of [productIds]. */
     suspend fun forProducts(productIds: List<ProductId>): List<Recipe>
