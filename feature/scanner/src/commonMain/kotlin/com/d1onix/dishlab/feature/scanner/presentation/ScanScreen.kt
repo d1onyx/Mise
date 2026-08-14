@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -243,7 +244,7 @@ private fun ResolvingScanContent(
 
     LaunchedEffect(facts.size) {
         while (true) {
-            delay(2_800)
+            delay(6_000)
             factIndex = (factIndex + 1) % facts.size
         }
     }
@@ -263,8 +264,12 @@ private fun ResolvingScanContent(
             onBackClick = { onAction(ScanAction.BackClicked) },
         )
         Spacer(Modifier.weight(1f))
-        ScanReticle(phase = ScanPhase.Resolving)
-        Spacer(Modifier.height(32.dp))
+        CircularProgressIndicator(
+            color = colors.cyan,
+            strokeWidth = 3.dp,
+            modifier = Modifier.size(52.dp),
+        )
+        Spacer(Modifier.height(28.dp))
         Text(
             text = stringResource(Res.string.scan_phase_resolving),
             style = MiseTheme.typography.title,
