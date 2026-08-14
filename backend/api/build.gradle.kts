@@ -26,4 +26,7 @@ dependencies {
     implementation(ktorLibs.serialization.kotlinx.json)
     implementation(ktorLibs.server.routingOpenapi)
     implementation(ktorLibs.server.swagger)
+    // Bundled swagger-ui static assets (webjars convention: META-INF/resources/webjars/swagger-ui/<version>/)
+    // so /swagger renders without reaching unpkg.com — see OpenApiRoutes.kt.
+    implementation("org.webjars:swagger-ui:5.32.13")
 }
