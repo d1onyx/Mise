@@ -24,11 +24,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import com.d1onix.dishlab.designsystem.component.MiseGhostButton
+import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.component.VerdictBadge
+import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphAction
@@ -113,13 +114,15 @@ fun ProductDetailSheet(
             }
             VerdictBadge(label = product.verdict.label, color = accent)
             Spacer(Modifier.width(8.dp))
-            MiseGhostButton(
-                text = stringResource(Res.string.product_remove),
+            MiseIconCircleButton(
+                icon = MiseIcons.Close,
+                contentDescription = stringResource(Res.string.product_remove),
                 onClick = { onAction(GraphAction.RemoveClicked(product.id)) },
-                contentPadding = PaddingValues(
-                    horizontal = 12.dp,
-                    vertical = 8.dp,
-                ),
+                size = 40,
+                iconSize = 18,
+                tint = colors.red,
+                borderColor = colors.red.copy(alpha = 0.6f),
+                background = colors.red.copy(alpha = 0.12f),
             )
         }
 

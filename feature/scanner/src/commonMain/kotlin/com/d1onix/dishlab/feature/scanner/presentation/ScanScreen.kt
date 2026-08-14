@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,9 +90,14 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_server_unavailable
 import com.d1onix.dishlab.feature.scanner.resources.scan_server_retry
 import com.d1onix.dishlab.feature.scanner.resources.scan_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_title_resolving
+import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_barcodes
+import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_data
+import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_graph
+import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_nutrition
 import com.kashif.cameraK.permissions.providePermissions
 import org.jetbrains.compose.resources.stringResource
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -122,6 +128,16 @@ internal fun ScanContent(
         ScannedProductReview(
             product = product,
             alreadyAdded = state.reviewedProductAlreadyAdded,
+            onAction = onAction,
+            modifier = modifier,
+        )
+        return
+    }
+
+    if (state.isResolving) {
+        ResolvingScanContent(
+            state = state,
+            showBackNavigation = showBackNavigation,
             onAction = onAction,
             modifier = modifier,
         )
@@ -201,6 +217,78 @@ internal fun ScanContent(
                 )
             }
         }
+    }
+}
+
+/**
+ * The camera is intentionally removed as soon as a barcode is accepted: the
+ * next useful thing is the lookup, not a frozen viewfinder. Rotating facts
+ * make a longer network lookup feel intentional without hiding its progress.
+ */
+@Composable
+private fun ResolvingScanContent(
+    state: ScanUiState,
+    showBackNavigation: Boolean,
+    onAction: (ScanAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MiseTheme.colors
+    val facts = listOf(
+        stringResource(Res.string.scan_loading_fact_barcodes),
+        stringResource(Res.string.scan_loading_fact_nutrition),
+        stringResource(Res.string.scan_loading_fact_graph),
+        stringResource(Res.string.scan_loading_fact_data),
+    )
+    var factIndex by remember { mutableStateOf(0) }
+
+    LaunchedEffect(facts.size) {
+        while (true) {
+            delay(2_800)
+            factIndex = (factIndex + 1) % facts.size
+        }
+    }
+
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .safeDrawingPadding()
+            .padding(horizontal = 28.dp, vertical = 20.dp)
+            .screenIn(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        RootScannerTopBar(
+            isResolving = true,
+            showBackNavigation = showBackNavigation,
+            onBackClick = { onAction(ScanAction.BackClicked) },
+        )
+        Spacer(Modifier.weight(1f))
+        ScanReticle(phase = ScanPhase.Resolving)
+        Spacer(Modifier.height(32.dp))
+        Text(
+            text = stringResource(Res.string.scan_phase_resolving),
+            style = MiseTheme.typography.title,
+            color = colors.text,
+            textAlign = TextAlign.Center,
+        )
+        state.visibleBarcode?.let { barcode ->
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = barcode,
+                style = MiseTheme.typography.monoSmall,
+                color = colors.cyan,
+            )
+        }
+        Spacer(Modifier.height(28.dp))
+        Text(
+            text = facts[factIndex],
+            style = MiseTheme.typography.body,
+            color = colors.textMuted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.weight(1f))
+        ScanProgressTrail(phase = ScanPhase.Resolving, modifier = Modifier.fillMaxWidth())
     }
 }
 
