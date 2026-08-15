@@ -72,13 +72,38 @@ data class ProductDetails(
     val quantity: String = "",
     val servingSize: String = "",
     val ingredientsText: String = "",
+    /** Structured breakdown of [ingredientsText] — percent, vegan/vegetarian status. */
+    val ingredients: List<ProductIngredient> = emptyList(),
     val allergens: List<String> = emptyList(),
+    val traces: List<String> = emptyList(),
+    val additives: List<String> = emptyList(),
     val categories: List<String> = emptyList(),
     val labels: List<String> = emptyList(),
+    val countries: List<String> = emptyList(),
+    val origins: List<String> = emptyList(),
     val nutriScore: String = "",
     val novaGroup: Int? = null,
     val ecoScore: String = "",
     val imageUrl: String = "",
+    val packaging: List<ProductPackagingComponent> = emptyList(),
+    /** Every nutrient the source reported, not just the four headline ones on [Product.nutrients]. */
+    val nutrients: List<Nutrient> = emptyList(),
+)
+
+data class ProductIngredient(
+    val name: String,
+    val percent: Double? = null,
+    val percentEstimate: Double? = null,
+    val vegan: String = "",
+    val vegetarian: String = "",
+)
+
+data class ProductPackagingComponent(
+    val numberOfUnits: Int? = null,
+    val quantityPerUnit: String = "",
+    val material: String = "",
+    val shape: String = "",
+    val recycling: String = "",
 )
 
 enum class ProductDataOrigin {

@@ -4,6 +4,8 @@ import com.d1onix.dishlab.domain.model.Nutrient
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductDetails
 import com.d1onix.dishlab.domain.model.ProductId
+import com.d1onix.dishlab.domain.model.ProductIngredient
+import com.d1onix.dishlab.domain.model.ProductPackagingComponent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -84,6 +86,57 @@ class ProductDetailCardModelTest {
         assertEquals(listOf("Gluten", "Oeufs"), card.allergens)
         assertEquals(listOf("Plant Based Foods", "Oat Milks"), card.categories)
         assertEquals(listOf("Organic", "No Added Sugar"), card.labels)
+    }
+
+    @Test
+    fun `traces additives countries origins and packaging reach the card`() {
+        val card = fullProduct().copy(
+            details = fullProduct().details.copy(
+                traces = listOf("en:nuts"),
+                additives = listOf("en:e330"),
+                countries = listOf("en:france"),
+                origins = listOf("en:brittany"),
+                packaging = listOf(
+                    ProductPackagingComponent(numberOfUnits = 1, quantityPerUnit = "500 g", material = "PET", shape = "Bottle", recycling = "Recycle"),
+                ),
+            ),
+        ).toDetailCardModel()
+
+        assertEquals(listOf("Nuts"), card.traces)
+        assertEquals(listOf("E330"), card.additives)
+        assertEquals(listOf("France"), card.countries)
+        assertEquals(listOf("Brittany"), card.origins)
+        assertEquals(1, card.packaging.size)
+    }
+
+    @Test
+    fun `structured ingredients with a percent are summarized`() {
+        val card = fullProduct().copy(
+            details = fullProduct().details.copy(
+                ingredients = listOf(
+                    ProductIngredient(name = "Water", percentEstimate = 90.0),
+                    ProductIngredient(name = "Carbon dioxide", percent = 0.5),
+                ),
+            ),
+        ).toDetailCardModel()
+
+        assertEquals("Water (90%), Carbon dioxide (0%)", card.ingredientsBreakdown)
+    }
+
+    @Test
+    fun `the full nutrient set from details replaces the four headline nutrients`() {
+        val card = fullProduct().copy(
+            details = fullProduct().details.copy(
+                nutrients = listOf(
+                    Nutrient("Energy", "350", "kcal"),
+                    Nutrient("Sugars", "5", "g"),
+                    Nutrient("Salt", "1", "g"),
+                ),
+            ),
+        ).toDetailCardModel()
+
+        assertEquals(3, card.nutrients.size)
+        assertEquals(listOf("Energy", "Sugars", "Salt"), card.nutrients.map(Nutrient::name))
     }
 
     private fun fullProduct() = Product(

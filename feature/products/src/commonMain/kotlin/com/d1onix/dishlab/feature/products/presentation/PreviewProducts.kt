@@ -5,6 +5,8 @@ import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductAlternative
 import com.d1onix.dishlab.domain.model.ProductDetails
 import com.d1onix.dishlab.domain.model.ProductId
+import com.d1onix.dishlab.domain.model.ProductIngredient
+import com.d1onix.dishlab.domain.model.ProductPackagingComponent
 
 /**
  * Fixtures for previews only.
@@ -36,13 +38,29 @@ internal val previewOats = Product(
         quantity = "500 g",
         servingSize = "50 g",
         ingredientsText = "Whole grain oats",
+        ingredients = listOf(ProductIngredient(name = "Whole grain oats", percent = 100.0, vegan = "yes", vegetarian = "yes")),
         allergens = listOf("Gluten"),
+        traces = listOf("Nuts", "Milk"),
+        additives = emptyList(),
         categories = listOf("Cereals", "Oats"),
         labels = listOf("Whole grain", "Vegan"),
+        countries = listOf("United Kingdom", "Ireland"),
+        origins = listOf("Scotland"),
         nutriScore = "a",
         novaGroup = 1,
         ecoScore = "a",
         imageUrl = "https://images.openfoodfacts.org/images/products/501/002/655/1017/front_en.3.200.jpg",
+        packaging = listOf(
+            ProductPackagingComponent(numberOfUnits = 1, quantityPerUnit = "500 g", material = "Cardboard", shape = "Box", recycling = "Recycle"),
+        ),
+        nutrients = listOf(
+            Nutrient("Energy", "389", "kcal"),
+            Nutrient("Carbohydrates", "66", "g"),
+            Nutrient("Sugars", "1", "g"),
+            Nutrient("Fiber", "10", "g"),
+            Nutrient("Proteins", "13", "g"),
+            Nutrient("Salt", "0", "g"),
+        ),
     ),
 )
 

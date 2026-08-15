@@ -1,5 +1,8 @@
 package com.d1onix.dishlab.data.catalog
 
+import com.d1onix.dishlab.data.catalog.off.ClientIngredientDto
+import com.d1onix.dishlab.data.catalog.off.ClientNutrientValueDto
+import com.d1onix.dishlab.data.catalog.off.ClientPackagingComponentDto
 import com.d1onix.dishlab.data.catalog.off.ClientProductSnapshotDto
 import com.d1onix.dishlab.data.catalog.off.OpenFoodFactsProductDataSource
 import com.d1onix.dishlab.domain.model.Nutrient
@@ -7,6 +10,8 @@ import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductAlternative
 import com.d1onix.dishlab.domain.model.ProductDataOrigin
 import com.d1onix.dishlab.domain.model.ProductId
+import com.d1onix.dishlab.domain.model.ProductIngredient
+import com.d1onix.dishlab.domain.model.ProductPackagingComponent
 import com.d1onix.dishlab.domain.model.RecipePage
 import com.d1onix.dishlab.domain.model.ProductDetails
 import com.d1onix.dishlab.domain.model.Recipe
@@ -133,13 +138,38 @@ private data class CachedProductDetailsDto(
     val quantity: String = "",
     val servingSize: String = "",
     val ingredientsText: String = "",
+    val ingredients: List<CachedIngredientDto> = emptyList(),
     val allergens: List<String> = emptyList(),
+    val traces: List<String> = emptyList(),
+    val additives: List<String> = emptyList(),
     val categories: List<String> = emptyList(),
     val labels: List<String> = emptyList(),
+    val countries: List<String> = emptyList(),
+    val origins: List<String> = emptyList(),
     val nutriScore: String = "",
     val novaGroup: Int? = null,
     val ecoScore: String = "",
     val imageUrl: String = "",
+    val packaging: List<CachedPackagingComponentDto> = emptyList(),
+    val nutrients: List<CachedNutrientDto> = emptyList(),
+)
+
+@Serializable
+private data class CachedIngredientDto(
+    val name: String,
+    val percent: Double? = null,
+    val percentEstimate: Double? = null,
+    val vegan: String = "",
+    val vegetarian: String = "",
+)
+
+@Serializable
+private data class CachedPackagingComponentDto(
+    val numberOfUnits: Int? = null,
+    val quantityPerUnit: String = "",
+    val material: String = "",
+    val shape: String = "",
+    val recycling: String = "",
 )
 
 /** Product repository backed by device-side OFF lookup, DishLab canonicalization and a local cache. */
@@ -196,22 +226,54 @@ class BackendProductRepository(
 
 internal fun ClientProductSnapshotDto.toDetails() = ProductDetails(
     brand = brand, quantity = quantity, servingSize = servingSize,
-    ingredientsText = ingredientsText, allergens = allergens.toDisplayTaxonomyTags(),
+    ingredientsText = ingredientsText,
+    ingredients = ingredients.map { it.toDomain() },
+    allergens = allergens.toDisplayTaxonomyTags(),
+    traces = traces.toDisplayTaxonomyTags(),
+    additives = additives.toDisplayTaxonomyTags(),
     categories = categories.toDisplayTaxonomyTags(), labels = labels.toDisplayTaxonomyTags(),
+    countries = countries.toDisplayTaxonomyTags(), origins = origins.toDisplayTaxonomyTags(),
     nutriScore = nutritionGrade, novaGroup = novaGroup,
     ecoScore = environmentalScoreGrade, imageUrl = imageFrontSmallUrl.ifBlank { imageFrontUrl },
+    packaging = packaging.map { it.toDomain() },
+    nutrients = nutrition?.nutrients.orEmpty().toDomainNutrients(),
 )
 
-private fun List<String>.toDisplayTaxonomyTags(): List<String> = mapNotNull { tag ->
-    tag.trim()
-        .takeIf(String::isNotBlank)
-        ?.substringAfter(':')
-        ?.replace('-', ' ')
-        ?.split(' ')
-        ?.filter(String::isNotBlank)
-        ?.joinToString(" ") { word -> word.replaceFirstChar(Char::uppercaseChar) }
-        ?.takeIf(String::isNotBlank)
-}.distinct()
+private fun ClientIngredientDto.toDomain() = ProductIngredient(
+    name = text.normalizedOrTag(id),
+    percent = percent,
+    percentEstimate = percentEstimate,
+    vegan = vegan,
+    vegetarian = vegetarian,
+)
+
+private fun ClientPackagingComponentDto.toDomain() = ProductPackagingComponent(
+    numberOfUnits = numberOfUnits,
+    quantityPerUnit = quantityPerUnit,
+    material = material.toDisplayTaxonomyTag(),
+    shape = shape.toDisplayTaxonomyTag(),
+    recycling = recycling.toDisplayTaxonomyTag(),
+)
+
+private fun Map<String, ClientNutrientValueDto>.toDomainNutrients(): List<Nutrient> =
+    mapNotNull { (key, nutrient) ->
+        (nutrient.value ?: nutrient.computedValue)?.let { amount ->
+            Nutrient(key.toDisplayTaxonomyTag(), amount.display(), nutrient.unit)
+        }
+    }
+
+private fun String.normalizedOrTag(fallbackTag: String): String =
+    trim().ifBlank { fallbackTag.toDisplayTaxonomyTag() }
+
+private fun List<String>.toDisplayTaxonomyTags(): List<String> = mapNotNull { it.toDisplayTaxonomyTag().takeIf(String::isNotBlank) }.distinct()
+
+private fun String.toDisplayTaxonomyTag(): String =
+    trim()
+        .substringAfter(':')
+        .replace('-', ' ')
+        .split(' ')
+        .filter(String::isNotBlank)
+        .joinToString(" ") { word -> word.replaceFirstChar(Char::uppercaseChar) }
 
 internal fun ClientProductSnapshotDto.toBackendProduct(): BackendProductDto {
     val nutrientValues = nutrition?.nutrients.orEmpty()
@@ -376,13 +438,20 @@ private fun ProductDetails.toCached() = CachedProductDetailsDto(
     quantity = quantity,
     servingSize = servingSize,
     ingredientsText = ingredientsText,
+    ingredients = ingredients.map { CachedIngredientDto(it.name, it.percent, it.percentEstimate, it.vegan, it.vegetarian) },
     allergens = allergens,
+    traces = traces,
+    additives = additives,
     categories = categories,
     labels = labels,
+    countries = countries,
+    origins = origins,
     nutriScore = nutriScore,
     novaGroup = novaGroup,
     ecoScore = ecoScore,
     imageUrl = imageUrl,
+    packaging = packaging.map { CachedPackagingComponentDto(it.numberOfUnits, it.quantityPerUnit, it.material, it.shape, it.recycling) },
+    nutrients = nutrients.map { CachedNutrientDto(it.name, it.amount, it.unit) },
 )
 
 private fun CachedProductDetailsDto.toDomain() = ProductDetails(
@@ -390,13 +459,20 @@ private fun CachedProductDetailsDto.toDomain() = ProductDetails(
     quantity = quantity,
     servingSize = servingSize,
     ingredientsText = ingredientsText,
+    ingredients = ingredients.map { ProductIngredient(it.name, it.percent, it.percentEstimate, it.vegan, it.vegetarian) },
     allergens = allergens,
+    traces = traces,
+    additives = additives,
     categories = categories,
     labels = labels,
+    countries = countries,
+    origins = origins,
     nutriScore = nutriScore,
     novaGroup = novaGroup,
     ecoScore = ecoScore,
     imageUrl = imageUrl,
+    packaging = packaging.map { ProductPackagingComponent(it.numberOfUnits, it.quantityPerUnit, it.material, it.shape, it.recycling) },
+    nutrients = nutrients.map { Nutrient(it.name, it.amount, it.unit) },
 )
 
 private fun Throwable.isBackendUnavailable(): Boolean =

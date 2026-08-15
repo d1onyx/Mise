@@ -53,9 +53,15 @@
     <string name="product_eco_score">Eco-Score</string>
     <string name="product_eco_score_scale_hint">A = lower environmental impact · E = higher environmental impact</string>
     <string name="product_ingredients">Ingredients</string>
+    <string name="product_ingredients_detailed">Ingredients breakdown</string>
     <string name="product_allergens">Allergens</string>
+    <string name="product_traces">May contain traces of</string>
+    <string name="product_additives">Additives</string>
     <string name="product_categories">Categories</string>
     <string name="product_labels">Labels</string>
+    <string name="product_countries">Sold in</string>
+    <string name="product_origins">Ingredient origin</string>
+    <string name="product_packaging">Packaging</string>
     <string name="product_nutrients_per_100g">Nutrients per 100 g</string>
     <string name="product_image">Product image</string>
 
