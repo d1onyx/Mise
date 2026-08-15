@@ -1,5 +1,9 @@
 package com.d1onix.dishlab.data.catalog
 
+import com.d1onix.dishlab.data.catalog.off.ClientIngredientDto
+import com.d1onix.dishlab.data.catalog.off.ClientNutrientValueDto
+import com.d1onix.dishlab.data.catalog.off.ClientPackagingComponentDto
+import com.d1onix.dishlab.data.catalog.off.ClientProductNutritionDto
 import com.d1onix.dishlab.data.catalog.off.ClientProductSnapshotDto
 import com.d1onix.dishlab.data.catalog.off.OpenFoodFactsProductDataSource
 import com.d1onix.dishlab.domain.model.ProductDataOrigin
@@ -51,6 +55,70 @@ class BackendProductRepositoryTest {
         assertEquals(listOf("Plant Based Foods", "Oat Milks"), details.categories)
         assertEquals(listOf("Organic"), details.labels)
         assertEquals(listOf("Gluten"), details.allergens)
+    }
+
+    @Test
+    fun `traces additives countries origins ingredients packaging and full nutrients reach ProductDetails`() {
+        val details = ClientProductSnapshotDto(
+            barcode = BARCODE,
+            name = "Sparkling water",
+            traces = listOf("en:nuts"),
+            additives = listOf("en:e290"),
+            countries = listOf("en:france"),
+            origins = listOf("en:brittany"),
+            ingredients = listOf(
+                ClientIngredientDto(id = "en:water", text = "Water", percent = 99.0, vegan = "yes", vegetarian = "yes"),
+            ),
+            packaging = listOf(
+                ClientPackagingComponentDto(
+                    numberOfUnits = 1,
+                    quantityPerUnit = "750 ml",
+                    material = "en:pet-1-polyethylene-terephthalate",
+                    shape = "en:bottle",
+                    recycling = "en:recycle",
+                ),
+            ),
+            nutrition = ClientProductNutritionDto(
+                nutrients = mapOf(
+                    "energy-kcal" to ClientNutrientValueDto(value = 0.0, unit = "kcal"),
+                    "sodium" to ClientNutrientValueDto(value = 0.01, unit = "g"),
+                ),
+            ),
+        ).toDetails()
+
+        assertEquals(listOf("Nuts"), details.traces)
+        assertEquals(listOf("E290"), details.additives)
+        assertEquals(listOf("France"), details.countries)
+        assertEquals(listOf("Brittany"), details.origins)
+        assertEquals("Water", details.ingredients.single().name)
+        assertEquals(99.0, details.ingredients.single().percent)
+        assertEquals("Pet 1 Polyethylene Terephthalate", details.packaging.single().material)
+        assertEquals(2, details.nutrients.size)
+    }
+
+    @Test
+    fun `nutrient levels food groups sourcing and extra photos reach ProductDetails`() {
+        val details = ClientProductSnapshotDto(
+            barcode = BARCODE,
+            name = "Peanut butter",
+            nutrientLevels = mapOf("fat" to "high", "sugars" to "low"),
+            foodGroups = listOf("en:legumes"),
+            manufacturingPlaces = listOf("en:romania"),
+            purchasePlaces = listOf("en:romania"),
+            stores = listOf("en:carrefour"),
+            imageIngredientsUrl = "https://images.test/ingredients.jpg",
+            imageNutritionUrl = "https://images.test/nutrition.jpg",
+            imagePackagingUrl = "https://images.test/packaging.jpg",
+        ).toDetails()
+
+        assertEquals(mapOf("fat" to "High", "sugars" to "Low"), details.nutrientLevels)
+        assertEquals(listOf("Legumes"), details.foodGroups)
+        assertEquals(listOf("Romania"), details.manufacturingPlaces)
+        assertEquals(listOf("Romania"), details.purchasePlaces)
+        assertEquals(listOf("Carrefour"), details.stores)
+        assertEquals("https://images.test/ingredients.jpg", details.ingredientsImageUrl)
+        assertEquals("https://images.test/nutrition.jpg", details.nutritionImageUrl)
+        assertEquals("https://images.test/packaging.jpg", details.packagingImageUrl)
     }
 
     @Test

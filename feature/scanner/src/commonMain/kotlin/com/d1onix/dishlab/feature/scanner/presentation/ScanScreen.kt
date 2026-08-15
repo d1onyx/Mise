@@ -58,6 +58,7 @@ import com.d1onix.dishlab.designsystem.component.VerdictBadge
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
+import com.d1onix.dishlab.domain.model.ProductPackagingComponent
 import com.d1onix.dishlab.domain.model.ScoreVerdict
 import com.d1onix.dishlab.feature.scanner.resources.Res
 import com.d1onix.dishlab.feature.scanner.resources.scan_back
@@ -453,6 +454,14 @@ private fun ScannedProductReview(
                 }
             }
 
+            listOfNotNull(
+                product.details.ingredientsImageUrl.trim().takeIf { it.startsWith("https://") }?.let { "Ingredients photo" to it },
+                product.details.nutritionImageUrl.trim().takeIf { it.startsWith("https://") }?.let { "Nutrition facts photo" to it },
+                product.details.packagingImageUrl.trim().takeIf { it.startsWith("https://") }?.let { "Packaging photo" to it },
+            ).forEach { (title, url) ->
+                item { ScannedPhotoTile(title = title, imageUrl = url, contentDescription = product.name) }
+            }
+
             item {
                 Text(
                     text = product.summary,
@@ -485,9 +494,11 @@ private fun ScannedProductReview(
                 item { ScannedDetailTile(title, value) }
             }
 
-            if (product.nutrients.isNotEmpty()) {
+            val scannedNutrients = product.details.nutrients.ifEmpty { product.nutrients }
+                .filter { nutrient -> nutrient.amount.toDoubleOrNull()?.let { it.isFinite() && it > 0 } == true }
+            if (scannedNutrients.isNotEmpty()) {
                 item { SectionLabel(stringResource(Res.string.scan_review_nutrition)) }
-                product.nutrients.chunked(3).forEach { nutrients ->
+                scannedNutrients.chunked(3).forEach { nutrients ->
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -600,6 +611,36 @@ private fun ScannedProductReview(
 }
 
 @Composable
+private fun ScannedPhotoTile(title: String, imageUrl: String, contentDescription: String) {
+    val colors = MiseTheme.colors
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(colors.panel, RoundedCornerShape(10.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(10.dp))
+            .padding(12.dp),
+    ) {
+        Text(title.uppercase(), style = MiseTheme.typography.monoTiny, color = colors.textMuted)
+        Spacer(Modifier.height(6.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(204.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(colors.surface),
+            contentAlignment = Alignment.Center,
+        ) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize().padding(12.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun ScannedDetailTile(title: String, value: String) {
     val colors = MiseTheme.colors
     Column(
@@ -633,7 +674,7 @@ private fun ScannedGradeScoreScale(grade: String, label: String, hint: String) {
     }
 }
 
-private fun Product.scanDetails(): List<Pair<String, String>> = buildList {
+internal fun Product.scanDetails(): List<Pair<String, String>> = buildList {
     fun String.clean() = trim().takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
     fun List<String>.tags() = mapNotNull { it.clean()?.substringAfter(':')?.replace('-', ' ') }
         .joinToString().takeIf(String::isNotBlank)
@@ -642,9 +683,31 @@ private fun Product.scanDetails(): List<Pair<String, String>> = buildList {
     details.quantity.clean()?.let { add("Quantity" to it) }
     details.servingSize.clean()?.let { add("Serving size" to it) }
     details.ingredientsText.clean()?.let { add("Ingredients" to it) }
+    details.ingredients
+        .filter { it.name.clean() != null }
+        .joinToString { ingredient ->
+            val percent = ingredient.percent ?: ingredient.percentEstimate
+            ingredient.name.trim() + (percent?.let { " (${it.toInt()}%)" } ?: "")
+        }
+        .takeIf(String::isNotBlank)
+        ?.let { add("Ingredients breakdown" to it) }
     details.allergens.tags()?.let { add("Allergens" to it) }
+    details.traces.tags()?.let { add("May contain traces of" to it) }
+    details.additives.tags()?.let { add("Additives" to it) }
     details.categories.tags()?.let { add("Categories" to it) }
     details.labels.tags()?.let { add("Labels" to it) }
+    details.countries.tags()?.let { add("Sold in" to it) }
+    details.origins.tags()?.let { add("Ingredient origin" to it) }
+    details.packaging.takeIf(List<ProductPackagingComponent>::isNotEmpty)?.let { components ->
+        add("Packaging" to components.joinToString { it.scanSummary() })
+    }
+    details.nutrientLevels.takeIf(Map<String, String>::isNotEmpty)?.let { levels ->
+        add("Nutrient levels" to levels.entries.joinToString { (name, level) -> "${name.clean() ?: name}: $level" })
+    }
+    details.foodGroups.tags()?.let { add("Food groups" to it) }
+    details.manufacturingPlaces.tags()?.let { add("Manufactured in" to it) }
+    details.purchasePlaces.tags()?.let { add("Purchased in" to it) }
+    details.stores.tags()?.let { add("Stores" to it) }
     details.novaGroup?.takeIf { it in 1..4 }?.let { group ->
         add("NOVA $group" to when (group) {
             1 -> "Unprocessed or minimally processed food"
@@ -654,6 +717,12 @@ private fun Product.scanDetails(): List<Pair<String, String>> = buildList {
         })
     }
 }
+
+private fun ProductPackagingComponent.scanSummary(): String = buildString {
+    numberOfUnits?.takeIf { it > 0 }?.let { append(it).append("× ") }
+    append(listOf(shape, material, recycling).filter(String::isNotBlank).joinToString(" · "))
+    quantityPerUnit.takeIf(String::isNotBlank)?.let { append(" (").append(it).append(')') }
+}.trim()
 
 private fun String.cleanNutriScoreGrade(): String? = trim().uppercase()
     .takeIf { it in setOf("A", "B", "C", "D", "E") }
