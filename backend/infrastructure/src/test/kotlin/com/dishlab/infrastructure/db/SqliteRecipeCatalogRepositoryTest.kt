@@ -56,6 +56,17 @@ class SqliteRecipeCatalogRepositoryTest {
                 )
                 statement.execute(
                     """
+                    CREATE TABLE ingredient_aliases (
+                        normalized_alias TEXT PRIMARY KEY,
+                        original_alias TEXT NOT NULL,
+                        ingredient_id INTEGER NOT NULL REFERENCES ingredients(id),
+                        source TEXT NOT NULL,
+                        confidence REAL NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                statement.execute(
+                    """
                     CREATE TABLE recipe_ingredients (
                         recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
                         position INTEGER NOT NULL,
@@ -88,6 +99,12 @@ class SqliteRecipeCatalogRepositoryTest {
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (8, 'quantity-test-water')")
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (9, 'quantity-test-cornstarch')")
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (10, 'quantity-test-butter')")
+                // t-102: a genuine synonym recorded only as an alias, never as sugar's own
+                // canonical_name — "granulated sugar" canonicalizes to itself, not to "sugar".
+                statement.execute(
+                    "INSERT INTO ingredient_aliases (normalized_alias, original_alias, ingredient_id, source, confidence) " +
+                        "VALUES ('granulated sugar', 'granulated sugar', 4, 'test', 1.0)",
+                )
 
                 fun link(recipeId: Int, position: Int, ingredientId: Int) {
                     statement.execute(
@@ -131,7 +148,7 @@ class SqliteRecipeCatalogRepositoryTest {
     }
 
     @Test
-    fun `multi-tag pantry match scores and orders by match percent without a group or exact filter`() {
+    fun `multi-tag pantry match excludes zero-match recipes by default and orders by match percent`() {
         val page = repository.findByPantryIngredients(
             firebaseUid = "anonymous",
             ingredientNames = listOf("en:flour", "en:water", "en:egg"),
@@ -144,32 +161,42 @@ class SqliteRecipeCatalogRepositoryTest {
             exactProductGroups = emptyList(),
         )
 
-        // Inactive recipe 5 never appears even though its ingredients are a full match.
-        // Recipe 6 (unrelated quantity-normalization fixture, see below) is active with its
-        // own ingredients, so it surfaces here too — with zero overlap against this pantry.
-        // Recipe 4 (zero recorded ingredients) sorts dead last, after recipe 6 (real
-        // ingredients, just none matched) — a recipe with no ingredient data at all is a worse
-        // result than one that simply doesn't match this pantry. (Pre-t-98, this comparison used
-        // a `totals` CTE column also literally named `total_count`; ORDER BY's bare `total_count`
-        // resolved to that raw joined column — NULL for recipe 4 — instead of the SELECT list's
-        // COALESCE(...,0) alias, so `CASE WHEN total_count = 0` was UNKNOWN, not TRUE, for recipe
-        // 4 specifically. That accidental short-circuit is what put it ahead of recipe 6, not the
-        // documented "zero-ingredient recipes sort last" intent — t-98's r.ingredient_count column
-        // has no such name collision, so it now sorts by what the CASE expression actually says.)
-        assertEquals(listOf(1L, 2L, 3L, 6L, 4L), page.items.map { it.recipe.id })
-        assertEquals(5, page.total)
+        // t-102: recipes with NO overlap against the pantry no longer surface at all with no
+        // flags set — "at least one selected product" is now the unconditional default (it used
+        // to require partialMatchOnly=true; see the comment on that branch in
+        // SqliteRecipeCatalogRepository.findByPantryIngredients). Recipe 3 (sugar+cocoa, 0/2
+        // matched), recipe 4 (no ingredients recorded), and recipe 6 (unrelated
+        // quantity-normalization fixture) all drop out; inactive recipe 5 was already excluded
+        // regardless. Only recipes 1 (full match) and 2 (partial match) remain.
+        assertEquals(listOf(1L, 2L), page.items.map { it.recipe.id })
+        assertEquals(2, page.total)
 
         val byId = page.items.associateBy { it.recipe.id }
         assertEquals(3, byId.getValue(1L).matchedCount)
         assertEquals(3, byId.getValue(1L).totalIngredients)
         assertEquals(1, byId.getValue(2L).matchedCount)
         assertEquals(2, byId.getValue(2L).totalIngredients)
-        assertEquals(0, byId.getValue(3L).matchedCount)
-        assertEquals(2, byId.getValue(3L).totalIngredients)
-        assertEquals(0, byId.getValue(4L).matchedCount)
-        assertEquals(0, byId.getValue(4L).totalIngredients)
-        assertEquals(0, byId.getValue(6L).matchedCount)
-        assertEquals(5, byId.getValue(6L).totalIngredients)
+    }
+
+    @Test
+    fun `pantry match resolves a genuine synonym recorded only as an ingredient alias`() {
+        // "granulated sugar" canonicalizes to itself (no plural/descriptor to strip) — it only
+        // resolves to sugar's ingredient row via the ingredient_aliases table t-102 wired in.
+        val page = repository.findByPantryIngredients(
+            firebaseUid = "anonymous",
+            ingredientNames = listOf("granulated sugar"),
+            tags = emptyList(),
+            strictTags = false,
+            page = 1,
+            pageSize = 10,
+            partialMatchOnly = false,
+            exactMatch = false,
+            exactProductGroups = emptyList(),
+        )
+
+        // Recipes 2 and 3 both contain sugar; nothing else does.
+        assertEquals(setOf(2L, 3L), page.items.map { it.recipe.id }.toSet())
+        assertTrue(page.items.all { it.matchedCount == 1 })
     }
 
     @Test

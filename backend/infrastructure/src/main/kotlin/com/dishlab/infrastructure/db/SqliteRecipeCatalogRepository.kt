@@ -212,7 +212,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         exactMatch: Boolean,
         exactProductGroups: List<List<String>>,
     ): PantryMatchPage = connection().use { conn ->
-        val normalizedNames = ingredientNames.map { IngredientNameNormalizer.canonicalize(it) }
+        val normalizedNames = ingredientNames.map { resolveCanonicalName(conn, it) }
 
         // Build WHERE conditions for category / tags filtering
         val conditions = mutableListOf("r.is_active = 1")
@@ -253,7 +253,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         // so duplicate ingredient rows are tolerated. Results still span 100%→low coverage because
         // extra non-selected ingredients lower match_percent.
         val canonicalGroups = exactProductGroups
-            .map { group -> group.map { IngredientNameNormalizer.canonicalize(it) }.filter(String::isNotBlank).distinct() }
+            .map { group -> group.map { resolveCanonicalName(conn, it) }.filter(String::isNotBlank).distinct() }
             .filter { it.isNotEmpty() }
         if (canonicalGroups.isNotEmpty()) {
             val groupConditions = canonicalGroups.map { group ->
@@ -282,9 +282,13 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                 "SELECT 1 FROM recipe_ingredients ri_e JOIN ingredients i_e ON i_e.id = ri_e.ingredient_id" +
                 " WHERE ri_e.recipe_id = r.id AND LOWER(i_e.canonical_name) = LOWER(p.norm)))"
             conditions += "NOT $missingSelectedExists"
-        } else if (partialMatchOnly && normalizedNames.isNotEmpty()) {
-            // Non-exact: the recipe contains AT LEAST ONE selected product (full 100% matches
-            // included). Uses pantry_names CTE — no extra params needed.
+        } else if (normalizedNames.isNotEmpty()) {
+            // t-102: this used to be gated on `partialMatchOnly`, so with no flags set at all the
+            // WHERE clause stayed empty and every active recipe — including 0% matches — went
+            // through the ORDER BY's full-catalog sort, just to rank last. "At least one selected
+            // product" is now the default whenever ingredients were selected, not an opt-in; it
+            // cuts the candidate set before the sort instead of after. partialMatchOnly's own
+            // value no longer changes this branch's behavior — it already asked for exactly this.
             val matchedSub = "(SELECT COUNT(*) FROM recipe_ingredients ri_m" +
                 " JOIN ingredients i_m ON i_m.id = ri_m.ingredient_id" +
                 " WHERE ri_m.recipe_id = r.id" +
@@ -455,6 +459,29 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             statement.setString(2, canonicalName)
             statement.setString(3, normalizedAlias)
             statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) else null }
+        }
+    }
+
+    // findByPantryIngredients used to compare the client's raw canonicalized ingredient name
+    // (e.g. "baking soda") directly against `ingredients.canonical_name` — but the catalog's own
+    // canonical name for that ingredient can be a genuine synonym ("soda"), recorded only in
+    // ingredient_aliases, never in canonical_name itself (t-102: measured ~35% of the alias table
+    // is exactly this kind of non-trivial synonym, not just a plural). findIngredientId already
+    // consulted aliases for search()'s single-ingredient path; this resolves pantry-match's whole
+    // ingredient list (and exactProductGroups) to the catalog's true canonical_name up front, so
+    // every downstream `canonical_name` comparison in this method benefits without duplicating
+    // alias-awareness at each call site. Falls back to the bare canonicalized form when nothing
+    // in the catalog recognises the name at all — comparisons then simply find no match, same as
+    // today's behavior for genuinely-unknown ingredients.
+    private fun resolveCanonicalName(conn: Connection, raw: String): String {
+        val alias = IngredientNameNormalizer.normalizeAlias(raw)
+        val canonical = IngredientNameNormalizer.canonicalize(raw)
+        return conn.prepareStatement(
+            "SELECT i.canonical_name FROM ingredients i " +
+                "JOIN ingredient_aliases a ON a.ingredient_id = i.id WHERE a.normalized_alias = ? LIMIT 1",
+        ).use { statement ->
+            statement.setString(1, alias)
+            statement.executeQuery().use { rows -> if (rows.next()) rows.getString(1) else canonical }
         }
     }
 
