@@ -366,6 +366,12 @@ private fun ScannedProductReview(
                 text = stringResource(Res.string.scan_review_title),
                 modifier = Modifier.padding(start = 14.dp),
             )
+            Spacer(Modifier.weight(1f))
+            MiseIconCircleButton(
+                icon = MiseIcons.Scale,
+                contentDescription = stringResource(Res.string.scan_review_compare_another),
+                onClick = { onAction(ScanAction.CompareWithAnotherClicked) },
+            )
         }
 
         LazyColumn(
@@ -562,29 +568,33 @@ private fun ScannedProductReview(
                 color = colors.textMuted,
                 modifier = Modifier.padding(bottom = 10.dp),
             )
-            MisePrimaryButton(
-                text = stringResource(
-                    if (alreadyAdded) {
-                        Res.string.scan_review_open_graph
-                    } else {
-                        Res.string.scan_review_add
-                    }
-                ),
-                onClick = { onAction(ScanAction.AddReviewedProductClicked) },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(8.dp))
-            MiseGhostButton(
-                text = stringResource(Res.string.scan_review_compare_another),
-                onClick = { onAction(ScanAction.CompareWithAnotherClicked) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(8.dp))
-            MiseGhostButton(
-                text = stringResource(Res.string.scan_review_skip),
-                onClick = { onAction(ScanAction.ReviewedProductSkipped) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                MisePrimaryButton(
+                    text = stringResource(
+                        if (alreadyAdded) {
+                            Res.string.scan_review_open_graph
+                        } else {
+                            Res.string.scan_review_add
+                        }
+                    ),
+                    onClick = { onAction(ScanAction.AddReviewedProductClicked) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(54.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 15.dp),
+                )
+                MiseGhostButton(
+                    text = stringResource(Res.string.scan_review_skip),
+                    onClick = { onAction(ScanAction.ReviewedProductSkipped) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(54.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 15.dp),
+                )
+            }
         }
     }
 }
