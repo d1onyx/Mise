@@ -27,12 +27,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
+import com.d1onix.dishlab.designsystem.component.MiseGhostButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.component.VerdictBadge
-import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.feature.products.presentation.graph.GraphAction
@@ -98,17 +97,29 @@ fun ProductDetailSheet(
         )
         Spacer(Modifier.height(16.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ScoreRing(score = product.score, color = accent, size = 64, strokeWidth = 6) {
-                Text(
-                    text = product.score.toString(),
-                    style = MiseTheme.typography.mono,
-                    color = accent,
-                )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                ScoreRing(score = product.score, color = accent, size = 64, strokeWidth = 6) {
+                    Text(
+                        text = product.score.toString(),
+                        style = MiseTheme.typography.mono,
+                        color = accent,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                VerdictBadge(label = product.verdict.label, color = accent)
             }
             Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(product.name, style = MiseTheme.typography.title, color = colors.text)
+            Column(Modifier.weight(1f).padding(top = 2.dp)) {
+                Text(
+                    text = product.name,
+                    style = MiseTheme.typography.title,
+                    color = colors.text,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Text(
                     product.category,
                     style = MiseTheme.typography.monoSmall,
@@ -116,18 +127,6 @@ fun ProductDetailSheet(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            VerdictBadge(label = product.verdict.label, color = accent)
-            Spacer(Modifier.width(8.dp))
-            MiseIconCircleButton(
-                icon = MiseIcons.Close,
-                contentDescription = stringResource(Res.string.product_remove),
-                onClick = { onAction(GraphAction.RemoveClicked(product.id)) },
-                size = 40,
-                iconSize = 18,
-                tint = colors.red,
-                borderColor = colors.red.copy(alpha = 0.6f),
-                background = colors.red.copy(alpha = 0.12f),
-            )
         }
 
         if (!product.hasCompleteData) {
@@ -265,11 +264,19 @@ fun ProductDetailSheet(
         }
 
         Spacer(Modifier.height(18.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             MisePrimaryButton(
                 text = stringResource(Res.string.product_cook),
                 onClick = { onAction(GraphAction.FindRecipesClicked) },
                 modifier = Modifier.weight(1f),
+            )
+            MiseGhostButton(
+                text = stringResource(Res.string.product_remove),
+                onClick = { onAction(GraphAction.RemoveClicked(product.id)) },
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 15.dp),
             )
         }
     }
