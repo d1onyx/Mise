@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -25,9 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.component.MiseGhostButton
+import com.d1onix.dishlab.designsystem.component.MiseGradeScoreScale
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
@@ -43,6 +42,7 @@ import com.d1onix.dishlab.feature.products.resources.product_brand
 import com.d1onix.dishlab.feature.products.resources.product_categories
 import com.d1onix.dishlab.feature.products.resources.product_cook
 import com.d1onix.dishlab.feature.products.resources.product_eco_score
+import com.d1onix.dishlab.feature.products.resources.product_eco_score_scale_hint
 import com.d1onix.dishlab.feature.products.resources.product_image
 import com.d1onix.dishlab.feature.products.resources.product_incomplete_data
 import com.d1onix.dishlab.feature.products.resources.product_ingredients
@@ -173,10 +173,19 @@ fun ProductDetailSheet(
         }
         card.facts.forEach { fact ->
             when (fact.kind) {
-                ProductDetailFactKind.NutriScore -> NutriScoreScale(fact.value)
+                ProductDetailFactKind.NutriScore -> GradeScoreTile(
+                    selectedGrade = fact.value,
+                    label = stringResource(Res.string.product_nutri_score),
+                    hint = stringResource(Res.string.product_nutri_score_scale_hint),
+                )
                 ProductDetailFactKind.Nova -> DetailTile(
                     title = "NOVA ${fact.value}",
                     text = fact.value.novaExplanation(),
+                )
+                ProductDetailFactKind.EcoScore -> GradeScoreTile(
+                    selectedGrade = fact.value,
+                    label = stringResource(Res.string.product_eco_score),
+                    hint = stringResource(Res.string.product_eco_score_scale_hint),
                 )
                 else -> DetailTile(title = fact.kind.label(), text = fact.value)
             }
@@ -283,10 +292,8 @@ fun ProductDetailSheet(
 }
 
 @Composable
-private fun NutriScoreScale(selectedGrade: String) {
+private fun GradeScoreTile(selectedGrade: String, label: String, hint: String) {
     val colors = MiseTheme.colors
-    val grades = listOf("A", "B", "C", "D", "E")
-    val gradeColors = listOf(colors.lime, colors.cyan, colors.amber, colors.amber, colors.red)
 
     Column(
         Modifier
@@ -296,73 +303,10 @@ private fun NutriScoreScale(selectedGrade: String) {
             .border(1.dp, colors.border, RoundedCornerShape(14.dp))
             .padding(12.dp),
     ) {
-        Text(
-            stringResource(Res.string.product_nutri_score).uppercase(),
-            style = MiseTheme.typography.monoTiny,
-            color = colors.textMuted,
-        )
-        Spacer(Modifier.height(8.dp))
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(34.dp)
-                .clip(RoundedCornerShape(9.dp)),
-        ) {
-            Row(Modifier.fillMaxSize()) {
-                grades.forEachIndexed { index, _ ->
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .fillMaxSize()
-                            .background(gradeColors[index]),
-                    )
-                }
-            }
-            Row(Modifier.fillMaxSize()) {
-                grades.forEachIndexed { index, grade ->
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (grade == selectedGrade) {
-                            Box(
-                                Modifier
-                                    .size(26.dp)
-                                    .background(colors.backgroundDeep, CircleShape)
-                                    .border(2.dp, Color.White.copy(alpha = 0.9f), CircleShape),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    grade,
-                                    style = MiseTheme.typography.monoSmall,
-                                    color = gradeColors[index],
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Row(Modifier.fillMaxWidth()) {
-            grades.forEachIndexed { index, grade ->
-                Text(
-                    text = grade,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(top = 4.dp),
-                    style = MiseTheme.typography.monoTiny,
-                    color = gradeColors[index],
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-        Spacer(Modifier.height(7.dp))
-        Text(
-            stringResource(Res.string.product_nutri_score_scale_hint),
-            style = MiseTheme.typography.monoTiny,
-            color = colors.textMuted,
+        MiseGradeScoreScale(
+            selectedGrade = selectedGrade,
+            label = label,
+            hint = hint,
         )
     }
 }

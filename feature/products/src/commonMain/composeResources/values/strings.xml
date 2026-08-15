@@ -51,6 +51,7 @@
     <string name="product_nutri_score_scale_hint">A = better nutritional quality · E = lower nutritional quality</string>
     <string name="product_nova">NOVA</string>
     <string name="product_eco_score">Eco-Score</string>
+    <string name="product_eco_score_scale_hint">A = lower environmental impact · E = higher environmental impact</string>
     <string name="product_ingredients">Ingredients</string>
     <string name="product_allergens">Allergens</string>
     <string name="product_categories">Categories</string>

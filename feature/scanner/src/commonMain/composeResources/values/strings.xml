@@ -28,6 +28,10 @@
     <string name="scan_camera_denied">Camera access is off — use “Capture scan” or type a barcode below.</string>
     <string name="scan_review_title">Product found</string>
     <string name="scan_review_nutrition">Nutrition</string>
+    <string name="scan_nutri_score">Nutri-Score</string>
+    <string name="scan_nutri_score_hint">A = better nutritional quality · E = lower nutritional quality</string>
+    <string name="scan_eco_score">Eco-Score</string>
+    <string name="scan_eco_score_hint">A = lower environmental impact · E = higher environmental impact</string>
     <string name="scan_review_alternatives">Healthier alternatives</string>
     <string name="scan_review_incomplete">Some nutrition values are estimated</string>
     <string name="scan_review_question">What would you like to do with this product?</string>

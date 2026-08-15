@@ -48,6 +48,7 @@ import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.MiseGhostButton
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
+import com.d1onix.dishlab.designsystem.component.MiseGradeScoreScale
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.MiseSearchField
 import com.d1onix.dishlab.designsystem.component.MiseTextAction
@@ -78,6 +79,10 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_manual_entry
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_placeholder
 import com.d1onix.dishlab.feature.scanner.resources.scan_browse_recipes
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_submit
+import com.d1onix.dishlab.feature.scanner.resources.scan_nutri_score
+import com.d1onix.dishlab.feature.scanner.resources.scan_nutri_score_hint
+import com.d1onix.dishlab.feature.scanner.resources.scan_eco_score
+import com.d1onix.dishlab.feature.scanner.resources.scan_eco_score_hint
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_alternatives
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_incomplete
@@ -447,6 +452,26 @@ private fun ScannedProductReview(
                 )
             }
 
+            product.details.nutriScore.cleanNutriScoreGrade()?.let { grade ->
+                item {
+                    ScannedGradeScoreScale(
+                        grade = grade,
+                        label = stringResource(Res.string.scan_nutri_score),
+                        hint = stringResource(Res.string.scan_nutri_score_hint),
+                    )
+                }
+            }
+
+            product.details.ecoScore.cleanNutriScoreGrade()?.let { grade ->
+                item {
+                    ScannedGradeScoreScale(
+                        grade = grade,
+                        label = stringResource(Res.string.scan_eco_score),
+                        hint = stringResource(Res.string.scan_eco_score_hint),
+                    )
+                }
+            }
+
             product.scanDetails().forEach { (title, value) ->
                 item { ScannedDetailTile(title, value) }
             }
@@ -577,6 +602,24 @@ private fun ScannedDetailTile(title: String, value: String) {
     }
 }
 
+@Composable
+private fun ScannedGradeScoreScale(grade: String, label: String, hint: String) {
+    val colors = MiseTheme.colors
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(colors.panel, RoundedCornerShape(10.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(10.dp))
+            .padding(12.dp),
+    ) {
+        MiseGradeScoreScale(
+            selectedGrade = grade,
+            label = label,
+            hint = hint,
+        )
+    }
+}
+
 private fun Product.scanDetails(): List<Pair<String, String>> = buildList {
     fun String.clean() = trim().takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
     fun List<String>.tags() = mapNotNull { it.clean()?.substringAfter(':')?.replace('-', ' ') }
@@ -589,8 +632,6 @@ private fun Product.scanDetails(): List<Pair<String, String>> = buildList {
     details.allergens.tags()?.let { add("Allergens" to it) }
     details.categories.tags()?.let { add("Categories" to it) }
     details.labels.tags()?.let { add("Labels" to it) }
-    details.nutriScore.clean()?.uppercase()?.takeIf { it in setOf("A", "B", "C", "D", "E") }
-        ?.let { add("Nutri-Score" to "$it · A is better, E is lower") }
     details.novaGroup?.takeIf { it in 1..4 }?.let { group ->
         add("NOVA $group" to when (group) {
             1 -> "Unprocessed or minimally processed food"
@@ -599,9 +640,10 @@ private fun Product.scanDetails(): List<Pair<String, String>> = buildList {
             else -> "Ultra-processed food"
         })
     }
-    details.ecoScore.clean()?.uppercase()?.takeIf { it in setOf("A", "B", "C", "D", "E") }
-        ?.let { add("Eco-Score" to it) }
 }
+
+private fun String.cleanNutriScoreGrade(): String? = trim().uppercase()
+    .takeIf { it in setOf("A", "B", "C", "D", "E") }
 
 /**
  * Camera preview kept out of the content composable so previews and manual
