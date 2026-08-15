@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -23,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
@@ -48,6 +51,7 @@ import com.d1onix.dishlab.feature.products.resources.product_labels
 import com.d1onix.dishlab.feature.products.resources.product_nova
 import com.d1onix.dishlab.feature.products.resources.product_nutrients_per_100g
 import com.d1onix.dishlab.feature.products.resources.product_nutri_score
+import com.d1onix.dishlab.feature.products.resources.product_nutri_score_scale_hint
 import com.d1onix.dishlab.feature.products.resources.product_quantity
 import com.d1onix.dishlab.feature.products.resources.product_remove
 import com.d1onix.dishlab.feature.products.resources.product_serving_size
@@ -291,30 +295,65 @@ private fun NutriScoreScale(selectedGrade: String) {
             color = colors.textMuted,
         )
         Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            grades.forEachIndexed { index, grade ->
-                val isSelected = grade == selectedGrade
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(if (isSelected) 34.dp else 28.dp)
-                        .background(
-                            if (isSelected) gradeColors[index] else gradeColors[index].copy(alpha = 0.22f),
-                            RoundedCornerShape(7.dp),
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        grade,
-                        style = MiseTheme.typography.monoSmall,
-                        color = if (isSelected) colors.background else gradeColors[index],
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(34.dp)
+                .clip(RoundedCornerShape(9.dp)),
+        ) {
+            Row(Modifier.fillMaxSize()) {
+                grades.forEachIndexed { index, _ ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxSize()
+                            .background(gradeColors[index]),
                     )
                 }
+            }
+            Row(Modifier.fillMaxSize()) {
+                grades.forEachIndexed { index, grade ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (grade == selectedGrade) {
+                            Box(
+                                Modifier
+                                    .size(26.dp)
+                                    .background(colors.backgroundDeep, CircleShape)
+                                    .border(2.dp, Color.White.copy(alpha = 0.9f), CircleShape),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    grade,
+                                    style = MiseTheme.typography.monoSmall,
+                                    color = gradeColors[index],
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth()) {
+            grades.forEachIndexed { index, grade ->
+                Text(
+                    text = grade,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(top = 4.dp),
+                    style = MiseTheme.typography.monoTiny,
+                    color = gradeColors[index],
+                    textAlign = TextAlign.Center,
+                )
             }
         }
         Spacer(Modifier.height(7.dp))
         Text(
-            "A = better nutritional quality · E = lower nutritional quality",
+            stringResource(Res.string.product_nutri_score_scale_hint),
             style = MiseTheme.typography.monoTiny,
             color = colors.textMuted,
         )

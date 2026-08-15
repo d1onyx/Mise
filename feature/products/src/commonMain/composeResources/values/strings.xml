@@ -48,6 +48,7 @@
     <string name="product_quantity">Quantity</string>
     <string name="product_serving_size">Serving size</string>
     <string name="product_nutri_score">Nutri-Score</string>
+    <string name="product_nutri_score_scale_hint">A = better nutritional quality · E = lower nutritional quality</string>
     <string name="product_nova">NOVA</string>
     <string name="product_eco_score">Eco-Score</string>
     <string name="product_ingredients">Ingredients</string>
