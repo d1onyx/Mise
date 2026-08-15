@@ -5,6 +5,10 @@
     <string name="scan_hint_secondary">Hold steady · scan from any orientation</string>
     <string name="scan_phase_searching">Looking for a barcode</string>
     <string name="scan_phase_resolving">Looking up the product</string>
+    <string name="scan_loading_fact_barcodes">Every barcode starts with a country or manufacturer prefix.</string>
+    <string name="scan_loading_fact_nutrition">Nutrition values are compared per 100 g, so products stay comparable.</string>
+    <string name="scan_loading_fact_graph">Your graph helps DishLab find recipes from products you already have.</string>
+    <string name="scan_loading_fact_data">We are matching this product with its nutrition data.</string>
     <string name="scan_phase_failed">Lookup failed</string>
     <string name="scan_step_read">Read</string>
     <string name="scan_step_lookup">Look up</string>
@@ -24,6 +28,10 @@
     <string name="scan_camera_denied">Camera access is off — use “Capture scan” or type a barcode below.</string>
     <string name="scan_review_title">Product found</string>
     <string name="scan_review_nutrition">Nutrition</string>
+    <string name="scan_nutri_score">Nutri-Score</string>
+    <string name="scan_nutri_score_hint">A = better nutritional quality · E = lower nutritional quality</string>
+    <string name="scan_eco_score">Eco-Score</string>
+    <string name="scan_eco_score_hint">A = lower environmental impact · E = higher environmental impact</string>
     <string name="scan_review_alternatives">Healthier alternatives</string>
     <string name="scan_review_incomplete">Some nutrition values are estimated</string>
     <string name="scan_review_question">What would you like to do with this product?</string>

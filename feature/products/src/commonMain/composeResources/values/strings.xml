@@ -43,13 +43,15 @@
     <string name="product_incomplete_data">⚠ Incomplete data — some nutrients estimated</string>
     <string name="product_alternatives">Healthier alternatives</string>
     <string name="product_cook">What can I cook?</string>
-    <string name="product_remove">×</string>
+    <string name="product_remove">Remove product</string>
     <string name="product_brand">Brand</string>
     <string name="product_quantity">Quantity</string>
     <string name="product_serving_size">Serving size</string>
     <string name="product_nutri_score">Nutri-Score</string>
+    <string name="product_nutri_score_scale_hint">A = better nutritional quality · E = lower nutritional quality</string>
     <string name="product_nova">NOVA</string>
     <string name="product_eco_score">Eco-Score</string>
+    <string name="product_eco_score_scale_hint">A = lower environmental impact · E = higher environmental impact</string>
     <string name="product_ingredients">Ingredients</string>
     <string name="product_allergens">Allergens</string>
     <string name="product_categories">Categories</string>

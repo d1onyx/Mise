@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.component.MiseGhostButton
+import com.d1onix.dishlab.designsystem.component.MiseGradeScoreScale
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
@@ -40,6 +43,7 @@ import com.d1onix.dishlab.feature.products.resources.product_brand
 import com.d1onix.dishlab.feature.products.resources.product_categories
 import com.d1onix.dishlab.feature.products.resources.product_cook
 import com.d1onix.dishlab.feature.products.resources.product_eco_score
+import com.d1onix.dishlab.feature.products.resources.product_eco_score_scale_hint
 import com.d1onix.dishlab.feature.products.resources.product_image
 import com.d1onix.dishlab.feature.products.resources.product_incomplete_data
 import com.d1onix.dishlab.feature.products.resources.product_ingredients
@@ -47,6 +51,7 @@ import com.d1onix.dishlab.feature.products.resources.product_labels
 import com.d1onix.dishlab.feature.products.resources.product_nova
 import com.d1onix.dishlab.feature.products.resources.product_nutrients_per_100g
 import com.d1onix.dishlab.feature.products.resources.product_nutri_score
+import com.d1onix.dishlab.feature.products.resources.product_nutri_score_scale_hint
 import com.d1onix.dishlab.feature.products.resources.product_quantity
 import com.d1onix.dishlab.feature.products.resources.product_remove
 import com.d1onix.dishlab.feature.products.resources.product_serving_size
@@ -71,6 +76,7 @@ fun ProductDetailSheet(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .fillMaxHeight(0.9f)
             .background(
                 Color(0xFF0C0E14).copy(alpha = 0.94f),
                 RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
@@ -79,31 +85,47 @@ fun ProductDetailSheet(
                 width = 1.dp,
                 color = colors.border,
                 shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
-            )
-            .padding(horizontal = 20.dp)
-            .padding(top = 14.dp, bottom = 26.dp)
-            .verticalScroll(rememberScrollState()),
+            ),
     ) {
-        Box(
+        Column(
             Modifier
-                .align(Alignment.CenterHorizontally)
-                .width(40.dp)
-                .height(4.dp)
-                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
-        )
-        Spacer(Modifier.height(16.dp))
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(top = 14.dp),
+        ) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .width(40.dp)
+                    .height(4.dp)
+                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
+            )
+            Spacer(Modifier.height(16.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ScoreRing(score = product.score, color = accent, size = 64, strokeWidth = 6) {
-                Text(
-                    text = product.score.toString(),
-                    style = MiseTheme.typography.mono,
-                    color = accent,
-                )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                ScoreRing(score = product.score, color = accent, size = 64, strokeWidth = 6) {
+                    Text(
+                        text = product.score.toString(),
+                        style = MiseTheme.typography.mono,
+                        color = accent,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                VerdictBadge(label = product.verdict.label, color = accent)
             }
             Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(product.name, style = MiseTheme.typography.title, color = colors.text)
+            Column(Modifier.weight(1f).padding(top = 2.dp)) {
+                Text(
+                    text = product.name,
+                    style = MiseTheme.typography.title,
+                    color = colors.text,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Text(
                     product.category,
                     style = MiseTheme.typography.monoSmall,
@@ -111,16 +133,6 @@ fun ProductDetailSheet(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            VerdictBadge(label = product.verdict.label, color = accent)
-            Spacer(Modifier.width(8.dp))
-            MiseGhostButton(
-                text = stringResource(Res.string.product_remove),
-                onClick = { onAction(GraphAction.RemoveClicked(product.id)) },
-                contentPadding = PaddingValues(
-                    horizontal = 12.dp,
-                    vertical = 8.dp,
-                ),
-            )
         }
 
         if (!product.hasCompleteData) {
@@ -167,10 +179,19 @@ fun ProductDetailSheet(
         }
         card.facts.forEach { fact ->
             when (fact.kind) {
-                ProductDetailFactKind.NutriScore -> NutriScoreScale(fact.value)
+                ProductDetailFactKind.NutriScore -> GradeScoreTile(
+                    selectedGrade = fact.value,
+                    label = stringResource(Res.string.product_nutri_score),
+                    hint = stringResource(Res.string.product_nutri_score_scale_hint),
+                )
                 ProductDetailFactKind.Nova -> DetailTile(
                     title = "NOVA ${fact.value}",
                     text = fact.value.novaExplanation(),
+                )
+                ProductDetailFactKind.EcoScore -> GradeScoreTile(
+                    selectedGrade = fact.value,
+                    label = stringResource(Res.string.product_eco_score),
+                    hint = stringResource(Res.string.product_eco_score_scale_hint),
                 )
                 else -> DetailTile(title = fact.kind.label(), text = fact.value)
             }
@@ -257,22 +278,39 @@ fun ProductDetailSheet(
             }
         }
 
-        Spacer(Modifier.height(18.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Spacer(Modifier.height(24.dp))
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 42.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             MisePrimaryButton(
                 text = stringResource(Res.string.product_cook),
                 onClick = { onAction(GraphAction.FindRecipesClicked) },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(54.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 15.dp),
+            )
+            MiseGhostButton(
+                text = stringResource(Res.string.product_remove),
+                onClick = { onAction(GraphAction.RemoveClicked(product.id)) },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(54.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 15.dp),
             )
         }
     }
 }
 
 @Composable
-private fun NutriScoreScale(selectedGrade: String) {
+private fun GradeScoreTile(selectedGrade: String, label: String, hint: String) {
     val colors = MiseTheme.colors
-    val grades = listOf("A", "B", "C", "D", "E")
-    val gradeColors = listOf(colors.lime, colors.cyan, colors.amber, colors.amber, colors.red)
 
     Column(
         Modifier
@@ -282,38 +320,10 @@ private fun NutriScoreScale(selectedGrade: String) {
             .border(1.dp, colors.border, RoundedCornerShape(14.dp))
             .padding(12.dp),
     ) {
-        Text(
-            stringResource(Res.string.product_nutri_score).uppercase(),
-            style = MiseTheme.typography.monoTiny,
-            color = colors.textMuted,
-        )
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            grades.forEachIndexed { index, grade ->
-                val isSelected = grade == selectedGrade
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(if (isSelected) 34.dp else 28.dp)
-                        .background(
-                            if (isSelected) gradeColors[index] else gradeColors[index].copy(alpha = 0.22f),
-                            RoundedCornerShape(7.dp),
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        grade,
-                        style = MiseTheme.typography.monoSmall,
-                        color = if (isSelected) colors.background else gradeColors[index],
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(7.dp))
-        Text(
-            "A = better nutritional quality · E = lower nutritional quality",
-            style = MiseTheme.typography.monoTiny,
-            color = colors.textMuted,
+        MiseGradeScoreScale(
+            selectedGrade = selectedGrade,
+            label = label,
+            hint = hint,
         )
     }
 }

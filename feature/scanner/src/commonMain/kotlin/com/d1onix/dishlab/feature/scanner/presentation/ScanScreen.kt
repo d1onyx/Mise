@@ -22,7 +22,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +48,7 @@ import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.MiseGhostButton
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
+import com.d1onix.dishlab.designsystem.component.MiseGradeScoreScale
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.MiseSearchField
 import com.d1onix.dishlab.designsystem.component.MiseTextAction
@@ -76,6 +79,10 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_manual_entry
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_placeholder
 import com.d1onix.dishlab.feature.scanner.resources.scan_browse_recipes
 import com.d1onix.dishlab.feature.scanner.resources.scan_manual_submit
+import com.d1onix.dishlab.feature.scanner.resources.scan_nutri_score
+import com.d1onix.dishlab.feature.scanner.resources.scan_nutri_score_hint
+import com.d1onix.dishlab.feature.scanner.resources.scan_eco_score
+import com.d1onix.dishlab.feature.scanner.resources.scan_eco_score_hint
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_alternatives
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_incomplete
@@ -89,9 +96,14 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_server_unavailable
 import com.d1onix.dishlab.feature.scanner.resources.scan_server_retry
 import com.d1onix.dishlab.feature.scanner.resources.scan_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_title_resolving
+import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_barcodes
+import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_data
+import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_graph
+import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_nutrition
 import com.kashif.cameraK.permissions.providePermissions
 import org.jetbrains.compose.resources.stringResource
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -122,6 +134,16 @@ internal fun ScanContent(
         ScannedProductReview(
             product = product,
             alreadyAdded = state.reviewedProductAlreadyAdded,
+            onAction = onAction,
+            modifier = modifier,
+        )
+        return
+    }
+
+    if (state.isResolving) {
+        ResolvingScanContent(
+            state = state,
+            showBackNavigation = showBackNavigation,
             onAction = onAction,
             modifier = modifier,
         )
@@ -204,6 +226,82 @@ internal fun ScanContent(
     }
 }
 
+/**
+ * The camera is intentionally removed as soon as a barcode is accepted: the
+ * next useful thing is the lookup, not a frozen viewfinder. Rotating facts
+ * make a longer network lookup feel intentional without hiding its progress.
+ */
+@Composable
+private fun ResolvingScanContent(
+    state: ScanUiState,
+    showBackNavigation: Boolean,
+    onAction: (ScanAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MiseTheme.colors
+    val facts = listOf(
+        stringResource(Res.string.scan_loading_fact_barcodes),
+        stringResource(Res.string.scan_loading_fact_nutrition),
+        stringResource(Res.string.scan_loading_fact_graph),
+        stringResource(Res.string.scan_loading_fact_data),
+    )
+    var factIndex by remember { mutableStateOf(0) }
+
+    LaunchedEffect(facts.size) {
+        while (true) {
+            delay(6_000)
+            factIndex = (factIndex + 1) % facts.size
+        }
+    }
+
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .safeDrawingPadding()
+            .padding(horizontal = 28.dp, vertical = 20.dp)
+            .screenIn(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        RootScannerTopBar(
+            isResolving = true,
+            showBackNavigation = showBackNavigation,
+            onBackClick = { onAction(ScanAction.BackClicked) },
+        )
+        Spacer(Modifier.weight(1f))
+        CircularProgressIndicator(
+            color = colors.cyan,
+            strokeWidth = 3.dp,
+            modifier = Modifier.size(52.dp),
+        )
+        Spacer(Modifier.height(28.dp))
+        Text(
+            text = stringResource(Res.string.scan_phase_resolving),
+            style = MiseTheme.typography.title,
+            color = colors.text,
+            textAlign = TextAlign.Center,
+        )
+        state.visibleBarcode?.let { barcode ->
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = barcode,
+                style = MiseTheme.typography.monoSmall,
+                color = colors.cyan,
+            )
+        }
+        Spacer(Modifier.height(28.dp))
+        Text(
+            text = facts[factIndex],
+            style = MiseTheme.typography.body,
+            color = colors.textMuted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.weight(1f))
+        ScanProgressTrail(phase = ScanPhase.Resolving, modifier = Modifier.fillMaxWidth())
+    }
+}
+
 internal data class ScannerTopBarModel(val hasNavigationIcon: Boolean)
 
 internal fun rootScannerTopBarModel(showBackNavigation: Boolean) =
@@ -268,6 +366,12 @@ private fun ScannedProductReview(
                 text = stringResource(Res.string.scan_review_title),
                 modifier = Modifier.padding(start = 14.dp),
             )
+            Spacer(Modifier.weight(1f))
+            MiseIconCircleButton(
+                icon = MiseIcons.Scale,
+                contentDescription = stringResource(Res.string.scan_review_compare_another),
+                onClick = { onAction(ScanAction.CompareWithAnotherClicked) },
+            )
         }
 
         LazyColumn(
@@ -288,12 +392,16 @@ private fun ScannedProductReview(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    ScoreRing(score = product.score, color = scoreColor, size = 68, strokeWidth = 6) {
-                        Text(
-                            text = product.score.toString(),
-                            style = MiseTheme.typography.mono,
-                            color = scoreColor,
-                        )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        ScoreRing(score = product.score, color = scoreColor, size = 68, strokeWidth = 6) {
+                            Text(
+                                text = product.score.toString(),
+                                style = MiseTheme.typography.mono,
+                                color = scoreColor,
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        VerdictBadge(product.verdict.label, scoreColor)
                     }
                     Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
                         Text(product.name, style = MiseTheme.typography.title, color = colors.text)
@@ -303,7 +411,6 @@ private fun ScannedProductReview(
                             color = colors.textMuted,
                         )
                     }
-                    VerdictBadge(product.verdict.label, scoreColor)
                 }
             }
 
@@ -352,6 +459,26 @@ private fun ScannedProductReview(
                     style = MiseTheme.typography.body,
                     color = colors.text.copy(alpha = 0.82f),
                 )
+            }
+
+            product.details.nutriScore.cleanNutriScoreGrade()?.let { grade ->
+                item {
+                    ScannedGradeScoreScale(
+                        grade = grade,
+                        label = stringResource(Res.string.scan_nutri_score),
+                        hint = stringResource(Res.string.scan_nutri_score_hint),
+                    )
+                }
+            }
+
+            product.details.ecoScore.cleanNutriScoreGrade()?.let { grade ->
+                item {
+                    ScannedGradeScoreScale(
+                        grade = grade,
+                        label = stringResource(Res.string.scan_eco_score),
+                        hint = stringResource(Res.string.scan_eco_score_hint),
+                    )
+                }
             }
 
             product.scanDetails().forEach { (title, value) ->
@@ -441,29 +568,33 @@ private fun ScannedProductReview(
                 color = colors.textMuted,
                 modifier = Modifier.padding(bottom = 10.dp),
             )
-            MisePrimaryButton(
-                text = stringResource(
-                    if (alreadyAdded) {
-                        Res.string.scan_review_open_graph
-                    } else {
-                        Res.string.scan_review_add
-                    }
-                ),
-                onClick = { onAction(ScanAction.AddReviewedProductClicked) },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(8.dp))
-            MiseGhostButton(
-                text = stringResource(Res.string.scan_review_compare_another),
-                onClick = { onAction(ScanAction.CompareWithAnotherClicked) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(8.dp))
-            MiseGhostButton(
-                text = stringResource(Res.string.scan_review_skip),
-                onClick = { onAction(ScanAction.ReviewedProductSkipped) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                MisePrimaryButton(
+                    text = stringResource(
+                        if (alreadyAdded) {
+                            Res.string.scan_review_open_graph
+                        } else {
+                            Res.string.scan_review_add
+                        }
+                    ),
+                    onClick = { onAction(ScanAction.AddReviewedProductClicked) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(54.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 15.dp),
+                )
+                MiseGhostButton(
+                    text = stringResource(Res.string.scan_review_skip),
+                    onClick = { onAction(ScanAction.ReviewedProductSkipped) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(54.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 15.dp),
+                )
+            }
         }
     }
 }
@@ -484,6 +615,24 @@ private fun ScannedDetailTile(title: String, value: String) {
     }
 }
 
+@Composable
+private fun ScannedGradeScoreScale(grade: String, label: String, hint: String) {
+    val colors = MiseTheme.colors
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(colors.panel, RoundedCornerShape(10.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(10.dp))
+            .padding(12.dp),
+    ) {
+        MiseGradeScoreScale(
+            selectedGrade = grade,
+            label = label,
+            hint = hint,
+        )
+    }
+}
+
 private fun Product.scanDetails(): List<Pair<String, String>> = buildList {
     fun String.clean() = trim().takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
     fun List<String>.tags() = mapNotNull { it.clean()?.substringAfter(':')?.replace('-', ' ') }
@@ -496,8 +645,6 @@ private fun Product.scanDetails(): List<Pair<String, String>> = buildList {
     details.allergens.tags()?.let { add("Allergens" to it) }
     details.categories.tags()?.let { add("Categories" to it) }
     details.labels.tags()?.let { add("Labels" to it) }
-    details.nutriScore.clean()?.uppercase()?.takeIf { it in setOf("A", "B", "C", "D", "E") }
-        ?.let { add("Nutri-Score" to "$it · A is better, E is lower") }
     details.novaGroup?.takeIf { it in 1..4 }?.let { group ->
         add("NOVA $group" to when (group) {
             1 -> "Unprocessed or minimally processed food"
@@ -506,9 +653,10 @@ private fun Product.scanDetails(): List<Pair<String, String>> = buildList {
             else -> "Ultra-processed food"
         })
     }
-    details.ecoScore.clean()?.uppercase()?.takeIf { it in setOf("A", "B", "C", "D", "E") }
-        ?.let { add("Eco-Score" to it) }
 }
+
+private fun String.cleanNutriScoreGrade(): String? = trim().uppercase()
+    .takeIf { it in setOf("A", "B", "C", "D", "E") }
 
 /**
  * Camera preview kept out of the content composable so previews and manual

@@ -39,6 +39,16 @@ object MiseIcons {
         strokeIcon("check", 16f, "M3 8l3 3 7-7", strokeWidth = 1.9f)
     }
 
+    /** Balance scales used for comparing products. */
+    val Scale: ImageVector by lazy {
+        strokeIcon(
+            "scale",
+            24f,
+            "M12 3v18M5 6h14M5 6l-3 6h6L5 6M19 6l-3 6h6l-3-6M8 21h8",
+            strokeWidth = 1.6f,
+        )
+    }
+
     val Scissors: ImageVector by lazy {
         strokeIcon(
             "scissors",
