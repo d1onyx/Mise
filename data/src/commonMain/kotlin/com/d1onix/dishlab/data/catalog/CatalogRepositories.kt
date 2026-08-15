@@ -361,13 +361,18 @@ class CatalogRecipeRepository(
         return pantryMatch.match(ingredients = tags).items.map(PantryMatchedRecipeDto::toDomain)
     }
 
-    override suspend fun forProductsPage(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage {
+    override suspend fun forProductsPage(
+        productIds: List<ProductId>,
+        page: Int,
+        pageSize: Int,
+        filters: RecipeCatalogFilterSelection,
+    ): RecipePage {
         val safePage = page.coerceAtLeast(1)
         val safeSize = pageSize.coerceIn(1, 50)
         if (productIds.isEmpty()) return RecipePage(emptyList(), safePage, false)
         val tags = products.byIds(productIds).flatMap { it.canonicalTags }.distinct()
         if (tags.isNotEmpty()) {
-            val result = pantryMatch.match(ingredients = tags, page = safePage, pageSize = safeSize)
+            val result = pantryMatch.match(ingredients = tags, filters = filters, page = safePage, pageSize = safeSize)
             return RecipePage(
                 items = result.items.map(PantryMatchedRecipeDto::toDomain),
                 page = result.page,

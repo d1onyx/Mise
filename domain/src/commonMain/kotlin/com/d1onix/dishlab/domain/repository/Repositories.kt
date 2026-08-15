@@ -34,7 +34,12 @@ interface RecipeRepository {
     suspend fun byId(id: RecipeId, productIds: List<ProductId> = emptyList()): Recipe?
     /** Recipes that use at least one of [productIds]. */
     suspend fun forProducts(productIds: List<ProductId>): List<Recipe>
-    suspend fun forProductsPage(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage
+    suspend fun forProductsPage(
+        productIds: List<ProductId>,
+        page: Int,
+        pageSize: Int,
+        filters: RecipeCatalogFilterSelection = RecipeCatalogFilterSelection(),
+    ): RecipePage
 }
 
 interface SavedRecipesRepository {

@@ -30,8 +30,12 @@ import kotlinx.coroutines.flow.map
 class GetRecipesForProductsUseCaseImpl(
     private val recipes: RecipeRepository,
 ) : GetRecipesForProductsUseCase {
-    override suspend fun invoke(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage =
-        recipes.forProductsPage(productIds, page, pageSize)
+    override suspend fun invoke(
+        productIds: List<ProductId>,
+        page: Int,
+        pageSize: Int,
+        filters: RecipeCatalogFilterSelection,
+    ): RecipePage = recipes.forProductsPage(productIds, page, pageSize, filters)
 }
 
 @ContributesBinding(AppScope::class)
