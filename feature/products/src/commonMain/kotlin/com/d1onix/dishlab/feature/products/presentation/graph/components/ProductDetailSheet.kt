@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -75,6 +76,7 @@ fun ProductDetailSheet(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .fillMaxHeight(0.9f)
             .background(
                 Color(0xFF0C0E14).copy(alpha = 0.94f),
                 RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
@@ -83,19 +85,23 @@ fun ProductDetailSheet(
                 width = 1.dp,
                 color = colors.border,
                 shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
-            )
-            .padding(horizontal = 20.dp)
-            .padding(top = 14.dp, bottom = 26.dp)
-            .verticalScroll(rememberScrollState()),
+            ),
     ) {
-        Box(
+        Column(
             Modifier
-                .align(Alignment.CenterHorizontally)
-                .width(40.dp)
-                .height(4.dp)
-                .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
-        )
-        Spacer(Modifier.height(16.dp))
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(top = 14.dp),
+        ) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .width(40.dp)
+                    .height(4.dp)
+                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(2.dp))
+            )
+            Spacer(Modifier.height(16.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -272,19 +278,30 @@ fun ProductDetailSheet(
             }
         }
 
-        Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(24.dp))
+        }
+
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(top = 16.dp, bottom = 42.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             MisePrimaryButton(
                 text = stringResource(Res.string.product_cook),
                 onClick = { onAction(GraphAction.FindRecipesClicked) },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(54.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 15.dp),
             )
             MiseGhostButton(
                 text = stringResource(Res.string.product_remove),
                 onClick = { onAction(GraphAction.RemoveClicked(product.id)) },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(54.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 15.dp),
             )
         }
