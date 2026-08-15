@@ -56,6 +56,15 @@ private fun RecipeDetailContentSavedPreview() {
     }
 }
 
+/** Opened without a product list (Discover/Saved) — no ingredient is highlighted. */
+@MiseScreenPreviews
+@Composable
+private fun RecipeDetailContentNoneMatchedPreview() {
+    MiseTheme {
+        RecipeDetailContent(state = RecipeDetailPreviewStates.NoneMatched, onAction = {})
+    }
+}
+
 /** The card is width-driven, so it gets the two widths rather than three devices. */
 @MiseWidthPreviews
 @Composable

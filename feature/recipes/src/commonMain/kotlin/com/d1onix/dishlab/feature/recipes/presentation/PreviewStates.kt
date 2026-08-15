@@ -20,6 +20,7 @@ internal object RecipeListPreviewStates {
 
 internal object RecipeDetailPreviewStates {
 
+    /** Opened from pantry-match — some ingredients already on the user's graph. */
     val Default = RecipeDetailUiState(
         recipe = previewBowl,
         products = previewProducts,
@@ -27,4 +28,9 @@ internal object RecipeDetailPreviewStates {
     )
 
     val Saved = Default.copy(isSaved = true)
+
+    /** Opened without a product list (Discover/Saved) — nothing highlighted. */
+    val NoneMatched = Default.copy(
+        recipe = previewBowl.copy(ingredients = previewBowl.ingredients.map { it.copy(matched = false) }),
+    )
 }

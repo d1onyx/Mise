@@ -50,9 +50,9 @@ internal val previewBowl = Recipe(
     description = "Creamy stovetop oats topped with caramelized banana — a 10-minute " +
         "breakfast that keeps you full till lunch.",
     ingredients = listOf(
-        Ingredient("50 g", "Rolled oats"),
+        Ingredient("50 g", "Rolled oats", matched = true),
         Ingredient("200 ml", "Milk or water"),
-        Ingredient("1", "Ripe banana"),
+        Ingredient("1", "Ripe banana", matched = true),
     ),
     steps = listOf(
         RecipeStep("Simmer the oats", "Bring oats and milk to a gentle simmer."),

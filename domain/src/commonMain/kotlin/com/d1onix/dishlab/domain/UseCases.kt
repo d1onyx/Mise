@@ -41,7 +41,7 @@ fun interface FilterRecipesByConnectionsUseCase {
 }
 
 fun interface GetRecipeUseCase {
-    suspend operator fun invoke(id: RecipeId): Recipe?
+    suspend operator fun invoke(id: RecipeId, productIds: List<ProductId>): Recipe?
 }
 
 /** Pure — search and the three filter groups applied to a list of recipes. */

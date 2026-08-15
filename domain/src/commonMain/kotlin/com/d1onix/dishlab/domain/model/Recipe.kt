@@ -27,6 +27,8 @@ data class RecipePage(
 data class Ingredient(
     val quantity: String,
     val name: String,
+    /** Already on the user's combination graph — set by the backend, never recomputed on the client. */
+    val matched: Boolean = false,
 )
 
 data class RecipeStep(

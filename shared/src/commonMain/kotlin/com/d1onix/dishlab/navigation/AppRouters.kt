@@ -1,5 +1,6 @@
 package com.d1onix.dishlab.navigation
 
+import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.feature.home.navigation.OnboardingRoute
 import com.d1onix.dishlab.feature.home.navigation.SettingsRoute
@@ -64,6 +65,7 @@ class ProductsRouterImpl(private val router: AppRouter) : ProductsRouter {
 @ContributesBinding(AppScope::class)
 @Inject
 class RecipesRouterImpl(private val router: AppRouter) : RecipesRouter {
-    override fun openRecipe(id: RecipeId) = router.launch(RecipeDetailRoute(id.value))
+    override fun openRecipe(id: RecipeId, productIds: List<ProductId>) =
+        router.launch(RecipeDetailRoute(id.value, productIds.map(ProductId::value)))
     override fun goBack() = router.goBack()
 }

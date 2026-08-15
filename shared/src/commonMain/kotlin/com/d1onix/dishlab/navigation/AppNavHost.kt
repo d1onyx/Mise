@@ -16,6 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.d1onix.dishlab.AppGraph
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
+import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.feature.home.navigation.OnboardingRoute
 import com.d1onix.dishlab.feature.home.navigation.SettingsRoute
@@ -129,9 +130,11 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
             }
 
             composable<RecipeDetailRoute> { entry ->
-                val recipeId = RecipeId(entry.toRoute<RecipeDetailRoute>().recipeId)
+                val route = entry.toRoute<RecipeDetailRoute>()
+                val recipeId = RecipeId(route.recipeId)
+                val productIds = route.productIds.map(::ProductId)
                 RecipeDetailScreen(
-                    viewModel { graph.recipeDetailViewModelFactory.create(recipeId) },
+                    viewModel { graph.recipeDetailViewModelFactory.create(recipeId, productIds) },
                 )
             }
 

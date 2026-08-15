@@ -95,7 +95,7 @@ private fun Set<ProductId>.isConnectedBy(
 class GetRecipeUseCaseImpl(
     private val recipes: RecipeRepository,
 ) : GetRecipeUseCase {
-    override suspend fun invoke(id: RecipeId): Recipe? = recipes.byId(id)
+    override suspend fun invoke(id: RecipeId, productIds: List<ProductId>): Recipe? = recipes.byId(id, productIds)
 }
 
 /**

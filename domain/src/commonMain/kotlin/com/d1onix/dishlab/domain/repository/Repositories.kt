@@ -30,7 +30,8 @@ interface RecipeRepository {
         filters: RecipeCatalogFilterSelection = RecipeCatalogFilterSelection(),
     ): RecipePage
     suspend fun catalogFilters(): RecipeCatalogFilters
-    suspend fun byId(id: RecipeId): Recipe?
+    /** [productIds] preserves pantry-match "already on your graph" highlighting on the ingredient list. */
+    suspend fun byId(id: RecipeId, productIds: List<ProductId> = emptyList()): Recipe?
     /** Recipes that use at least one of [productIds]. */
     suspend fun forProducts(productIds: List<ProductId>): List<Recipe>
     suspend fun forProductsPage(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage
