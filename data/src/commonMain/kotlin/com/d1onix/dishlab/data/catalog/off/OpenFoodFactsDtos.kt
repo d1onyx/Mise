@@ -123,6 +123,13 @@ data class ClientProductSnapshotDto(
     val sourceSchemaVersion: Int? = null,
     val sourceRevision: Long? = null,
     val sourceUpdatedAtEpochSeconds: Long? = null,
+    /**
+     * The complete OFF `product` object, verbatim. Backstop for every field OFF
+     * exposes that this DTO does not (yet) name explicitly — typed fields above
+     * cover what the app currently uses; this is what makes "all data for one
+     * barcode" true regardless of OFF schema growth.
+     */
+    val rawSourceJson: String = "",
 )
 
 @Serializable
@@ -162,13 +169,19 @@ data class ClientPackagingComponentDto(
     val recycling: String = "",
 )
 
-internal fun OpenFoodFactsProductResponseDto.toSnapshot(requestedBarcode: String): ClientProductSnapshotDto? {
+internal fun OpenFoodFactsProductResponseDto.toSnapshot(
+    requestedBarcode: String,
+    rawProductJson: JsonElement? = null,
+): ClientProductSnapshotDto? {
     val source = product ?: return null
-    val displayName = source.productName.ifBlank { source.genericName }.ifBlank { source.brands }.trim()
-    if (displayName.isBlank()) return null
+    val barcode = source.code.filter(Char::isDigit).ifBlank { requestedBarcode.filter(Char::isDigit) }
+    // Every other field is optional — OFF frequently has partial data (no name yet,
+    // pending review, etc.), and a barcode with *some* data is strictly more useful
+    // than dropping it outright. Only a barcode to key it by is not negotiable.
+    val displayName = source.productName.ifBlank { source.genericName }.ifBlank { source.brands }.ifBlank { barcode }.trim()
     val nutrientSet = source.nutrition?.aggregatedSet
     return ClientProductSnapshotDto(
-        barcode = source.code.filter(Char::isDigit).ifBlank { requestedBarcode.filter(Char::isDigit) },
+        barcode = barcode,
         name = displayName,
         brand = source.brands.trim(),
         genericName = source.genericName.trim(),
@@ -220,6 +233,7 @@ internal fun OpenFoodFactsProductResponseDto.toSnapshot(requestedBarcode: String
         sourceSchemaVersion = source.schemaVersion,
         sourceRevision = source.rev,
         sourceUpdatedAtEpochSeconds = source.lastModifiedT,
+        rawSourceJson = rawProductJson?.toString().orEmpty(),
     )
 }
 
