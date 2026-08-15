@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -170,6 +171,7 @@ internal fun RecipeDetailContent(
                     Modifier
                         .padding(top = 12.dp)
                         .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
                         .border(1.dp, colors.border, RoundedCornerShape(16.dp)),
                 ) {
                     recipe.ingredients.forEachIndexed { index, ingredient ->
