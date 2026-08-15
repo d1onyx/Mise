@@ -60,4 +60,21 @@ class Phase0AcceptanceTest {
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(body.contains("\"title\":\"DishLab Backend API\""), body)
     }
+
+    @Test
+    fun `swagger ui assets are served locally instead of from a CDN`() = testApplication {
+        application { testModule() }
+
+        // t-105: /swagger renders links to /swagger-ui-dist@<version>/... instead of
+        // unpkg.com, so the page must actually work offline/behind a firewall.
+        val bundle = client.get("/swagger-ui-dist@5.32.13/swagger-ui-bundle.js")
+        assertEquals(HttpStatusCode.OK, bundle.status)
+        assertTrue(bundle.headers[HttpHeaders.ContentType]?.contains("javascript") == true, bundle.headers.toString())
+
+        val css = client.get("/swagger-ui-dist@5.32.13/swagger-ui.css")
+        assertEquals(HttpStatusCode.OK, css.status)
+
+        val missing = client.get("/swagger-ui-dist@5.32.13/does-not-exist.js")
+        assertEquals(HttpStatusCode.NotFound, missing.status)
+    }
 }

@@ -87,6 +87,7 @@ class SqliteRecipeCatalogRepositoryTest {
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (7, 'quantity-test-egg')")
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (8, 'quantity-test-water')")
                 statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (9, 'quantity-test-cornstarch')")
+                statement.execute("INSERT INTO ingredients (id, canonical_name) VALUES (10, 'quantity-test-butter')")
 
                 fun link(recipeId: Int, position: Int, ingredientId: Int) {
                     statement.execute(
@@ -116,6 +117,9 @@ class SqliteRecipeCatalogRepositoryTest {
                 linkWithQuantity(2, 7, "2", "2 eggs")
                 linkWithQuantity(3, 8, "", "water to taste")
                 linkWithQuantity(4, 9, "1", "1 T cornstarch")
+                // t-105: raw floating-point division result from the ingest pipeline, standing
+                // in for what was originally "2/3 cup" in the source recipe.
+                linkWithQuantity(5, 10, "0.66666668653488", "0.66666668653488 cup butter")
             }
         }
         repository = SqliteRecipeCatalogRepository(dbFile)
@@ -165,7 +169,7 @@ class SqliteRecipeCatalogRepositoryTest {
         assertEquals(0, byId.getValue(4L).matchedCount)
         assertEquals(0, byId.getValue(4L).totalIngredients)
         assertEquals(0, byId.getValue(6L).matchedCount)
-        assertEquals(4, byId.getValue(6L).totalIngredients)
+        assertEquals(5, byId.getValue(6L).totalIngredients)
     }
 
     @Test
@@ -260,6 +264,9 @@ class SqliteRecipeCatalogRepositoryTest {
         assertEquals("", byPosition.getValue("water to taste").quantity)
         // The dataset's own "T" = tablespoon / "t" = teaspoon convention resolves case-sensitively.
         assertEquals("1 tbsp", byPosition.getValue("1 T cornstarch").quantity)
+        // t-105: a raw floating-point division result ("2/3 cup" stored as .66666668653488)
+        // rounds to a normal 2-decimal quantity instead of leaking ingest internals to the client.
+        assertEquals("0.67 cup", byPosition.getValue("0.66666668653488 cup butter").quantity)
     }
 
     @Test

@@ -671,7 +671,23 @@ private object IngredientQuantityNormalizer {
         val unit = word.findAll(originalText.orEmpty())
             .take(6)
             .firstNotNullOfOrNull { unitFor(it.value) }
-        return "$trimmed ${unit ?: "pcs"}"
+        return "${roundedNumber(trimmed)} ${unit ?: "pcs"}"
+    }
+
+    // The ingest pipeline (t-91) stores raw floating-point division results verbatim —
+    // "0.66666668653488" for what was originally "2/3 cup" in the source recipe. Two decimal
+    // places is precise enough for a home cook and reads like a normal recipe quantity; an
+    // already-clean value ("2", "0.5", already-a-fraction like "1/2") round-trips unchanged
+    // since rounding to 2dp is a no-op for those, and non-numeric strings fail toDoubleOrNull
+    // and pass through as-is.
+    private fun roundedNumber(raw: String): String {
+        val value = raw.toDoubleOrNull() ?: return raw
+        val rounded = Math.round(value * 100) / 100.0
+        return if (rounded == Math.floor(rounded) && !rounded.isInfinite()) {
+            rounded.toLong().toString()
+        } else {
+            rounded.toString()
+        }
     }
 
     // "t"/"T" only resolve case-sensitively — this dataset's own convention for teaspoon vs.
