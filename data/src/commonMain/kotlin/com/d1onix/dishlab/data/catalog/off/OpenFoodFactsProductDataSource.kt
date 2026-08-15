@@ -14,6 +14,7 @@ import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.http.HttpHeaders
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 
 /**
  * Calls Open Food Facts from the Android/iOS device. This client deliberately
@@ -24,7 +25,7 @@ import kotlinx.serialization.json.Json
 open class OpenFoodFactsProductDataSource(
     config: NetworkConfig,
     logger: Logger,
-    json: Json,
+    private val json: Json,
 ) {
     private val client = createHttpClient(
         config = config.copy(baseUrl = OPEN_FOOD_FACTS_BASE_URL),
@@ -33,14 +34,22 @@ open class OpenFoodFactsProductDataSource(
         json = json,
     )
 
+    /**
+     * No `fields` parameter: OFF only returns what is asked for, so restricting
+     * it to a named subset silently drops every field this DTO does not (yet)
+     * know about. Omitting it returns the complete product object, which is
+     * also what lets [rawSourceJson][ClientProductSnapshotDto.rawSourceJson]
+     * carry everything OFF has for this barcode.
+     */
     open suspend fun findByBarcode(barcode: String): ClientProductSnapshotDto? {
         val normalizedBarcode = barcode.filter(Char::isDigit)
         return try {
-            client.get("api/v3.6/product/$normalizedBarcode.json") {
+            val root = client.get("api/v3.6/product/$normalizedBarcode.json") {
                 header(HttpHeaders.UserAgent, OPEN_FOOD_FACTS_USER_AGENT)
                 parameter("product_type", "food")
-                parameter("fields", PRODUCT_FIELDS.joinToString(","))
-            }.body<OpenFoodFactsProductResponseDto>().toSnapshot(normalizedBarcode)
+            }.body<JsonObject>()
+            val response = json.decodeFromJsonElement(OpenFoodFactsProductResponseDto.serializer(), root)
+            response.toSnapshot(normalizedBarcode, rawProductJson = root["product"])
         } catch (exception: BackendException) {
             if (exception.httpCode.value == HTTP_NOT_FOUND) null else throw exception
         }
@@ -50,38 +59,5 @@ open class OpenFoodFactsProductDataSource(
         const val OPEN_FOOD_FACTS_BASE_URL = "https://world.openfoodfacts.org/"
         const val OPEN_FOOD_FACTS_USER_AGENT = "DishLab/1.0 (https://github.com/d1onyx)"
         const val HTTP_NOT_FOUND = 404
-
-        val PRODUCT_FIELDS = listOf(
-            "code",
-            "product_name",
-            "generic_name",
-            "lang",
-            "brands",
-            "quantity",
-            "product_quantity",
-            "product_quantity_unit",
-            "serving_size",
-            "categories_tags",
-            "labels_tags",
-            "countries_tags",
-            "origins_tags",
-            "ingredients_text",
-            "ingredients",
-            "allergens_tags",
-            "traces_tags",
-            "additives_tags",
-            "nutrition",
-            "nutriscore_grade",
-            "nutriscore_score",
-            "nova_group",
-            "environmental_score_grade",
-            "environmental_score_score",
-            "image_front_url",
-            "image_front_small_url",
-            "packagings",
-            "schema_version",
-            "rev",
-            "last_modified_t",
-        )
     }
 }

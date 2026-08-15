@@ -1,6 +1,7 @@
 package com.d1onix.dishlab.data.catalog.off
 
 import com.d1onyx.core.network.serialization.createDefaultJson
+import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -23,6 +24,27 @@ class OpenFoodFactsDtosTest {
         assertEquals("en:pet-1-polyethylene-terephthalate", product.packaging.single().material)
         assertEquals(1004, product.sourceSchemaVersion)
         assertEquals(42L, product.sourceRevision)
+    }
+
+    @Test
+    fun `a product with no name is kept rather than dropped`() {
+        val response = json.decodeFromString<OpenFoodFactsProductResponseDto>(
+            """{ "status": "success", "product": { "code": "0000000000017" } }""",
+        )
+
+        val product = assertNotNull(response.toSnapshot("0000000000017"))
+
+        assertEquals("0000000000017", product.name)
+    }
+
+    @Test
+    fun `the raw OFF product payload is preserved verbatim`() {
+        val response = json.decodeFromString<OpenFoodFactsProductResponseDto>(PRODUCT_JSON)
+        val rawProduct = json.parseToJsonElement(PRODUCT_JSON).jsonObject["product"]
+
+        val product = assertNotNull(response.toSnapshot("4009900552387", rawProductJson = rawProduct))
+
+        assertEquals(rawProduct.toString(), product.rawSourceJson)
     }
 
     private companion object {
