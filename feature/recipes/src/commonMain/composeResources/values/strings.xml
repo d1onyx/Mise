@@ -33,5 +33,6 @@
     <string name="recipe_save">Save recipe</string>
     <string name="recipe_unsave">Remove from saved</string>
     <string name="recipe_ingredients">Ingredients</string>
+    <string name="recipe_ingredient_matched">Already on your graph</string>
     <string name="recipe_steps">Steps · %1$d</string>
 </resources>

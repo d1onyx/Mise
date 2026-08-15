@@ -58,7 +58,7 @@ class RecipesViewModel(
             is RecipeListAction.CatalogFilterOptionClicked,
             -> Unit
 
-            is RecipeListAction.RecipeClicked -> router.openRecipe(action.id)
+            is RecipeListAction.RecipeClicked -> router.openRecipe(action.id, session.products.value)
             RecipeListAction.BackClicked -> router.goBack()
             RecipeListAction.RetryClicked -> launch("retryRecipes") { load(session.products.value) }
             RecipeListAction.LoadNextPage -> loadNextPage()

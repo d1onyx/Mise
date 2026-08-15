@@ -264,8 +264,9 @@ class CatalogRecipeRepository(
 
     override suspend fun catalogFilters(): RecipeCatalogFilters = remoteCatalog.filters().toDomain()
 
-    override suspend fun byId(id: RecipeId): Recipe? = try {
-        remoteCatalog.recipe(id).toDomain()
+    override suspend fun byId(id: RecipeId, productIds: List<ProductId>): Recipe? = try {
+        val tags = if (productIds.isEmpty()) emptyList() else products.byIds(productIds).flatMap { it.canonicalTags }.distinct()
+        remoteCatalog.recipe(id, tags).toDomain()
     } catch (error: ConnectionException) {
         catalog.recipes().firstOrNull { it.id == id }
     } catch (error: BackendException) {

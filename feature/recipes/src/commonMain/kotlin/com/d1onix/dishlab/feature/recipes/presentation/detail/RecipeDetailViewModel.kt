@@ -7,6 +7,7 @@ import com.d1onix.dishlab.domain.GetRecipeUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipeIdsUseCase
 import com.d1onix.dishlab.domain.ToggleSavedRecipeUseCase
 import com.d1onix.dishlab.domain.model.Product
+import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRouter
@@ -43,6 +44,7 @@ data class RecipeDetailUiState(
 class RecipeDetailViewModel(
     dependencies: CommonDependencies,
     @Assisted private val recipeId: RecipeId,
+    @Assisted private val productIds: List<ProductId> = emptyList(),
     private val getRecipe: GetRecipeUseCase,
     private val getProducts: GetProductsUseCase,
     private val toggleSaved: ToggleSavedRecipeUseCase,
@@ -76,7 +78,7 @@ class RecipeDetailViewModel(
     private suspend fun loadRecipe() {
         _uiState.update { it.copy(isLoading = true, loadError = false) }
         try {
-            val recipe = getRecipe(recipeId)
+            val recipe = getRecipe(recipeId, productIds)
             if (recipe == null) {
                 _uiState.update { it.copy(isLoading = false, loadError = true) }
                 return
@@ -96,6 +98,6 @@ class RecipeDetailViewModel(
 
     @AssistedFactory
     fun interface Factory {
-        fun create(recipeId: RecipeId): RecipeDetailViewModel
+        fun create(recipeId: RecipeId, productIds: List<ProductId>): RecipeDetailViewModel
     }
 }

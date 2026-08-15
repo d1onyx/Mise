@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,6 +45,7 @@ import com.d1onix.dishlab.feature.recipes.resources.recipe_loading
 import com.d1onix.dishlab.feature.recipes.resources.recipe_unavailable
 import com.d1onix.dishlab.feature.recipes.resources.recipe_retry
 import com.d1onix.dishlab.feature.recipes.resources.recipe_ingredients
+import com.d1onix.dishlab.feature.recipes.resources.recipe_ingredient_matched
 import com.d1onix.dishlab.feature.recipes.resources.recipe_save
 import com.d1onix.dishlab.feature.recipes.resources.recipe_steps
 import com.d1onix.dishlab.feature.recipes.resources.recipe_unsave
@@ -171,7 +173,7 @@ internal fun RecipeDetailContent(
                         .border(1.dp, colors.border, RoundedCornerShape(16.dp)),
                 ) {
                     recipe.ingredients.forEachIndexed { index, ingredient ->
-                        RecipeIngredientRow(index + 1, ingredient.name, ingredient.quantity)
+                        RecipeIngredientRow(index + 1, ingredient.name, ingredient.quantity, ingredient.matched)
                     }
                 }
 
@@ -219,12 +221,12 @@ internal fun RecipeDetailContent(
 }
 
 @Composable
-private fun RecipeIngredientRow(number: Int, name: String, quantity: String) {
+private fun RecipeIngredientRow(number: Int, name: String, quantity: String, matched: Boolean = false) {
     val colors = MiseTheme.colors
     Row(
         Modifier
             .fillMaxWidth()
-            .background(colors.panel)
+            .background(if (matched) colors.lime.copy(alpha = 0.1f) else colors.panel)
             .padding(horizontal = 15.dp, vertical = 13.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.Top,
@@ -239,7 +241,17 @@ private fun RecipeIngredientRow(number: Int, name: String, quantity: String) {
             Text("$number", style = MiseTheme.typography.monoTiny, color = colors.lime)
         }
         Column(Modifier.weight(1f)) {
-            Text(text = name, style = MiseTheme.typography.body, color = colors.text)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (matched) {
+                    Icon(
+                        MiseIcons.Check,
+                        contentDescription = stringResource(Res.string.recipe_ingredient_matched),
+                        modifier = Modifier.size(14.dp),
+                        tint = colors.lime,
+                    )
+                }
+                Text(text = name, style = MiseTheme.typography.body, color = colors.text)
+            }
             if (quantity.isNotBlank()) {
                 Text(
                     text = quantity,

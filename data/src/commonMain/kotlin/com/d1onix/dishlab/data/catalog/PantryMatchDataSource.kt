@@ -43,8 +43,10 @@ class PantryMatchDataSource(
 class RecipeCatalogRemoteDataSource(
     private val client: HttpClient,
 ) {
-    suspend fun recipe(id: RecipeId): CatalogRecipeDto =
-        client.get("api/v1/recipe-catalog/${id.value}").body()
+    suspend fun recipe(id: RecipeId, ingredients: List<String> = emptyList()): CatalogRecipeDto =
+        client.get("api/v1/recipe-catalog/${id.value}") {
+            ingredients.forEach { parameter("ingredient", it) }
+        }.body()
 
     suspend fun recipes(
         page: Int,
@@ -107,6 +109,7 @@ data class CatalogRecipeDto(
 data class CatalogIngredientDto(
     val name: String,
     val quantity: String? = null,
+    val matched: Boolean = false,
 )
 
 @Serializable
@@ -125,7 +128,7 @@ fun CatalogRecipeDto.toDomain(): Recipe = Recipe(
     categories = listOfNotNull(category),
     productIds = emptyList(),
     description = description.orEmpty(),
-    ingredients = ingredients.map { Ingredient(quantity = it.quantity.orEmpty(), name = it.name) },
+    ingredients = ingredients.map { Ingredient(quantity = it.quantity.orEmpty(), name = it.name, matched = it.matched) },
     steps = steps.sortedBy(CatalogRecipeStepDto::position).map { RecipeStep(title = "", description = it.text) },
 )
 
