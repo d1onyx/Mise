@@ -97,6 +97,31 @@ class BackendProductRepositoryTest {
     }
 
     @Test
+    fun `nutrient levels food groups sourcing and extra photos reach ProductDetails`() {
+        val details = ClientProductSnapshotDto(
+            barcode = BARCODE,
+            name = "Peanut butter",
+            nutrientLevels = mapOf("fat" to "high", "sugars" to "low"),
+            foodGroups = listOf("en:legumes"),
+            manufacturingPlaces = listOf("en:romania"),
+            purchasePlaces = listOf("en:romania"),
+            stores = listOf("en:carrefour"),
+            imageIngredientsUrl = "https://images.test/ingredients.jpg",
+            imageNutritionUrl = "https://images.test/nutrition.jpg",
+            imagePackagingUrl = "https://images.test/packaging.jpg",
+        ).toDetails()
+
+        assertEquals(mapOf("fat" to "High", "sugars" to "Low"), details.nutrientLevels)
+        assertEquals(listOf("Legumes"), details.foodGroups)
+        assertEquals(listOf("Romania"), details.manufacturingPlaces)
+        assertEquals(listOf("Romania"), details.purchasePlaces)
+        assertEquals(listOf("Carrefour"), details.stores)
+        assertEquals("https://images.test/ingredients.jpg", details.ingredientsImageUrl)
+        assertEquals("https://images.test/nutrition.jpg", details.nutritionImageUrl)
+        assertEquals("https://images.test/packaging.jpg", details.packagingImageUrl)
+    }
+
+    @Test
     fun `a canonical product is served from the cache without a lookup`() = runTest {
         val cache = cache()
         cache.put(canonicalDto.toDomain())

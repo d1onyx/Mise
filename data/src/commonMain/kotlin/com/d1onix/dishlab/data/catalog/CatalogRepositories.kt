@@ -150,8 +150,16 @@ private data class CachedProductDetailsDto(
     val novaGroup: Int? = null,
     val ecoScore: String = "",
     val imageUrl: String = "",
+    val ingredientsImageUrl: String = "",
+    val nutritionImageUrl: String = "",
+    val packagingImageUrl: String = "",
     val packaging: List<CachedPackagingComponentDto> = emptyList(),
     val nutrients: List<CachedNutrientDto> = emptyList(),
+    val nutrientLevels: Map<String, String> = emptyMap(),
+    val foodGroups: List<String> = emptyList(),
+    val manufacturingPlaces: List<String> = emptyList(),
+    val purchasePlaces: List<String> = emptyList(),
+    val stores: List<String> = emptyList(),
 )
 
 @Serializable
@@ -235,8 +243,16 @@ internal fun ClientProductSnapshotDto.toDetails() = ProductDetails(
     countries = countries.toDisplayTaxonomyTags(), origins = origins.toDisplayTaxonomyTags(),
     nutriScore = nutritionGrade, novaGroup = novaGroup,
     ecoScore = environmentalScoreGrade, imageUrl = imageFrontSmallUrl.ifBlank { imageFrontUrl },
+    ingredientsImageUrl = imageIngredientsSmallUrl.ifBlank { imageIngredientsUrl },
+    nutritionImageUrl = imageNutritionSmallUrl.ifBlank { imageNutritionUrl },
+    packagingImageUrl = imagePackagingSmallUrl.ifBlank { imagePackagingUrl },
     packaging = packaging.map { it.toDomain() },
     nutrients = nutrition?.nutrients.orEmpty().toDomainNutrients(),
+    nutrientLevels = nutrientLevels.mapValues { (_, level) -> level.replaceFirstChar(Char::uppercaseChar) },
+    foodGroups = foodGroups.toDisplayTaxonomyTags(),
+    manufacturingPlaces = manufacturingPlaces.toDisplayTaxonomyTags(),
+    purchasePlaces = purchasePlaces.toDisplayTaxonomyTags(),
+    stores = stores.toDisplayTaxonomyTags(),
 )
 
 private fun ClientIngredientDto.toDomain() = ProductIngredient(
@@ -450,8 +466,16 @@ private fun ProductDetails.toCached() = CachedProductDetailsDto(
     novaGroup = novaGroup,
     ecoScore = ecoScore,
     imageUrl = imageUrl,
+    ingredientsImageUrl = ingredientsImageUrl,
+    nutritionImageUrl = nutritionImageUrl,
+    packagingImageUrl = packagingImageUrl,
     packaging = packaging.map { CachedPackagingComponentDto(it.numberOfUnits, it.quantityPerUnit, it.material, it.shape, it.recycling) },
     nutrients = nutrients.map { CachedNutrientDto(it.name, it.amount, it.unit) },
+    nutrientLevels = nutrientLevels,
+    foodGroups = foodGroups,
+    manufacturingPlaces = manufacturingPlaces,
+    purchasePlaces = purchasePlaces,
+    stores = stores,
 )
 
 private fun CachedProductDetailsDto.toDomain() = ProductDetails(
@@ -471,8 +495,16 @@ private fun CachedProductDetailsDto.toDomain() = ProductDetails(
     novaGroup = novaGroup,
     ecoScore = ecoScore,
     imageUrl = imageUrl,
+    ingredientsImageUrl = ingredientsImageUrl,
+    nutritionImageUrl = nutritionImageUrl,
+    packagingImageUrl = packagingImageUrl,
     packaging = packaging.map { ProductPackagingComponent(it.numberOfUnits, it.quantityPerUnit, it.material, it.shape, it.recycling) },
     nutrients = nutrients.map { Nutrient(it.name, it.amount, it.unit) },
+    nutrientLevels = nutrientLevels,
+    foodGroups = foodGroups,
+    manufacturingPlaces = manufacturingPlaces,
+    purchasePlaces = purchasePlaces,
+    stores = stores,
 )
 
 private fun Throwable.isBackendUnavailable(): Boolean =

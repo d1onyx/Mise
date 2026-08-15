@@ -139,6 +139,31 @@ class ProductDetailCardModelTest {
         assertEquals(listOf("Energy", "Sugars", "Salt"), card.nutrients.map(Nutrient::name))
     }
 
+    @Test
+    fun `nutrient levels food groups sourcing and extra photos reach the card`() {
+        val card = fullProduct().copy(
+            details = fullProduct().details.copy(
+                nutrientLevels = mapOf("fat" to "High", "sugars" to "Low"),
+                foodGroups = listOf("en:legumes"),
+                manufacturingPlaces = listOf("en:romania"),
+                purchasePlaces = listOf("en:france"),
+                stores = listOf("en:carrefour"),
+                ingredientsImageUrl = "https://example.test/oats-ingredients.jpg",
+                nutritionImageUrl = "https://example.test/oats-nutrition.jpg",
+                packagingImageUrl = "https://example.test/oats-packaging.jpg",
+            ),
+        ).toDetailCardModel()
+
+        assertEquals(listOf("Fat" to "High", "Sugars" to "Low"), card.nutrientLevels)
+        assertEquals(listOf("Legumes"), card.foodGroups)
+        assertEquals(listOf("Romania"), card.manufacturingPlaces)
+        assertEquals(listOf("France"), card.purchasePlaces)
+        assertEquals(listOf("Carrefour"), card.stores)
+        assertTrue(card.ingredientsImageUrl!!.startsWith("https://"))
+        assertTrue(card.nutritionImageUrl!!.startsWith("https://"))
+        assertTrue(card.packagingImageUrl!!.startsWith("https://"))
+    }
+
     private fun fullProduct() = Product(
         id = ProductId("barcode:1"), barcode = "1", name = "Oats", category = "Cereals", score = 90,
         accentColor = 0, initial = "O", nutrients = listOf(Nutrient("Energy", "350", "kcal"), Nutrient("Protein", "12", "g")),

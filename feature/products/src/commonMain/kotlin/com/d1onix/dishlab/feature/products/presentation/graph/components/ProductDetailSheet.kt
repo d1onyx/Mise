@@ -49,18 +49,26 @@ import com.d1onix.dishlab.feature.products.resources.product_image
 import com.d1onix.dishlab.feature.products.resources.product_incomplete_data
 import com.d1onix.dishlab.feature.products.resources.product_additives
 import com.d1onix.dishlab.feature.products.resources.product_countries
+import com.d1onix.dishlab.feature.products.resources.product_food_groups
 import com.d1onix.dishlab.feature.products.resources.product_ingredients
 import com.d1onix.dishlab.feature.products.resources.product_ingredients_detailed
+import com.d1onix.dishlab.feature.products.resources.product_ingredients_photo
 import com.d1onix.dishlab.feature.products.resources.product_labels
+import com.d1onix.dishlab.feature.products.resources.product_manufacturing_places
 import com.d1onix.dishlab.feature.products.resources.product_nova
+import com.d1onix.dishlab.feature.products.resources.product_nutrient_levels
 import com.d1onix.dishlab.feature.products.resources.product_nutrients_per_100g
 import com.d1onix.dishlab.feature.products.resources.product_nutri_score
 import com.d1onix.dishlab.feature.products.resources.product_nutri_score_scale_hint
+import com.d1onix.dishlab.feature.products.resources.product_nutrition_photo
 import com.d1onix.dishlab.feature.products.resources.product_origins
 import com.d1onix.dishlab.feature.products.resources.product_packaging
+import com.d1onix.dishlab.feature.products.resources.product_packaging_photo
+import com.d1onix.dishlab.feature.products.resources.product_purchase_places
 import com.d1onix.dishlab.feature.products.resources.product_quantity
 import com.d1onix.dishlab.feature.products.resources.product_remove
 import com.d1onix.dishlab.feature.products.resources.product_serving_size
+import com.d1onix.dishlab.feature.products.resources.product_stores
 import com.d1onix.dishlab.feature.products.resources.product_traces
 import org.jetbrains.compose.resources.stringResource
 import coil3.compose.AsyncImage
@@ -234,6 +242,29 @@ fun ProductDetailSheet(
                 text = components.joinToString { it.summary() },
             )
         }
+        card.nutrientLevels.takeIf(List<*>::isNotEmpty)?.let { levels ->
+            DetailTile(
+                title = stringResource(Res.string.product_nutrient_levels),
+                text = levels.joinToString { (name, level) -> "$name: $level" },
+            )
+        }
+        card.foodGroups.takeIf(List<String>::isNotEmpty)?.let {
+            DetailTile(title = stringResource(Res.string.product_food_groups), text = it.joinToString())
+        }
+        card.manufacturingPlaces.takeIf(List<String>::isNotEmpty)?.let {
+            DetailTile(title = stringResource(Res.string.product_manufacturing_places), text = it.joinToString())
+        }
+        card.purchasePlaces.takeIf(List<String>::isNotEmpty)?.let {
+            DetailTile(title = stringResource(Res.string.product_purchase_places), text = it.joinToString())
+        }
+        card.stores.takeIf(List<String>::isNotEmpty)?.let {
+            DetailTile(title = stringResource(Res.string.product_stores), text = it.joinToString())
+        }
+        listOfNotNull(
+            card.ingredientsImageUrl?.let { Res.string.product_ingredients_photo to it },
+            card.nutritionImageUrl?.let { Res.string.product_nutrition_photo to it },
+            card.packagingImageUrl?.let { Res.string.product_packaging_photo to it },
+        ).forEach { (label, url) -> ProductPhotoTile(title = stringResource(label), imageUrl = url, contentDescription = product.name) }
 
         if (card.nutrients.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
@@ -368,6 +399,35 @@ private fun String.novaExplanation(): String = when (this) {
     "3" -> "Processed food"
     "4" -> "Ultra-processed food"
     else -> ""
+}
+
+@Composable
+private fun ProductPhotoTile(title: String, imageUrl: String, contentDescription: String) {
+    val colors = MiseTheme.colors
+    Column(
+        Modifier.fillMaxWidth().padding(bottom = 8.dp)
+            .background(colors.panel, RoundedCornerShape(14.dp))
+            .border(1.dp, colors.border, RoundedCornerShape(14.dp))
+            .padding(10.dp),
+    ) {
+        Text(title.uppercase(), style = MiseTheme.typography.monoTiny, color = colors.textMuted)
+        Spacer(Modifier.height(6.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(204.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(colors.surface),
+            contentAlignment = Alignment.Center,
+        ) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize().padding(12.dp),
+            )
+        }
+    }
 }
 
 @Composable

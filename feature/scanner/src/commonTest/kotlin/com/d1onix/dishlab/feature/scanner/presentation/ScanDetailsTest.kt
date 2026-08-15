@@ -34,6 +34,25 @@ class ScanDetailsTest {
     }
 
     @Test
+    fun `nutrient levels food groups and sourcing appear as review tiles`() {
+        val details = scannedProduct().copy(
+            details = scannedProduct().details.copy(
+                nutrientLevels = mapOf("fat" to "High"),
+                foodGroups = listOf("en:beverages"),
+                manufacturingPlaces = listOf("en:france"),
+                purchasePlaces = listOf("en:france"),
+                stores = listOf("en:carrefour"),
+            ),
+        ).scanDetails().toMap()
+
+        assertTrue(details.containsKey("Nutrient levels"))
+        assertTrue(details.containsKey("Food groups"))
+        assertTrue(details.containsKey("Manufactured in"))
+        assertTrue(details.containsKey("Purchased in"))
+        assertTrue(details.containsKey("Stores"))
+    }
+
+    @Test
     fun `empty optional fields do not produce tiles`() {
         val details = Product(
             id = ProductId("barcode:1"), barcode = "1", name = "Water", category = "Beverages", score = 90,

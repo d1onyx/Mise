@@ -62,8 +62,16 @@
     <string name="product_countries">Sold in</string>
     <string name="product_origins">Ingredient origin</string>
     <string name="product_packaging">Packaging</string>
+    <string name="product_nutrient_levels">Nutrient levels</string>
+    <string name="product_food_groups">Food groups</string>
+    <string name="product_manufacturing_places">Manufactured in</string>
+    <string name="product_purchase_places">Purchased in</string>
+    <string name="product_stores">Stores</string>
     <string name="product_nutrients_per_100g">Nutrients per 100 g</string>
     <string name="product_image">Product image</string>
+    <string name="product_ingredients_photo">Ingredients photo</string>
+    <string name="product_nutrition_photo">Nutrition facts photo</string>
+    <string name="product_packaging_photo">Packaging photo</string>
 
     <string name="history_title">History</string>
     <string name="history_clear">clear</string>

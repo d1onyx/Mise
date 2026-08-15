@@ -85,9 +85,18 @@ data class ProductDetails(
     val novaGroup: Int? = null,
     val ecoScore: String = "",
     val imageUrl: String = "",
+    val ingredientsImageUrl: String = "",
+    val nutritionImageUrl: String = "",
+    val packagingImageUrl: String = "",
     val packaging: List<ProductPackagingComponent> = emptyList(),
     /** Every nutrient the source reported, not just the four headline ones on [Product.nutrients]. */
     val nutrients: List<Nutrient> = emptyList(),
+    /** e.g. "fat" to "high" — OFF's quick quality read on fat/salt/sugars/saturated fat. */
+    val nutrientLevels: Map<String, String> = emptyMap(),
+    val foodGroups: List<String> = emptyList(),
+    val manufacturingPlaces: List<String> = emptyList(),
+    val purchasePlaces: List<String> = emptyList(),
+    val stores: List<String> = emptyList(),
 )
 
 data class ProductIngredient(

@@ -53,6 +53,11 @@ internal val previewOats = Product(
         packaging = listOf(
             ProductPackagingComponent(numberOfUnits = 1, quantityPerUnit = "500 g", material = "Cardboard", shape = "Box", recycling = "Recycle"),
         ),
+        nutrientLevels = mapOf("Fat" to "Low", "Saturated fat" to "Low", "Sugars" to "Low", "Salt" to "Low"),
+        foodGroups = listOf("Cereals and potatoes"),
+        manufacturingPlaces = listOf("United Kingdom"),
+        purchasePlaces = listOf("United Kingdom"),
+        stores = listOf("Tesco", "Sainsbury's"),
         nutrients = listOf(
             Nutrient("Energy", "389", "kcal"),
             Nutrient("Carbohydrates", "66", "g"),

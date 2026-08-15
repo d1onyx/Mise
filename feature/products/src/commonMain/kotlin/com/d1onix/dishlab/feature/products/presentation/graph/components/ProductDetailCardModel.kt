@@ -18,7 +18,15 @@ internal data class ProductDetailCardModel(
     val origins: List<String>,
     val packaging: List<ProductPackagingComponent>,
     val nutrients: List<Nutrient>,
+    val nutrientLevels: List<Pair<String, String>>,
+    val foodGroups: List<String>,
+    val manufacturingPlaces: List<String>,
+    val purchasePlaces: List<String>,
+    val stores: List<String>,
     val imageUrl: String?,
+    val ingredientsImageUrl: String?,
+    val nutritionImageUrl: String?,
+    val packagingImageUrl: String?,
 )
 
 internal data class ProductDetailFact(val kind: ProductDetailFactKind, val value: String)
@@ -67,7 +75,16 @@ internal fun Product.toDetailCardModel(): ProductDetailCardModel {
         origins = details.origins.mapNotNull(String::normalizedTaxonomyTag),
         packaging = details.packaging,
         nutrients = validNutrients,
+        nutrientLevels = details.nutrientLevels.entries
+            .mapNotNull { (name, level) -> name.normalizedTaxonomyTag()?.let { it to level } },
+        foodGroups = details.foodGroups.mapNotNull(String::normalizedTaxonomyTag),
+        manufacturingPlaces = details.manufacturingPlaces.mapNotNull(String::normalizedTaxonomyTag),
+        purchasePlaces = details.purchasePlaces.mapNotNull(String::normalizedTaxonomyTag),
+        stores = details.stores.mapNotNull(String::normalizedTaxonomyTag),
         imageUrl = details.imageUrl.trim().takeIf { it.startsWith("https://") },
+        ingredientsImageUrl = details.ingredientsImageUrl.trim().takeIf { it.startsWith("https://") },
+        nutritionImageUrl = details.nutritionImageUrl.trim().takeIf { it.startsWith("https://") },
+        packagingImageUrl = details.packagingImageUrl.trim().takeIf { it.startsWith("https://") },
     )
 }
 
