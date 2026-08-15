@@ -386,12 +386,16 @@ private fun ScannedProductReview(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    ScoreRing(score = product.score, color = scoreColor, size = 68, strokeWidth = 6) {
-                        Text(
-                            text = product.score.toString(),
-                            style = MiseTheme.typography.mono,
-                            color = scoreColor,
-                        )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        ScoreRing(score = product.score, color = scoreColor, size = 68, strokeWidth = 6) {
+                            Text(
+                                text = product.score.toString(),
+                                style = MiseTheme.typography.mono,
+                                color = scoreColor,
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        VerdictBadge(product.verdict.label, scoreColor)
                     }
                     Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
                         Text(product.name, style = MiseTheme.typography.title, color = colors.text)
@@ -401,7 +405,6 @@ private fun ScannedProductReview(
                             color = colors.textMuted,
                         )
                     }
-                    VerdictBadge(product.verdict.label, scoreColor)
                 }
             }
 
