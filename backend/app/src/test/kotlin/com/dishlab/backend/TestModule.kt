@@ -73,12 +73,29 @@ private class TestRecipeCatalogRepository : RecipeCatalogRepository {
                     partialMatchOnly -> plainMatch
                     else -> true
                 }
-                if (qualifies) PantryMatchedRecipe(raw, selected.count(names::contains), names.size) else null
+                if (qualifies) {
+                    val withMatchFlags = raw.copy(
+                        ingredients = raw.ingredients.map { ingredient ->
+                            ingredient.copy(matched = ingredient.canonicalTags.any { it.removePrefix("en:") in selected })
+                        },
+                    )
+                    PantryMatchedRecipe(withMatchFlags, selected.count(names::contains), names.size)
+                } else {
+                    null
+                }
             }
         return PantryMatchPage(matches, page, pageSize, matches.size)
     }
 
-    override fun findById(firebaseUid: String, recipeId: Long) = recipes.find { it.id == recipeId }
+    override fun findById(firebaseUid: String, recipeId: Long, ingredientNames: List<String>): CatalogRecipe? {
+        val raw = recipes.find { it.id == recipeId } ?: return null
+        val selected = ingredientNames.map { it.removePrefix("en:") }.toSet()
+        return raw.copy(
+            ingredients = raw.ingredients.map { ingredient ->
+                ingredient.copy(matched = ingredient.canonicalTags.any { it.removePrefix("en:") in selected })
+            },
+        )
+    }
     override fun getFilters() = CatalogFilters(
         categories = listOf("Dessert"),
         cuisines = listOf("American"),

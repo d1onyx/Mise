@@ -16,6 +16,7 @@ data class CatalogRecipeIngredient(
     val name: String,
     val quantity: String? = null,
     val canonicalTags: List<String> = emptyList(),
+    val matched: Boolean = false,
 )
 
 data class CatalogRecipeStep(

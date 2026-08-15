@@ -35,6 +35,7 @@ data class CatalogRecipeIngredientResponse(
     val name: String,
     val quantity: String? = null,
     val canonicalTags: List<String> = emptyList(),
+    val matched: Boolean = false,
 )
 
 @Serializable
@@ -79,7 +80,7 @@ fun CatalogRecipe.toCatalogResponse(): CatalogRecipeResponse = CatalogRecipeResp
     tags = tags,
     nutrition = nutrition.toResponse(),
     ingredients = ingredients.map {
-        CatalogRecipeIngredientResponse(it.name, it.quantity, it.canonicalTags)
+        CatalogRecipeIngredientResponse(it.name, it.quantity, it.canonicalTags, it.matched)
     },
     steps = steps.map { CatalogRecipeStepResponse(it.position, it.text) },
 )

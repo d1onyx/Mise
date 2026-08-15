@@ -60,7 +60,7 @@ interface RecipeCatalogRepository {
         exactProductGroups: List<List<String>> = emptyList(),
     ): PantryMatchPage
 
-    fun findById(firebaseUid: String, recipeId: Long): CatalogRecipe?
+    fun findById(firebaseUid: String, recipeId: Long, ingredientNames: List<String> = emptyList()): CatalogRecipe?
     fun getFilters(): CatalogFilters
 }
 
@@ -89,8 +89,9 @@ class RecipeCatalogService(
         pageSize = pageSize.coerceIn(1, 100),
     )
 
-    fun get(firebaseUid: String, recipeId: Long): CatalogRecipe =
-        repository.findById(firebaseUid, recipeId) ?: throw NotFoundError("Рецепт не знайдено")
+    fun get(firebaseUid: String, recipeId: Long, ingredientNames: List<String> = emptyList()): CatalogRecipe =
+        repository.findById(firebaseUid, recipeId, ingredientNames.cleaned())
+            ?: throw NotFoundError("Рецепт не знайдено")
 
     fun getFilters(firebaseUid: String, userRecipeTags: List<String> = emptyList()): CatalogFilters {
         val filters = repository.getFilters()

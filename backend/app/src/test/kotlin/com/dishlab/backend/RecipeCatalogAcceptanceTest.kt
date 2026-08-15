@@ -14,6 +14,10 @@ import io.ktor.server.testing.testApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 class RecipeCatalogAcceptanceTest {
     private val token = "Bearer :catalog-test-user"
@@ -283,5 +287,37 @@ class RecipeCatalogAcceptanceTest {
         )
         assertEquals(HttpStatusCode.OK, pantryNonMatching.status)
         assertTrue(pantryNonMatching.bodyAsText().contains("\"items\":[]"), pantryNonMatching.bodyAsText())
+    }
+
+    @Test
+    fun `pantry-match and recipe detail flag matched ingredients against the caller's products`() = testApplication {
+        application { testModule() }
+
+        // Recipe 38 (flour, water, milk, egg, butter) — only flour+water supplied. `matched`
+        // defaults to false and kotlinx.serialization omits default-valued fields, so an
+        // unmatched ingredient has no "matched" key at all rather than "matched":false.
+        // The fake TestRecipeCatalogRepository doesn't paginate, so the response has every
+        // fixture recipe regardless of pageSize — pick recipe 38 out by id before asserting.
+        val pantryMatch = client.get(
+            "/api/v1/recipe-catalog/pantry-match?ingredient=en:flour&ingredient=en:water",
+        ).bodyAsText()
+        val recipe38FromPantryMatch = Json.parseToJsonElement(pantryMatch).jsonObject["items"]!!.jsonArray
+            .map { it.jsonObject["recipe"]!!.jsonObject }
+            .single { it["id"]!!.jsonPrimitive.content == "catalog:38" }
+        val pantryMatchIngredients = recipe38FromPantryMatch["ingredients"]!!.jsonArray
+        assertEquals(5, pantryMatchIngredients.size)
+        assertEquals(2, pantryMatchIngredients.count { it.jsonObject["matched"]?.jsonPrimitive?.content == "true" })
+
+        // Same products carried over to the detail call highlight the same ingredients.
+        val detailWithProducts = client.get(
+            "/api/v1/recipe-catalog/catalog:38?ingredient=en:flour&ingredient=en:water",
+        ).bodyAsText()
+        val detailIngredients = Json.parseToJsonElement(detailWithProducts).jsonObject["ingredients"]!!.jsonArray
+        assertEquals(2, detailIngredients.count { it.jsonObject["matched"]?.jsonPrimitive?.content == "true" })
+
+        // No products supplied — default stays false for everyone, same as before this field existed.
+        val detailWithoutProducts = client.get("/api/v1/recipe-catalog/catalog:38").bodyAsText()
+        val noProductIngredients = Json.parseToJsonElement(detailWithoutProducts).jsonObject["ingredients"]!!.jsonArray
+        assertTrue(noProductIngredients.none { it.jsonObject["matched"]?.jsonPrimitive?.content == "true" })
     }
 }

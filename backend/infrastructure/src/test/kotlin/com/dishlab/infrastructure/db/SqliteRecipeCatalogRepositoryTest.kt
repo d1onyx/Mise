@@ -179,6 +179,40 @@ class SqliteRecipeCatalogRepositoryTest {
     }
 
     @Test
+    fun `pantry match flags matched ingredients individually, not just the recipe-level count`() {
+        // Only flour + water from recipe 1's flour+water+egg — a partial, per-ingredient match.
+        val page = repository.findByPantryIngredients(
+            firebaseUid = "anonymous",
+            ingredientNames = listOf("en:flour", "en:water"),
+            tags = emptyList(),
+            strictTags = false,
+            page = 1,
+            pageSize = 10,
+            partialMatchOnly = false,
+            exactMatch = false,
+            exactProductGroups = emptyList(),
+        )
+
+        val recipe1 = page.items.single { it.recipe.id == 1L }.recipe
+        assertEquals(3, recipe1.ingredients.size)
+        assertEquals(2, recipe1.ingredients.count { it.matched })
+        assertEquals(1, recipe1.ingredients.count { !it.matched })
+    }
+
+    @Test
+    fun `recipe detail flags ingredients matched against the caller-supplied products`() {
+        val withProducts = requireNotNull(
+            repository.findById(firebaseUid = "anonymous", recipeId = 1, ingredientNames = listOf("en:flour", "en:water")),
+        )
+        assertEquals(2, withProducts.ingredients.count { it.matched })
+        assertEquals(1, withProducts.ingredients.count { !it.matched })
+
+        // No products supplied — same default as before this field existed: nothing highlighted.
+        val withoutProducts = requireNotNull(repository.findById(firebaseUid = "anonymous", recipeId = 1))
+        assertTrue(withoutProducts.ingredients.none { it.matched })
+    }
+
+    @Test
     fun `pantry match resolves a genuine synonym recorded only as an ingredient alias`() {
         // "granulated sugar" canonicalizes to itself (no plural/descriptor to strip) — it only
         // resolves to sugar's ingredient row via the ingredient_aliases table t-102 wired in.

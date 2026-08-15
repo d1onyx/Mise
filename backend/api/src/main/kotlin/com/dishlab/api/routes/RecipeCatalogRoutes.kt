@@ -144,7 +144,12 @@ fun Route.recipeCatalogRoutes(
             // The detail route has to resolve whichever one the client got from that list.
             val rawId = call.parameters["recipeId"] ?: throw NotFoundError("Рецепт не знайдено")
             if (rawId.startsWith("catalog:")) {
-                val recipe = withContext(Dispatchers.IO) { service.get("anonymous", call.catalogRecipeId()) }
+                // t-124: same ?ingredient= a client passed to pantry-match, so opening a recipe
+                // from those results highlights the same ingredients as already-on-hand.
+                val ingredients = call.request.queryParameters.getAll("ingredient").orEmpty()
+                val recipe = withContext(Dispatchers.IO) {
+                    service.get("anonymous", call.catalogRecipeId(), ingredients)
+                }
                 call.respond(recipe.toCatalogResponse())
             } else {
                 val recipeId = rawId.toUuidOrNull() ?: throw NotFoundError("Рецепт не знайдено")

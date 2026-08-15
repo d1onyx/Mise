@@ -170,7 +170,11 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         CatalogRecipePage(items, page, pageSize, total)
     }
 
-    override fun findById(firebaseUid: String, recipeId: Long): CatalogRecipe? = connection().use { conn ->
+    override fun findById(
+        firebaseUid: String,
+        recipeId: Long,
+        ingredientNames: List<String>,
+    ): CatalogRecipe? = connection().use { conn ->
         val loaded = conn.prepareStatement(
             """
             SELECT r.*
@@ -191,8 +195,12 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             }
         } ?: return@use null
 
+        // t-124: same products a caller passed to pantry-match, re-resolved through the alias-
+        // aware lookup so a recipe opened from pantry-match results highlights the same
+        // ingredients pantry-match itself counted as matched.
+        val matchedIds = ingredientIdsByCanonicalName(conn, ingredientNames.map { resolveCanonicalName(conn, it) })
         loaded.recipe.copy(
-            ingredients = loadIngredients(conn, recipeId),
+            ingredients = loadIngredients(conn, recipeId, matchedIds),
             steps = loadSteps(loaded.instructions),
         )
     }
@@ -309,15 +317,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         // comparison against pantry_names) had to run once for every row in the WHERE-filtered
         // candidate set — for the common multi-tag request that set is the whole active catalog
         // (500k+ rows), which is what pushed the endpoint past the client's 10s timeout.
-        val matchedIngredientIds: List<Long> = if (normalizedNames.isEmpty()) {
-            emptyList()
-        } else {
-            val placeholders = normalizedNames.joinToString(",") { "?" }
-            conn.prepareStatement("SELECT id FROM ingredients WHERE LOWER(canonical_name) IN ($placeholders)").use { stmt ->
-                normalizedNames.forEachIndexed { i, name -> stmt.setString(i + 1, name) }
-                stmt.executeQuery().use { rs -> buildList { while (rs.next()) add(rs.getLong(1)) } }
-            }
-        }
+        val matchedIngredientIds: List<Long> = ingredientIdsByCanonicalName(conn, normalizedNames).toList()
         val matchedCte = if (matchedIngredientIds.isEmpty()) {
             "SELECT NULL, NULL WHERE 0"
         } else {
@@ -358,6 +358,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             stmt.executeQuery().use { rs -> rs.next(); rs.getInt(1) }
         }
 
+        val matchedIdsSet = matchedIngredientIds.toSet()
         val offset = (page - 1) * pageSize
         val items = conn.prepareStatement("$sql LIMIT ? OFFSET ?").use { stmt ->
             var idx = 1
@@ -369,9 +370,13 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
             stmt.executeQuery().use { rs ->
                 buildList {
                     while (rs.next()) {
+                        val recipe = rs.toRecipe()
                         add(
                             PantryMatchedRecipe(
-                                recipe = rs.toRecipe(),
+                                // t-124: matched flags per ingredient, not just the aggregate
+                                // count below — only fetched for this page's rows (pageSize, not
+                                // the full candidate set), same reasoning as findById.
+                                recipe = recipe.copy(ingredients = loadIngredients(conn, recipe.id, matchedIdsSet)),
                                 matchedCount = rs.getInt("matched_count"),
                                 totalIngredients = rs.getInt("total_count"),
                             ),
@@ -485,10 +490,28 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
         }
     }
 
-    private fun loadIngredients(conn: Connection, recipeId: Long): List<CatalogRecipeIngredient> =
+    // Shared by findByPantryIngredients (already-resolved canonical names) and findById/matched
+    // ingredient highlighting (t-124) — resolves already-canonicalized names to ingredient ids.
+    private fun ingredientIdsByCanonicalName(conn: Connection, canonicalNames: List<String>): Set<Long> {
+        if (canonicalNames.isEmpty()) return emptySet()
+        val placeholders = canonicalNames.joinToString(",") { "?" }
+        return conn.prepareStatement("SELECT id FROM ingredients WHERE LOWER(canonical_name) IN ($placeholders)").use { stmt ->
+            canonicalNames.forEachIndexed { i, name -> stmt.setString(i + 1, name) }
+            stmt.executeQuery().use { rs -> buildSet { while (rs.next()) add(rs.getLong(1)) } }
+        }
+    }
+
+    // t-124: `matchedIds` are the pantry/selected-product ingredient ids (already alias-resolved
+    // — see resolveCanonicalName) a caller wants highlighted; empty by default so plain recipe
+    // detail lookups keep every ingredient's `matched` at false, same as before this field existed.
+    private fun loadIngredients(
+        conn: Connection,
+        recipeId: Long,
+        matchedIds: Set<Long> = emptySet(),
+    ): List<CatalogRecipeIngredient> =
         conn.prepareStatement(
             """
-            SELECT ri.original_text, ri.quantity, i.canonical_name
+            SELECT ri.ingredient_id, ri.original_text, ri.quantity, i.canonical_name
             FROM recipe_ingredients ri
             JOIN ingredients i ON i.id = ri.ingredient_id
             WHERE ri.recipe_id = ?
@@ -508,6 +531,7 @@ class SqliteRecipeCatalogRepository(databasePath: Path) : RecipeCatalogRepositor
                                     rows.getString("original_text"),
                                 ),
                                 canonicalTags = listOf(canonicalTag).filter(String::isNotBlank),
+                                matched = rows.getLong("ingredient_id") in matchedIds,
                             ),
                         )
                     }
