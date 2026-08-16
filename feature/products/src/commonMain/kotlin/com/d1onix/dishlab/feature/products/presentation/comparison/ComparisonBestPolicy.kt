@@ -10,27 +10,25 @@ internal object ComparisonBestPolicy {
     private val higherIsBetterNutrients = listOf("protein", "fiber", "fibre")
 
     fun highestNumeric(values: List<Pair<ProductId, String>>): ProductId? =
-        uniqueBest(values, String::toDoubleOrNull, Comparator.naturalOrder())
+        uniqueBest(values, String::toDoubleOrNull) { first, second -> first.compareTo(second) }
 
     fun lowestNumeric(values: List<Pair<ProductId, String>>): ProductId? =
-        uniqueBest(values, String::toDoubleOrNull, Comparator.reverseOrder())
+        uniqueBest(values, String::toDoubleOrNull) { first, second -> second.compareTo(first) }
 
     fun bestGrade(values: List<Pair<ProductId, String>>): ProductId? =
         uniqueBest(
             values,
             { grade -> grade.trim().uppercase().let { "EDCBA".indexOf(it) + 1 }.takeIf { it > 0 } },
-            Comparator.naturalOrder(),
-        )
+        ) { first, second -> first.compareTo(second) }
 
     fun bestNovaGroup(values: List<Pair<ProductId, String>>): ProductId? =
-        uniqueBest(values, String::toIntOrNull, Comparator.reverseOrder())
+        uniqueBest(values, String::toIntOrNull) { first, second -> second.compareTo(first) }
 
     fun bestNutrientLevel(values: List<Pair<ProductId, String>>): ProductId? =
         uniqueBest(
             values,
             { level -> when (level.trim().lowercase()) { "low" -> 1; "moderate" -> 2; "high" -> 3; else -> null } },
-            Comparator.reverseOrder(),
-        )
+        ) { first, second -> second.compareTo(first) }
 
     fun bestNutrient(name: String, values: List<Pair<ProductId, String>>): ProductId? = when {
         lowerIsBetterNutrients.any { name.contains(it, ignoreCase = true) } -> lowestNumeric(values)
@@ -41,11 +39,11 @@ internal object ComparisonBestPolicy {
     private fun <T : Comparable<T>> uniqueBest(
         values: List<Pair<ProductId, String>>,
         parse: (String) -> T?,
-        comparator: Comparator<T>,
+        compare: (T, T) -> Int,
     ): ProductId? {
         val parsed = values.mapNotNull { (id, value) -> parse(value)?.let { id to it } }
         if (parsed.size != values.size || parsed.size < 2) return null
-        val winningValue = parsed.maxWithOrNull { first, second -> comparator.compare(first.second, second.second) }?.second
+        val winningValue = parsed.maxWithOrNull { first, second -> compare(first.second, second.second) }?.second
             ?: return null
         return parsed.singleOrNull { it.second == winningValue }?.first
     }
