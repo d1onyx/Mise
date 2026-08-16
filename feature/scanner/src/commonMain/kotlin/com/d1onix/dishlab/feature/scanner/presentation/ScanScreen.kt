@@ -795,7 +795,7 @@ private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier) {
     val colors = MiseTheme.colors
     val accent by animateColorAsState(
         targetValue = when (phase) {
-            ScanPhase.Searching -> colors.lime
+            ScanPhase.Searching -> colors.mint
             ScanPhase.Resolving -> colors.cyan
             ScanPhase.Failed -> colors.red
         },
@@ -895,7 +895,7 @@ private fun ScanProgressTrail(phase: ScanPhase, modifier: Modifier = Modifier) {
         ScanPhase.Searching -> -1
         ScanPhase.Resolving, ScanPhase.Failed -> 1
     }
-    val accent = if (phase == ScanPhase.Failed) colors.red else colors.lime
+    val accent = if (phase == ScanPhase.Failed) colors.red else colors.mint
 
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         steps.forEachIndexed { index, label ->
