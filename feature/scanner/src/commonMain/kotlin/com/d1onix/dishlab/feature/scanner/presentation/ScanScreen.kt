@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -43,6 +45,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.MiseEasing
@@ -177,17 +181,34 @@ internal fun ScanContent(
 
                 Spacer(Modifier.weight(1f))
 
-                ScanReticle(phase = state.phase)
+                // Smaller than the old full-screen reticle: this box is now
+                // only half the display, so the frame has to fit alongside
+                // the top bar and status text without clipping either.
+                ScanReticle(phase = state.phase, reticleSize = 190.dp)
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(16.dp))
                 ScanProgressTrail(phase = state.phase, modifier = Modifier.fillMaxWidth())
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(12.dp))
                 ScanStatus(state = state, onAction = onAction)
 
                 Spacer(Modifier.weight(1f))
             }
         }
+
+        // A hard edge here would read as "the camera just got cut off", so the
+        // seam is a visible accent rule plus a panel that rounds up into it —
+        // it reads as a deliberate sheet, not a clipped viewfinder.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(Color.Transparent, colors.mint.copy(alpha = 0.7f), Color.Transparent),
+                    ),
+                ),
+        )
 
         ScannerControlPanel(
             state = state,
@@ -200,7 +221,9 @@ internal fun ScanContent(
 /**
  * Everything below the viewfinder. Torch and lens-flip sit as labelled hints
  * in the top corners rather than a bottom-nav-style bar, since they are
- * occasional actions, not the primary flow through this screen.
+ * occasional actions, not the primary flow through this screen. They step
+ * aside while manual entry is open so the keyboard flow never has to share
+ * the panel with them.
  */
 @Composable
 private fun ScannerControlPanel(
@@ -208,38 +231,51 @@ private fun ScannerControlPanel(
     onAction: (ScanAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = MiseTheme.colors
     Box(
         modifier
-            .background(MiseTheme.colors.backgroundDeep)
+            .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+            .background(colors.surface)
+            .border(
+                1.dp,
+                colors.border,
+                RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
+            )
             .safeDrawingPadding()
-            .padding(horizontal = 22.dp, vertical = 20.dp),
+            .padding(horizontal = 22.dp, vertical = 20.dp)
+            .verticalScroll(rememberScrollState()),
     ) {
-        if (state.camera.canSwitchFacing) {
-            ScanHintButton(
-                icon = MiseIcons.CameraFlip,
-                label = stringResource(Res.string.scan_switch_camera),
-                onClick = { onAction(ScanAction.CameraFacingToggled) },
-                modifier = Modifier.align(Alignment.TopStart),
-            )
-        }
+        if (!state.manualEntryVisible) {
+            if (state.camera.canSwitchFacing) {
+                ScanHintButton(
+                    icon = MiseIcons.CameraFlip,
+                    label = stringResource(Res.string.scan_switch_camera),
+                    onClick = { onAction(ScanAction.CameraFacingToggled) },
+                    modifier = Modifier.align(Alignment.TopStart),
+                )
+            }
 
-        if (state.camera.canToggleTorch) {
-            ScanHintButton(
-                icon = if (state.camera.torchOn) MiseIcons.Flash else MiseIcons.FlashOff,
-                label = stringResource(
-                    if (state.camera.torchOn) Res.string.scan_torch_off else Res.string.scan_torch_on,
-                ),
-                onClick = { onAction(ScanAction.TorchToggled) },
-                highlighted = state.camera.torchOn,
-                modifier = Modifier.align(Alignment.TopEnd),
-            )
+            if (state.camera.canToggleTorch) {
+                ScanHintButton(
+                    icon = if (state.camera.torchOn) MiseIcons.Flash else MiseIcons.FlashOff,
+                    label = stringResource(
+                        if (state.camera.torchOn) Res.string.scan_torch_off else Res.string.scan_torch_on,
+                    ),
+                    onClick = { onAction(ScanAction.TorchToggled) },
+                    highlighted = state.camera.torchOn,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
         }
 
         Column(
             Modifier
-                .align(Alignment.Center)
+                .align(Alignment.TopCenter)
                 .widthIn(max = 320.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                // Anchored below the corner hints (when they're showing)
+                // instead of dead-centered, so it can never sit under them.
+                .padding(top = if (state.manualEntryVisible) 0.dp else 84.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (state.manualEntryVisible) {
@@ -289,7 +325,7 @@ private fun ScanHintButton(
 ) {
     val colors = MiseTheme.colors
     Column(
-        modifier = modifier.width(88.dp),
+        modifier = modifier.width(104.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         MiseIconCircleButton(
@@ -308,6 +344,8 @@ private fun ScanHintButton(
             style = MiseTheme.typography.monoTiny,
             color = colors.textMuted,
             textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -870,13 +908,13 @@ private fun viewfinderScrim(): Brush = Brush.verticalGradient(
 )
 
 /**
- * The 250dp reticle. Everything about it is derived from [phase], so the frame
+ * The reticle. Everything about it is derived from [phase], so the frame
  * itself reports what the scanner is doing: mint and sweeping top-to-bottom
  * while it hunts, snapped wide and still the moment a code is locked, cyan
  * with a spinner while the lookup runs, red when it failed.
  */
 @Composable
-private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier) {
+private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier, reticleSize: Dp = 250.dp) {
     val colors = MiseTheme.colors
     val accent by animateColorAsState(
         targetValue = when (phase) {
@@ -896,7 +934,7 @@ private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier) {
     val sweep = rememberSweep(durationMillis = 1800, label = "scanLine")
     val spin = rememberSweep(durationMillis = 1100, label = "scanSpin")
 
-    Canvas(modifier.size(250.dp)) {
+    Canvas(modifier.size(reticleSize)) {
         val corner = size.minDimension * cornerFraction
         val stroke = 3.dp.toPx()
         val inset = 24.dp.toPx()
