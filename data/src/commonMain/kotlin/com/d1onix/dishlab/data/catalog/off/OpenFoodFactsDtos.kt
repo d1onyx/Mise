@@ -1,5 +1,6 @@
 package com.d1onix.dishlab.data.catalog.off
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -53,6 +54,13 @@ internal data class OpenFoodFactsProductDto(
     val manufacturingPlacesTags: List<String> = emptyList(),
     val purchasePlacesTags: List<String> = emptyList(),
     val storesTags: List<String> = emptyList(),
+    /** OFF's field is `pnns_groups_1` — the digit-after-underscore breaks the automatic camelCase mapping. */
+    @SerialName("pnns_groups_1") val pnnsGroups1: String = "",
+    @SerialName("pnns_groups_2") val pnnsGroups2: String = "",
+    val comparedToCategory: String = "",
+    val expirationDate: String = "",
+    val nutriscoreVersion: String = "",
+    val origin: String = "",
     val schemaVersion: Int? = null,
     val rev: Long? = null,
     val lastModifiedT: Long? = null,
@@ -129,6 +137,12 @@ data class ClientProductSnapshotDto(
     val manufacturingPlaces: List<String> = emptyList(),
     val purchasePlaces: List<String> = emptyList(),
     val stores: List<String> = emptyList(),
+    val pnnsGroup: String = "",
+    val pnnsSubgroup: String = "",
+    val comparedToCategory: String = "",
+    val expirationDate: String = "",
+    val nutriScoreVersion: String = "",
+    val originNote: String = "",
     val nutritionGrade: String = "",
     val nutritionScore: Int? = null,
     val novaGroup: Int? = null,
@@ -229,6 +243,12 @@ internal fun OpenFoodFactsProductResponseDto.toSnapshot(
         manufacturingPlaces = source.manufacturingPlacesTags,
         purchasePlaces = source.purchasePlacesTags,
         stores = source.storesTags,
+        pnnsGroup = source.pnnsGroups1,
+        pnnsSubgroup = source.pnnsGroups2,
+        comparedToCategory = source.comparedToCategory,
+        expirationDate = source.expirationDate,
+        nutriScoreVersion = source.nutriscoreVersion,
+        originNote = source.origin,
         nutritionGrade = source.nutriscoreGrade,
         nutritionScore = source.nutriscoreScore,
         novaGroup = source.novaGroup,

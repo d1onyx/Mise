@@ -75,6 +75,12 @@ internal object ScanPreviewStates {
                 ),
                 nutrientLevels = mapOf("Fat" to "Low", "Sugars" to "Low"),
                 foodGroups = listOf("Cereals and potatoes"),
+                pnnsGroup = "Cereals and potatoes",
+                pnnsSubgroup = "Cereals",
+                comparedToCategory = "en:breakfast-cereals",
+                expirationDate = "09-2026",
+                nutriScoreVersion = "2023",
+                nutrientsPer = "100 g",
                 nutrients = listOf(
                     Nutrient("Energy", "389", "kcal"),
                     Nutrient("Protein", "13", "g"),

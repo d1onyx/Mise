@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import com.d1onix.dishlab.designsystem.component.AmbientConstellation
 import com.d1onix.dishlab.designsystem.component.FilterChipBar
+import com.d1onix.dishlab.designsystem.component.MiseFact
+import com.d1onix.dishlab.designsystem.component.MiseFactList
 import com.d1onix.dishlab.designsystem.component.MiseSearchField
 import com.d1onix.dishlab.designsystem.component.MiseTabPager
 import com.d1onix.dishlab.designsystem.component.MiseToast
@@ -81,6 +83,24 @@ private fun FilterChipBarExpandedPreview() {
             expandedGroupId = "difficulty",
             onGroupClick = {},
             onOptionClick = { _, _ -> },
+            modifier = Modifier.padding(vertical = 12.dp),
+        )
+    }
+}
+
+/** Mixes real values with a blank one, so the placeholder styling is visible too. */
+@MiseWidthPreviews
+@Composable
+private fun MiseFactListPreview() {
+    MiseTheme {
+        MiseFactList(
+            facts = listOf(
+                MiseFact("Brand", "Morning Mill"),
+                MiseFact("Quantity", "500 g"),
+                MiseFact("Manufactured in", ""),
+                MiseFact("Stores", "Tesco, Sainsbury's"),
+            ),
+            placeholder = "Not set",
             modifier = Modifier.padding(vertical = 12.dp),
         )
     }

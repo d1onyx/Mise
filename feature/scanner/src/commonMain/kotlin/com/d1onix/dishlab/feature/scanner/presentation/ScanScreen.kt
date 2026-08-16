@@ -48,6 +48,8 @@ import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.EmptyState
+import com.d1onix.dishlab.designsystem.component.MiseFact
+import com.d1onix.dishlab.designsystem.component.MiseFactList
 import com.d1onix.dishlab.designsystem.component.MiseGhostButton
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MiseGradeScoreScale
@@ -90,13 +92,14 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_eco_score_hint
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_alternatives
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_incomplete
-import com.d1onix.dishlab.feature.scanner.resources.scan_review_nutrition
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_open_graph
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_question
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_compare_another
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_skip
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_no_extra_photos
+import com.d1onix.dishlab.feature.scanner.resources.scan_not_set
+import com.d1onix.dishlab.feature.scanner.resources.scan_nutrients_per
 import com.d1onix.dishlab.feature.scanner.resources.scan_server_unavailable
 import com.d1onix.dishlab.feature.scanner.resources.scan_server_retry
 import com.d1onix.dishlab.feature.scanner.resources.scan_tab_composition
@@ -526,22 +529,6 @@ private fun ScannedPhotoTile(title: String, imageUrl: String, contentDescription
 }
 
 @Composable
-private fun ScannedDetailTile(title: String, value: String) {
-    val colors = MiseTheme.colors
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(colors.panel, RoundedCornerShape(10.dp))
-            .border(1.dp, colors.border, RoundedCornerShape(10.dp))
-            .padding(12.dp),
-    ) {
-        Text(title.uppercase(), style = MiseTheme.typography.monoTiny, color = colors.textMuted)
-        Spacer(Modifier.height(4.dp))
-        Text(value, style = MiseTheme.typography.bodySmall, color = colors.text)
-    }
-}
-
-@Composable
 private fun ScannedGradeScoreScale(grade: String, label: String, hint: String) {
     val colors = MiseTheme.colors
     Column(
@@ -562,6 +549,7 @@ private fun ScannedGradeScoreScale(grade: String, label: String, hint: String) {
 @Composable
 private fun ScanOverviewPage(product: Product) {
     val colors = MiseTheme.colors
+    val placeholder = stringResource(Res.string.scan_not_set)
 
     product.details.imageUrl.trim().takeIf { it.startsWith("https://") }?.let { imageUrl ->
         Box(
@@ -599,7 +587,8 @@ private fun ScanOverviewPage(product: Product) {
             hint = stringResource(Res.string.scan_eco_score_hint),
         )
     }
-    product.overviewDetails().forEach { (title, value) -> ScannedDetailTile(title, value) }
+
+    MiseFactList(placeholder = placeholder, facts = product.overviewFacts())
 
     if (product.alternatives.isNotEmpty()) {
         SectionLabel(stringResource(Res.string.scan_review_alternatives))
@@ -626,56 +615,25 @@ private fun ScanOverviewPage(product: Product) {
 
 @Composable
 private fun ScanNutritionPage(product: Product) {
-    val colors = MiseTheme.colors
+    val placeholder = stringResource(Res.string.scan_not_set)
 
-    product.nutritionDetails().forEach { (title, value) -> ScannedDetailTile(title, value) }
+    MiseFactList(placeholder = placeholder, facts = product.nutritionFacts())
 
     val scannedNutrients = product.details.nutrients.ifEmpty { product.nutrients }
         .filter { nutrient -> nutrient.amount.toDoubleOrNull()?.let { it.isFinite() && it > 0 } == true }
     if (scannedNutrients.isNotEmpty()) {
-        SectionLabel(stringResource(Res.string.scan_review_nutrition))
-        scannedNutrients.chunked(3).forEach { nutrients ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                nutrients.forEach { nutrient ->
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .background(colors.panel, RoundedCornerShape(8.dp))
-                            .border(1.dp, colors.border, RoundedCornerShape(8.dp))
-                            .padding(12.dp),
-                    ) {
-                        Text(
-                            nutrient.name.uppercase(),
-                            style = MiseTheme.typography.monoTiny,
-                            color = colors.textMuted,
-                        )
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                nutrient.amount,
-                                style = MiseTheme.typography.titleSmall,
-                                color = colors.text,
-                            )
-                            Text(
-                                nutrient.unit,
-                                style = MiseTheme.typography.monoTiny,
-                                color = colors.textMuted,
-                                modifier = Modifier.padding(start = 2.dp, bottom = 1.dp),
-                            )
-                        }
-                    }
-                }
-                repeat(3 - nutrients.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
+        val perLabel = product.details.nutrientsPer.ifBlank { "100 g" }
+        SectionLabel(stringResource(Res.string.scan_nutrients_per, perLabel))
+        MiseFactList(
+            placeholder = placeholder,
+            facts = scannedNutrients.map { MiseFact(it.name, "${it.amount} ${it.unit}".trim()) },
+        )
     }
 }
 
 @Composable
 private fun ScanCompositionPage(product: Product) {
-    product.compositionDetails().forEach { (title, value) -> ScannedDetailTile(title, value) }
+    MiseFactList(placeholder = stringResource(Res.string.scan_not_set), facts = product.compositionFacts())
 }
 
 @Composable
@@ -692,59 +650,67 @@ private fun ScanPhotosPage(product: Product) {
     photos.forEach { (title, url) -> ScannedPhotoTile(title = title, imageUrl = url, contentDescription = product.name) }
 }
 
-private fun String.cleanScanValue() = trim().takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
+private fun String.cleanScanValue() = trim().takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }.orEmpty()
 
-private fun List<String>.scanTags() = mapNotNull { it.cleanScanValue()?.substringAfter(':')?.replace('-', ' ') }
-    .joinToString().takeIf(String::isNotBlank)
+private fun List<String>.scanTags() = mapNotNull { it.cleanScanValue().ifBlank { null }?.substringAfter(':')?.replace('-', ' ') }
+    .joinToString()
 
 /** Identity facts a shopper reads at a glance — brand, portion, plain-text ingredients, allergens. */
-internal fun Product.overviewDetails(): List<Pair<String, String>> = buildList {
-    details.brand.cleanScanValue()?.let { add("Brand" to it) }
-    details.quantity.cleanScanValue()?.let { add("Quantity" to it) }
-    details.servingSize.cleanScanValue()?.let { add("Serving size" to it) }
-    details.ingredientsText.cleanScanValue()?.let { add("Ingredients" to it) }
-    details.allergens.scanTags()?.let { add("Allergens" to it) }
-}
+internal fun Product.overviewFacts(): List<MiseFact> = listOf(
+    MiseFact("Brand", details.brand.cleanScanValue()),
+    MiseFact("Quantity", details.quantity.cleanScanValue()),
+    MiseFact("Serving size", details.servingSize.cleanScanValue()),
+    MiseFact("Best before", details.expirationDate.cleanScanValue()),
+    MiseFact("Ingredients", details.ingredientsText.cleanScanValue()),
+    MiseFact("Allergens", details.allergens.scanTags()),
+)
 
 /** Everything about how the nutrients themselves should be read. */
-internal fun Product.nutritionDetails(): List<Pair<String, String>> = buildList {
-    details.novaGroup?.takeIf { it in 1..4 }?.let { group ->
-        add("NOVA $group" to when (group) {
-            1 -> "Unprocessed or minimally processed food"
-            2 -> "Processed culinary ingredient"
-            3 -> "Processed food"
-            else -> "Ultra-processed food"
-        })
-    }
-    details.nutrientLevels.takeIf(Map<String, String>::isNotEmpty)?.let { levels ->
-        add("Nutrient levels" to levels.entries.joinToString { (name, level) -> "${name.cleanScanValue() ?: name}: $level" })
-    }
-}
+internal fun Product.nutritionFacts(): List<MiseFact> = listOf(
+    MiseFact(
+        "NOVA",
+        details.novaGroup?.takeIf { it in 1..4 }?.let { group ->
+            "$group · ${
+                when (group) {
+                    1 -> "Unprocessed or minimally processed food"
+                    2 -> "Processed culinary ingredient"
+                    3 -> "Processed food"
+                    else -> "Ultra-processed food"
+                }
+            }"
+        }.orEmpty(),
+    ),
+    MiseFact("Nutri-Score version", details.nutriScoreVersion.cleanScanValue()),
+    MiseFact("Scored against", details.comparedToCategory.cleanScanValue()),
+) + details.nutrientLevels.map { (name, level) -> MiseFact(name.cleanScanValue().ifBlank { name }, level) }
 
 /** What the product is made of and where it comes from. */
-internal fun Product.compositionDetails(): List<Pair<String, String>> = buildList {
-    details.ingredients
-        .filter { it.name.cleanScanValue() != null }
-        .joinToString { ingredient ->
-            val percent = ingredient.percent ?: ingredient.percentEstimate
-            ingredient.name.trim() + (percent?.let { " (${it.toInt()}%)" } ?: "")
-        }
-        .takeIf(String::isNotBlank)
-        ?.let { add("Ingredients breakdown" to it) }
-    details.traces.scanTags()?.let { add("May contain traces of" to it) }
-    details.additives.scanTags()?.let { add("Additives" to it) }
-    details.categories.scanTags()?.let { add("Categories" to it) }
-    details.labels.scanTags()?.let { add("Labels" to it) }
-    details.foodGroups.scanTags()?.let { add("Food groups" to it) }
-    details.countries.scanTags()?.let { add("Sold in" to it) }
-    details.origins.scanTags()?.let { add("Ingredient origin" to it) }
-    details.manufacturingPlaces.scanTags()?.let { add("Manufactured in" to it) }
-    details.purchasePlaces.scanTags()?.let { add("Purchased in" to it) }
-    details.stores.scanTags()?.let { add("Stores" to it) }
-    details.packaging.takeIf(List<ProductPackagingComponent>::isNotEmpty)?.let { components ->
-        add("Packaging" to components.joinToString { it.scanSummary() })
-    }
-}
+internal fun Product.compositionFacts(): List<MiseFact> = listOf(
+    MiseFact(
+        "Ingredients breakdown",
+        details.ingredients
+            .filter { it.name.cleanScanValue().isNotBlank() }
+            .joinToString { ingredient ->
+                val percent = ingredient.percent ?: ingredient.percentEstimate
+                ingredient.name.trim() + (percent?.let { " (${it.toInt()}%)" } ?: "")
+            },
+    ),
+    MiseFact("May contain traces of", details.traces.scanTags()),
+    MiseFact("Additives", details.additives.scanTags()),
+    MiseFact("Categories", details.categories.scanTags()),
+    MiseFact("Labels", details.labels.scanTags()),
+    MiseFact(
+        "Food classification",
+        listOf(details.pnnsGroup, details.pnnsSubgroup).filter(String::isNotBlank).joinToString(" · ")
+            .ifBlank { details.foodGroups.scanTags() },
+    ),
+    MiseFact("Sold in", details.countries.scanTags()),
+    MiseFact("Ingredient origin", details.origins.scanTags().ifBlank { details.originNote.cleanScanValue() }),
+    MiseFact("Manufactured in", details.manufacturingPlaces.scanTags()),
+    MiseFact("Purchased in", details.purchasePlaces.scanTags()),
+    MiseFact("Stores", details.stores.scanTags()),
+    MiseFact("Packaging", details.packaging.joinToString { it.scanSummary() }),
+)
 
 private fun ProductPackagingComponent.scanSummary(): String = buildString {
     numberOfUnits?.takeIf { it > 0 }?.let { append(it).append("× ") }

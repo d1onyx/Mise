@@ -72,11 +72,17 @@
     <string name="product_manufacturing_places">Manufactured in</string>
     <string name="product_purchase_places">Purchased in</string>
     <string name="product_stores">Stores</string>
-    <string name="product_nutrients_per_100g">Nutrients per 100 g</string>
+    <string name="product_nutrients_per">Nutrients per %1$s</string>
     <string name="product_image">Product image</string>
     <string name="product_ingredients_photo">Ingredients photo</string>
     <string name="product_nutrition_photo">Nutrition facts photo</string>
     <string name="product_packaging_photo">Packaging photo</string>
+    <string name="product_not_set">Not set</string>
+    <string name="product_expiration_date">Best before</string>
+    <string name="product_nutri_score_version">Nutri-Score version</string>
+    <string name="product_compared_to_category">Scored against</string>
+    <string name="product_food_classification">Food classification</string>
+    <string name="product_origin_note">Origin note</string>
 
     <string name="history_title">History</string>
     <string name="history_clear">clear</string>

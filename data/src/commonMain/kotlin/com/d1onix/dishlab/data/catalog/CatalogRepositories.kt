@@ -160,6 +160,13 @@ private data class CachedProductDetailsDto(
     val manufacturingPlaces: List<String> = emptyList(),
     val purchasePlaces: List<String> = emptyList(),
     val stores: List<String> = emptyList(),
+    val pnnsGroup: String = "",
+    val pnnsSubgroup: String = "",
+    val comparedToCategory: String = "",
+    val expirationDate: String = "",
+    val nutriScoreVersion: String = "",
+    val originNote: String = "",
+    val nutrientsPer: String = "",
 )
 
 @Serializable
@@ -253,7 +260,21 @@ internal fun ClientProductSnapshotDto.toDetails() = ProductDetails(
     manufacturingPlaces = manufacturingPlaces.toDisplayTaxonomyTags(),
     purchasePlaces = purchasePlaces.toDisplayTaxonomyTags(),
     stores = stores.toDisplayTaxonomyTags(),
+    pnnsGroup = pnnsGroup.trim(),
+    pnnsSubgroup = pnnsSubgroup.trim(),
+    comparedToCategory = comparedToCategory.toDisplayTaxonomyTag(),
+    expirationDate = expirationDate.trim(),
+    nutriScoreVersion = nutriScoreVersion.trim(),
+    originNote = originNote.trim(),
+    nutrientsPer = nutrition?.per.orEmpty().toDisplayNutrientsPer(),
 )
+
+/** OFF sends "100g" or "serving" — display as "100 g" so it reads like the rest of the app's units. */
+private fun String.toDisplayNutrientsPer(): String = when (trim().lowercase()) {
+    "100g" -> "100 g"
+    "100ml" -> "100 ml"
+    else -> trim()
+}
 
 private fun ClientIngredientDto.toDomain() = ProductIngredient(
     name = text.normalizedOrTag(id),
@@ -493,6 +514,13 @@ private fun ProductDetails.toCached() = CachedProductDetailsDto(
     manufacturingPlaces = manufacturingPlaces,
     purchasePlaces = purchasePlaces,
     stores = stores,
+    pnnsGroup = pnnsGroup,
+    pnnsSubgroup = pnnsSubgroup,
+    comparedToCategory = comparedToCategory,
+    expirationDate = expirationDate,
+    nutriScoreVersion = nutriScoreVersion,
+    originNote = originNote,
+    nutrientsPer = nutrientsPer,
 )
 
 private fun CachedProductDetailsDto.toDomain() = ProductDetails(
@@ -522,6 +550,13 @@ private fun CachedProductDetailsDto.toDomain() = ProductDetails(
     manufacturingPlaces = manufacturingPlaces,
     purchasePlaces = purchasePlaces,
     stores = stores,
+    pnnsGroup = pnnsGroup,
+    pnnsSubgroup = pnnsSubgroup,
+    comparedToCategory = comparedToCategory,
+    expirationDate = expirationDate,
+    nutriScoreVersion = nutriScoreVersion,
+    originNote = originNote,
+    nutrientsPer = nutrientsPer,
 )
 
 private fun Throwable.isBackendUnavailable(): Boolean =

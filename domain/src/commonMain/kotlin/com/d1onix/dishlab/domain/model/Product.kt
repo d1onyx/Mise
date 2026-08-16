@@ -97,6 +97,19 @@ data class ProductDetails(
     val manufacturingPlaces: List<String> = emptyList(),
     val purchasePlaces: List<String> = emptyList(),
     val stores: List<String> = emptyList(),
+    /** PNNS food classification — finer-grained than [foodGroups], e.g. "Sweets" under "Sugary snacks". */
+    val pnnsGroup: String = "",
+    val pnnsSubgroup: String = "",
+    /** The category the score was benchmarked against, e.g. "Spreads". */
+    val comparedToCategory: String = "",
+    /** Free-form "best before" on the scanned package, e.g. "12-2024". Not a parsed date — OFF sends it as OFF entered it. */
+    val expirationDate: String = "",
+    /** Which Nutri-Score formula produced [nutriScore], e.g. "2023". */
+    val nutriScoreVersion: String = "",
+    /** Free-text origin note, distinct from the structured [origins] tag list. */
+    val originNote: String = "",
+    /** What [nutrients] are reported per — "100g" or "serving". Never assume 100g: label the section with this. */
+    val nutrientsPer: String = "",
 )
 
 data class ProductIngredient(
