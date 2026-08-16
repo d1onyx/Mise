@@ -11,13 +11,24 @@ import kotlin.test.assertTrue
 /**
  * The post-scan review screen renders its own detail tiles, independent of the
  * graph's product sheet — a field added to one does not automatically reach the
- * other, so this mirrors that surface's coverage directly.
+ * other, so this mirrors that surface's coverage directly. Split across three
+ * functions because the screen now spreads them across separate swipeable tabs.
  */
 class ScanDetailsTest {
 
     @Test
-    fun `traces additives origin and packaging appear as review tiles`() {
-        val details = scannedProduct().scanDetails().toMap()
+    fun `overview page shows brand quantity ingredients text and allergens`() {
+        val details = scannedProduct().copy(
+            details = scannedProduct().details.copy(allergens = listOf("en:gluten")),
+        ).overviewDetails().toMap()
+
+        assertTrue(details.containsKey("Brand"))
+        assertTrue(details.containsKey("Allergens"))
+    }
+
+    @Test
+    fun `composition page covers traces additives origin and packaging`() {
+        val details = scannedProduct().compositionDetails().toMap()
 
         assertTrue(details.containsKey("May contain traces of"))
         assertTrue(details.containsKey("Additives"))
@@ -27,25 +38,33 @@ class ScanDetailsTest {
     }
 
     @Test
-    fun `structured ingredients are summarized with their percent`() {
-        val details = scannedProduct().scanDetails().toMap()
+    fun `structured ingredients are summarized with their percent on the composition page`() {
+        val details = scannedProduct().compositionDetails().toMap()
 
         assertTrue(details.getValue("Ingredients breakdown").contains("90%"))
     }
 
     @Test
-    fun `nutrient levels food groups and sourcing appear as review tiles`() {
+    fun `nutrition page covers nova and nutrient levels`() {
+        val details = scannedProduct().copy(
+            details = scannedProduct().details.copy(novaGroup = 4, nutrientLevels = mapOf("fat" to "High")),
+        ).nutritionDetails().toMap()
+
+        assertTrue(details.keys.any { it.startsWith("NOVA") })
+        assertTrue(details.containsKey("Nutrient levels"))
+    }
+
+    @Test
+    fun `composition page covers food groups and sourcing`() {
         val details = scannedProduct().copy(
             details = scannedProduct().details.copy(
-                nutrientLevels = mapOf("fat" to "High"),
                 foodGroups = listOf("en:beverages"),
                 manufacturingPlaces = listOf("en:france"),
                 purchasePlaces = listOf("en:france"),
                 stores = listOf("en:carrefour"),
             ),
-        ).scanDetails().toMap()
+        ).compositionDetails().toMap()
 
-        assertTrue(details.containsKey("Nutrient levels"))
         assertTrue(details.containsKey("Food groups"))
         assertTrue(details.containsKey("Manufactured in"))
         assertTrue(details.containsKey("Purchased in"))
@@ -53,12 +72,12 @@ class ScanDetailsTest {
     }
 
     @Test
-    fun `empty optional fields do not produce tiles`() {
+    fun `empty optional fields do not produce overview tiles`() {
         val details = Product(
             id = ProductId("barcode:1"), barcode = "1", name = "Water", category = "Beverages", score = 90,
             accentColor = 0, initial = "W", nutrients = emptyList(), summary = "", hasCompleteData = true,
             alternatives = emptyList(), details = ProductDetails(brand = "Spring"),
-        ).scanDetails().toMap()
+        ).overviewDetails().toMap()
 
         assertTrue(details.keys == setOf("Brand"))
     }

@@ -33,6 +33,11 @@
     <string name="scan_eco_score">Eco-Score</string>
     <string name="scan_eco_score_hint">A = lower environmental impact · E = higher environmental impact</string>
     <string name="scan_review_alternatives">Healthier alternatives</string>
+    <string name="scan_tab_overview">Overview</string>
+    <string name="scan_tab_nutrition">Nutrition</string>
+    <string name="scan_tab_composition">Composition</string>
+    <string name="scan_tab_photos">Photos</string>
+    <string name="scan_no_extra_photos">No extra photos for this product yet.</string>
     <string name="scan_review_incomplete">Some nutrition values are estimated</string>
     <string name="scan_review_question">What would you like to do with this product?</string>
     <string name="scan_review_add">Save to my products</string>

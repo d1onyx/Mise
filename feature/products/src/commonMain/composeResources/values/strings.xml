@@ -41,6 +41,11 @@
     <string name="connections_none_missing">This product is connected to every other product.</string>
 
     <string name="product_incomplete_data">⚠ Incomplete data — some nutrients estimated</string>
+    <string name="product_tab_overview">Overview</string>
+    <string name="product_tab_nutrition">Nutrition</string>
+    <string name="product_tab_composition">Composition</string>
+    <string name="product_tab_photos">Photos</string>
+    <string name="product_no_extra_photos">No extra photos for this product yet.</string>
     <string name="product_alternatives">Healthier alternatives</string>
     <string name="product_cook">What can I cook?</string>
     <string name="product_remove">Remove product</string>
