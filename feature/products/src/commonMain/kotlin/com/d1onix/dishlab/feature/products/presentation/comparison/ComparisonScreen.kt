@@ -1,6 +1,8 @@
 package com.d1onix.dishlab.feature.products.presentation.comparison
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,14 +13,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.screenIn
@@ -123,7 +130,7 @@ internal fun ComparisonContent(
         }
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(state.products, key = { it.id.value }) { product ->
                 ComparedProductCard(
@@ -136,15 +143,15 @@ internal fun ComparisonContent(
             }
         }
 
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
-            item { SectionLabel(stringResource(Res.string.comparison_nutrition)) }
-            items(nutrientNames(state.products), key = { it }) { nutrientName ->
-                NutrientComparisonRow(nutrientName, state.products)
-            }
+            SectionLabel(stringResource(Res.string.comparison_nutrition))
+            Spacer(Modifier.height(10.dp))
+            NutrientComparisonPanel(state.products)
         }
 
         Row(
@@ -181,14 +188,14 @@ private fun ComparedProductCard(
 ) {
     val colors = MiseTheme.colors
     MisePanel(
-        modifier = Modifier.width(164.dp),
+        modifier = Modifier.width(144.dp),
         cornerRadius = 8,
         background = if (selected) colors.lime.copy(alpha = 0.08f) else colors.panel,
         borderColor = if (selected) colors.lime else colors.border,
-        contentPadding = PaddingValues(14.dp),
+        contentPadding = PaddingValues(12.dp),
         onClick = onToggle,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -212,34 +219,109 @@ private fun ComparedProductCard(
     }
 }
 
+/**
+ * Nutrients side by side as one continuous divided table (the [MiseFactList]
+ * pattern) instead of a separate bordered card per nutrient — the previous
+ * layout turned into a wall of identical cards once three or more products
+ * were compared.
+ */
 @Composable
-private fun NutrientComparisonRow(name: String, products: List<Product>) {
+private fun NutrientComparisonPanel(products: List<Product>, modifier: Modifier = Modifier) {
     val colors = MiseTheme.colors
-    MisePanel(
-        modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 8,
-        contentPadding = PaddingValues(14.dp),
+    val names = nutrientNames(products)
+    Column(
+        modifier
+            .fillMaxWidth()
+            .background(colors.panel, RoundedCornerShape(14.dp))
+            .padding(horizontal = 14.dp),
     ) {
-        Column {
-            Text(name.uppercase(), style = MiseTheme.typography.monoTiny, color = colors.textMuted)
-            Spacer(Modifier.height(8.dp))
-            products.mapNotNull { product ->
-                product.nutrients.firstOrNull { it.name == name }?.let { product to it }
-            }.forEach { (product, nutrient) ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(product.name, style = MiseTheme.typography.bodySmall, color = colors.text)
-                    Text(
-                        "${nutrient.amount} ${nutrient.unit}",
-                        style = MiseTheme.typography.monoSmall,
-                        color = colors.textMuted,
-                    )
-                }
+        NutrientHeaderRow(products)
+        Box(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
+        names.forEachIndexed { index, name ->
+            if (index > 0) {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
+            }
+            NutrientValuesRow(name, products)
+        }
+    }
+}
+
+@Composable
+private fun NutrientHeaderRow(products: List<Product>) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+        Spacer(Modifier.weight(NUTRIENT_LABEL_WEIGHT))
+        Row(Modifier.weight(NUTRIENT_VALUES_WEIGHT), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            products.forEach { product ->
+                Text(
+                    text = product.initial,
+                    style = MiseTheme.typography.monoTiny,
+                    color = Color(product.accentColor),
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
+}
+
+@Composable
+private fun NutrientValuesRow(name: String, products: List<Product>) {
+    val colors = MiseTheme.colors
+    val bestId = bestProductIdForNutrient(name, products)
+    Row(Modifier.fillMaxWidth().padding(vertical = 11.dp)) {
+        Text(
+            text = name,
+            style = MiseTheme.typography.bodySmall,
+            color = colors.textMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(NUTRIENT_LABEL_WEIGHT),
+        )
+        Row(Modifier.weight(NUTRIENT_VALUES_WEIGHT), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            products.forEach { product ->
+                val nutrient = product.nutrients.firstOrNull { it.name == name }
+                val isBest = nutrient != null && product.id == bestId
+                Text(
+                    text = nutrient?.let { "${it.amount}${it.unit}" } ?: "—",
+                    style = MiseTheme.typography.monoTiny,
+                    color = if (isBest) colors.lime else colors.text,
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+private const val NUTRIENT_LABEL_WEIGHT = 0.34f
+private const val NUTRIENT_VALUES_WEIGHT = 0.66f
+
+/** Substrings of nutrient names DishLab's data sources use, lower-cased. */
+private val LOWER_IS_BETTER = listOf("sugar", "salt", "sodium", "saturated", "fat", "cholesterol", "energy", "calor")
+private val HIGHER_IS_BETTER = listOf("protein", "fiber", "fibre")
+
+/**
+ * Which product wins a nutrient row — the actual "compare intelligently" part
+ * of this screen. Sugar/salt/fat/sodium/energy are better lower, protein and
+ * fiber are better higher; anything else (unrecognised nutrient names) is left
+ * unhighlighted rather than guessed at.
+ */
+private fun bestProductIdForNutrient(name: String, products: List<Product>): ProductId? {
+    val lowerName = name.lowercase()
+    val directionIsLower = when {
+        LOWER_IS_BETTER.any { lowerName.contains(it) } -> true
+        HIGHER_IS_BETTER.any { lowerName.contains(it) } -> false
+        else -> return null
+    }
+    val values = products.mapNotNull { product ->
+        product.nutrients.firstOrNull { it.name == name }?.amount?.toDoubleOrNull()?.let { product.id to it }
+    }
+    if (values.size < 2) return null
+    return if (directionIsLower) values.minBy { it.second }.first else values.maxBy { it.second }.first
 }
 
 private fun nutrientNames(products: List<Product>): List<String> =
