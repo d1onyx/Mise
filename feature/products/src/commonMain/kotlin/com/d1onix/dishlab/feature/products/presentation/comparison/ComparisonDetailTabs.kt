@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -67,13 +68,12 @@ import org.jetbrains.compose.resources.stringResource
 
 private const val LABEL_WEIGHT = 0.34f
 private const val VALUES_WEIGHT = 0.66f
-private val LOWER_IS_BETTER = listOf("sugar", "salt", "sodium", "saturated", "fat", "cholesterol", "energy", "calor")
-private val HIGHER_IS_BETTER = listOf("protein", "fiber", "fibre")
 
 private data class ComparedDetail(val product: Product, val card: ProductDetailCardModel)
 
 private data class ComparisonFact(
     val label: String,
+    val bestProduct: ((List<ComparedDetail>) -> ProductId?)? = null,
     val value: (ComparedDetail) -> String,
 )
 
@@ -106,10 +106,22 @@ private fun OverviewComparison(details: List<ComparedDetail>) {
         details = details,
         placeholder = placeholder,
         facts = listOf(
-            ComparisonFact(stringResource(Res.string.comparison_score)) { it.product.score.toString() },
+            ComparisonFact(
+                label = stringResource(Res.string.comparison_score),
+                value = { it.product.score.toString() },
+                bestProduct = { compared -> ComparisonBestPolicy.highestNumeric(compared.map { it.product.id to it.product.score.toString() }) },
+            ),
             ComparisonFact(stringResource(Res.string.comparison_summary)) { it.product.summary },
-            ComparisonFact(stringResource(Res.string.product_nutri_score)) { it.card.nutriScoreGrade },
-            ComparisonFact(stringResource(Res.string.product_eco_score)) { it.card.ecoScoreGrade },
+            ComparisonFact(
+                label = stringResource(Res.string.product_nutri_score),
+                value = { it.card.nutriScoreGrade },
+                bestProduct = { compared -> ComparisonBestPolicy.bestGrade(compared.map { it.product.id to it.card.nutriScoreGrade }) },
+            ),
+            ComparisonFact(
+                label = stringResource(Res.string.product_eco_score),
+                value = { it.card.ecoScoreGrade },
+                bestProduct = { compared -> ComparisonBestPolicy.bestGrade(compared.map { it.product.id to it.card.ecoScoreGrade }) },
+            ),
             ComparisonFact(stringResource(Res.string.product_brand)) { it.card.brand },
             ComparisonFact(stringResource(Res.string.product_quantity)) { it.card.quantity },
             ComparisonFact(stringResource(Res.string.product_serving_size)) { it.card.servingSize },
@@ -120,8 +132,6 @@ private fun OverviewComparison(details: List<ComparedDetail>) {
                 it.product.alternatives.joinToString { alternative -> "${alternative.name} (${alternative.score})" }
             },
         ),
-        bestProductId = details.maxByOrNull { it.product.score }?.product?.id,
-        bestLabel = stringResource(Res.string.comparison_score),
     )
 }
 
@@ -133,14 +143,24 @@ private fun NutritionComparison(details: List<ComparedDetail>) {
         details = details,
         placeholder = placeholder,
         facts = listOf(
-            ComparisonFact(stringResource(Res.string.product_nova)) {
-                it.card.novaGroup?.let { group -> "$group · ${group.novaExplanation()}" }.orEmpty()
-            },
+            ComparisonFact(
+                label = stringResource(Res.string.product_nova),
+                value = { it.card.novaGroup?.let { group -> "$group · ${group.novaExplanation()}" }.orEmpty() },
+                bestProduct = { compared -> ComparisonBestPolicy.bestNovaGroup(compared.map { it.product.id to it.card.novaGroup?.toString().orEmpty() }) },
+            ),
             ComparisonFact(stringResource(Res.string.product_nutri_score_version)) { it.card.nutriScoreVersion },
             ComparisonFact(stringResource(Res.string.product_compared_to_category)) { it.card.comparedToCategory },
             ComparisonFact(stringResource(Res.string.comparison_nutrients_per)) { it.card.nutrientsPer },
         ) + levelNames.map { name ->
-            ComparisonFact(name) { detail -> detail.card.nutrientLevels.firstOrNull { it.first == name }?.second.orEmpty() }
+            ComparisonFact(
+                label = name,
+                value = { detail -> detail.card.nutrientLevels.firstOrNull { it.first == name }?.second.orEmpty() },
+                bestProduct = { compared ->
+                    ComparisonBestPolicy.bestNutrientLevel(
+                        compared.map { detail -> detail.product.id to detail.card.nutrientLevels.firstOrNull { it.first == name }?.second.orEmpty() },
+                    )
+                },
+            )
         },
     )
     Spacer(Modifier.height(16.dp))
@@ -181,8 +201,6 @@ private fun ComparisonFactsPanel(
     details: List<ComparedDetail>,
     facts: List<ComparisonFact>,
     placeholder: String,
-    bestProductId: ProductId? = null,
-    bestLabel: String? = null,
 ) {
     val colors = MiseTheme.colors
     Column(
@@ -196,7 +214,7 @@ private fun ComparisonFactsPanel(
                 fact = fact,
                 details = details,
                 placeholder = placeholder,
-                highlightProductId = if (fact.label == bestLabel) bestProductId else null,
+                highlightProductId = fact.bestProduct?.invoke(details),
             )
         }
     }
@@ -256,7 +274,9 @@ private fun ComparisonFactRow(
             details.forEach { detail ->
                 Text(
                     text = fact.value(detail).ifBlank { placeholder },
-                    style = MiseTheme.typography.monoTiny,
+                    style = MiseTheme.typography.monoTiny.copy(
+                        fontWeight = if (detail.product.id == highlightProductId) FontWeight.Bold else FontWeight.Normal,
+                    ),
                     color = if (detail.product.id == highlightProductId) colors.lime else colors.text,
                     textAlign = TextAlign.End,
                     modifier = Modifier.weight(1f),
@@ -269,7 +289,12 @@ private fun ComparisonFactRow(
 @Composable
 private fun ComparisonNutrientRow(name: String, details: List<ComparedDetail>, placeholder: String) {
     val colors = MiseTheme.colors
-    val bestProductId = bestProductIdForNutrient(name, details)
+    val bestProductId = ComparisonBestPolicy.bestNutrient(
+        name,
+        details.map { detail ->
+            detail.product.id to detail.card.nutrients.firstOrNull { it.name == name }?.amount.orEmpty()
+        },
+    )
     Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.Top) {
         Text(name, style = MiseTheme.typography.bodySmall, color = colors.textMuted, modifier = Modifier.weight(LABEL_WEIGHT))
         Row(Modifier.weight(VALUES_WEIGHT), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -277,7 +302,9 @@ private fun ComparisonNutrientRow(name: String, details: List<ComparedDetail>, p
                 val nutrient = detail.card.nutrients.firstOrNull { it.name == name }
                 Text(
                     text = nutrient?.let { "${it.amount} ${it.unit}".trim() } ?: placeholder,
-                    style = MiseTheme.typography.monoTiny,
+                    style = MiseTheme.typography.monoTiny.copy(
+                        fontWeight = if (detail.product.id == bestProductId) FontWeight.Bold else FontWeight.Normal,
+                    ),
                     color = if (detail.product.id == bestProductId) colors.lime else colors.text,
                     textAlign = TextAlign.End,
                     modifier = Modifier.weight(1f),
@@ -289,17 +316,3 @@ private fun ComparisonNutrientRow(name: String, details: List<ComparedDetail>, p
 
 @Composable
 private fun Divider() = Box(Modifier.fillMaxWidth().height(1.dp).background(MiseTheme.colors.border))
-
-private fun bestProductIdForNutrient(name: String, details: List<ComparedDetail>): ProductId? {
-    val lowerName = name.lowercase()
-    val lowerIsBetter = when {
-        LOWER_IS_BETTER.any(lowerName::contains) -> true
-        HIGHER_IS_BETTER.any(lowerName::contains) -> false
-        else -> return null
-    }
-    val values = details.mapNotNull { detail ->
-        detail.card.nutrients.firstOrNull { it.name == name }?.amount?.toDoubleOrNull()?.let { detail.product.id to it }
-    }
-    if (values.size < 2) return null
-    return if (lowerIsBetter) values.minBy { it.second }.first else values.maxBy { it.second }.first
-}
