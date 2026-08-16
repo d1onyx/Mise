@@ -51,6 +51,7 @@ fun RecipesScreen(viewModel: RecipesViewModel) {
         state = state,
         onAction = viewModel::onAction,
         showBanner = true,
+        showCatalogCategoryFilter = true,
     )
 }
 

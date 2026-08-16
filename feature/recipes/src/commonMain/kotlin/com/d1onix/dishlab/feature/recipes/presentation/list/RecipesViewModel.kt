@@ -3,6 +3,7 @@ package com.d1onix.dishlab.feature.recipes.presentation.list
 import androidx.lifecycle.viewModelScope
 import com.d1onix.dishlab.domain.FilterRecipesUseCase
 import com.d1onix.dishlab.domain.GetProductsUseCase
+import com.d1onix.dishlab.domain.GetRecipeCatalogFiltersUseCase
 import com.d1onix.dishlab.domain.GetRecipesForProductsUseCase
 import com.d1onix.dishlab.domain.repository.ScanSessionStore
 import com.d1onix.dishlab.feature.recipes.navigation.RecipesRouter
@@ -23,6 +24,7 @@ import kotlinx.coroutines.launch
 class RecipesViewModel(
     dependencies: CommonDependencies,
     private val getRecipesForProducts: GetRecipesForProductsUseCase,
+    private val getCatalogFilters: GetRecipeCatalogFiltersUseCase,
     private val filterRecipes: FilterRecipesUseCase,
     private val getProducts: GetProductsUseCase,
     private val session: ScanSessionStore,
@@ -37,6 +39,10 @@ class RecipesViewModel(
             session.products.collectLatest { ids ->
                 load(ids)
             }
+        }
+        launch("loadRecipeCatalogFilters") {
+            val catalogFilters = runCatching { getCatalogFilters() }.getOrNull() ?: return@launch
+            _uiState.update { it.copy(catalogFilters = catalogFilters) }
         }
     }
 
@@ -54,9 +60,18 @@ class RecipesViewModel(
                 it.copy(filters = it.filters.toggle(action.group, action.option)).refiltered()
             }
 
-            is RecipeListAction.CatalogFilterGroupClicked,
-            is RecipeListAction.CatalogFilterOptionClicked,
-            -> Unit
+            is RecipeListAction.CatalogFilterGroupClicked -> _uiState.update {
+                it.copy(
+                    expandedCatalogFilterGroup = if (it.expandedCatalogFilterGroup == action.group) null else action.group,
+                )
+            }
+
+            is RecipeListAction.CatalogFilterOptionClicked -> {
+                _uiState.update { state ->
+                    state.copy(catalogFilterSelection = state.catalogFilterSelection.toggle(action.group, action.option))
+                }
+                launch("filterRecipes") { load(session.products.value) }
+            }
 
             is RecipeListAction.RecipeClicked -> router.openRecipe(action.id, session.products.value)
             RecipeListAction.BackClicked -> router.goBack()
@@ -68,7 +83,8 @@ class RecipesViewModel(
     private suspend fun load(ids: List<com.d1onix.dishlab.domain.model.ProductId>) {
         _uiState.update { it.copy(isLoading = true, loadError = false) }
         try {
-            val result = if (ids.isEmpty()) null else getRecipesForProducts(ids, page = 1, pageSize = PAGE_SIZE)
+            val selectedFilters = _uiState.value.catalogFilterSelection
+            val result = if (ids.isEmpty()) null else getRecipesForProducts(ids, page = 1, pageSize = PAGE_SIZE, filters = selectedFilters)
             val recipes = result?.items.orEmpty()
             val products = getProducts(recipes.flatMap { it.productIds }.distinct())
             _uiState.update {
@@ -94,7 +110,12 @@ class RecipesViewModel(
         launch("loadMoreRecipes") {
             _uiState.update { it.copy(isLoadingMore = true) }
             try {
-                val page = getRecipesForProducts(session.products.value, state.all.size / PAGE_SIZE + 1, PAGE_SIZE)
+                val page = getRecipesForProducts(
+                    session.products.value,
+                    state.all.size / PAGE_SIZE + 1,
+                    PAGE_SIZE,
+                    state.catalogFilterSelection,
+                )
                 val all = (state.all + page.items).distinctBy { it.id }
                 val products = getProducts(page.items.flatMap { it.productIds }.distinct())
                 _uiState.update {

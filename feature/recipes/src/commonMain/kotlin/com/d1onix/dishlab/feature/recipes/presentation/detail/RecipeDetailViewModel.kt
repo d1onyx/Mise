@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import com.d1onix.dishlab.domain.GetProductsUseCase
 import com.d1onix.dishlab.domain.GetRecipeUseCase
+import com.d1onix.dishlab.domain.GetSavedRecipeUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipeIdsUseCase
 import com.d1onix.dishlab.domain.ToggleSavedRecipeUseCase
 import com.d1onix.dishlab.domain.model.Product
@@ -46,6 +47,7 @@ class RecipeDetailViewModel(
     @Assisted private val recipeId: RecipeId,
     @Assisted private val productIds: List<ProductId> = emptyList(),
     private val getRecipe: GetRecipeUseCase,
+    private val getSavedRecipe: GetSavedRecipeUseCase,
     private val getProducts: GetProductsUseCase,
     private val toggleSaved: ToggleSavedRecipeUseCase,
     observeSavedIds: ObserveSavedRecipeIdsUseCase,
@@ -71,14 +73,19 @@ class RecipeDetailViewModel(
         when (action) {
             RecipeDetailAction.BackClicked -> router.goBack()
             RecipeDetailAction.RetryClicked -> launch("reloadRecipe") { loadRecipe() }
-            RecipeDetailAction.SaveClicked -> launch("toggleSaved") { toggleSaved(recipeId) }
+            RecipeDetailAction.SaveClicked -> _uiState.value.recipe?.let { recipe ->
+                launch("toggleSaved") { toggleSaved(recipe) }
+            }
         }
     }
 
     private suspend fun loadRecipe() {
         _uiState.update { it.copy(isLoading = true, loadError = false) }
         try {
-            val recipe = getRecipe(recipeId, productIds)
+            // Catalogue lookup fails offline for a recipe outside the bundled demo set,
+            // even though its full content may already be cached from being saved — fall
+            // back to that cache before surfacing a load error.
+            val recipe = getRecipe(recipeId, productIds) ?: getSavedRecipe(recipeId)
             if (recipe == null) {
                 _uiState.update { it.copy(isLoading = false, loadError = true) }
                 return
@@ -92,7 +99,14 @@ class RecipeDetailViewModel(
             }
         } catch (exception: Throwable) {
             if (exception is CancellationException) throw exception
-            _uiState.update { it.copy(recipe = null, products = emptyList(), isLoading = false, loadError = true) }
+            val recipe = getSavedRecipe(recipeId)
+            if (recipe != null) {
+                _uiState.update {
+                    it.copy(recipe = recipe, products = getProducts(recipe.productIds), isLoading = false)
+                }
+            } else {
+                _uiState.update { it.copy(recipe = null, products = emptyList(), isLoading = false, loadError = true) }
+            }
         }
     }
 

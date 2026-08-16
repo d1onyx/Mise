@@ -6,6 +6,7 @@ import com.d1onix.dishlab.domain.model.AllergenPreference
 import com.d1onix.dishlab.domain.model.CookingPreferences
 import com.d1onix.dishlab.domain.model.DietPreference
 import com.d1onix.dishlab.domain.model.KitchenEquipment
+import com.d1onix.dishlab.domain.model.Recipe
 import com.d1onix.dishlab.domain.model.RecipeId
 import com.d1onix.dishlab.domain.model.TastePreference
 import com.d1onix.dishlab.domain.repository.CookingPreferencesRepository
@@ -21,9 +22,14 @@ import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.combine
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 private object DishLabKeys {
     val SavedRecipes = PreferenceKey.StringSetKey("saved_recipes")
+    /** Full recipe content, JSON-encoded — resolves the Saved screen without any network call. */
+    val SavedRecipesData = PreferenceKey.StringKey("saved_recipes_data")
     /** Ordered, most recent first — a set would lose that, so it is one string. */
     val ScanHistory = PreferenceKey.StringKey("scan_history")
     val ProfileName = PreferenceKey.StringKey("profile_name")
@@ -50,12 +56,29 @@ class StoredSavedRecipesRepository(
             ids.orEmpty().map(::RecipeId).toSet()
         }
 
-    override suspend fun toggle(id: RecipeId) {
-        val current = storage.get(DishLabKeys.SavedRecipes).orEmpty()
-        val updated = if (id.value in current) current - id.value else current + id.value
-        storage.put(DishLabKeys.SavedRecipes, updated)
+    override val savedRecipes: Flow<List<Recipe>> =
+        storage.observe(DishLabKeys.SavedRecipesData).map { it.decodeSavedRecipes() }
+
+    override suspend fun toggle(recipe: Recipe) {
+        val currentIds = storage.get(DishLabKeys.SavedRecipes).orEmpty()
+        val isSaved = recipe.id.value in currentIds
+        val updatedIds = if (isSaved) currentIds - recipe.id.value else currentIds + recipe.id.value
+        storage.put(DishLabKeys.SavedRecipes, updatedIds)
+
+        val currentRecipes = storage.get(DishLabKeys.SavedRecipesData).decodeSavedRecipes()
+        val updatedRecipes = if (isSaved) {
+            currentRecipes.filterNot { it.id == recipe.id }
+        } else {
+            currentRecipes.filterNot { it.id == recipe.id } + recipe
+        }
+        storage.put(DishLabKeys.SavedRecipesData, Json.encodeToString(updatedRecipes.map { it.toSavedDto() }))
     }
 }
+
+private fun String?.decodeSavedRecipes(): List<Recipe> =
+    this?.let { Json.decodeFromString<List<SavedRecipeDto>>(it) }
+        ?.map { it.toDomain() }
+        .orEmpty()
 
 @ContributesBinding(AppScope::class)
 @Inject

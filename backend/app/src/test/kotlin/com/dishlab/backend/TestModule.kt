@@ -3,6 +3,7 @@ package com.dishlab.backend
 import com.dishlab.infrastructure.firebase.DevFirebaseAuthVerifier
 import com.dishlab.application.service.CatalogFilters
 import com.dishlab.application.service.CatalogRecipePage
+import com.dishlab.application.service.InMemoryRecipeRepository
 import com.dishlab.application.service.PantryMatchPage
 import com.dishlab.application.service.RecipeCatalogRepository
 import com.dishlab.domain.model.CatalogRecipe
@@ -15,9 +16,15 @@ import io.ktor.server.application.Application
  * Test composition root — wires the full app but swaps the production
  * Firebase verifier for [DevFirebaseAuthVerifier], which accepts `Bearer :<uid>`
  * tokens. Skips `FirebaseInitializer.init()`, so tests need no Firebase
- * credentials. Acceptance tests use `application { testModule() }`.
+ * credentials. Also forces an in-memory recipe repository so acceptance tests
+ * never write fixture recipes into a real Postgres reachable via `.env`.
+ * Acceptance tests use `application { testModule() }`.
  */
-fun Application.testModule() = appModule(DevFirebaseAuthVerifier(), TestRecipeCatalogRepository())
+fun Application.testModule() = appModule(
+    DevFirebaseAuthVerifier(),
+    TestRecipeCatalogRepository(),
+    InMemoryRecipeRepository(),
+)
 
 private class TestRecipeCatalogRepository : RecipeCatalogRepository {
     private val recipes = listOf(

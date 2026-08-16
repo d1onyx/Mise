@@ -34,12 +34,19 @@ interface RecipeRepository {
     suspend fun byId(id: RecipeId, productIds: List<ProductId> = emptyList()): Recipe?
     /** Recipes that use at least one of [productIds]. */
     suspend fun forProducts(productIds: List<ProductId>): List<Recipe>
-    suspend fun forProductsPage(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage
+    suspend fun forProductsPage(
+        productIds: List<ProductId>,
+        page: Int,
+        pageSize: Int,
+        filters: RecipeCatalogFilterSelection = RecipeCatalogFilterSelection(),
+    ): RecipePage
 }
 
 interface SavedRecipesRepository {
     val saved: Flow<Set<RecipeId>>
-    suspend fun toggle(id: RecipeId)
+    /** Full content of saved recipes, cached locally at save time so it resolves fully offline. */
+    val savedRecipes: Flow<List<Recipe>>
+    suspend fun toggle(recipe: Recipe)
 }
 
 interface ScanHistoryRepository {

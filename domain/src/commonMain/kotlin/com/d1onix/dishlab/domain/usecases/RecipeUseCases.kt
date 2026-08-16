@@ -6,6 +6,7 @@ import com.d1onix.dishlab.domain.GetRecipeUseCase
 import com.d1onix.dishlab.domain.GetAllRecipesUseCase
 import com.d1onix.dishlab.domain.GetRecipeCatalogFiltersUseCase
 import com.d1onix.dishlab.domain.GetRecipesForProductsUseCase
+import com.d1onix.dishlab.domain.GetSavedRecipeUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipeIdsUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipesUseCase
 import com.d1onix.dishlab.domain.ToggleSavedRecipeUseCase
@@ -23,6 +24,7 @@ import com.d1onyx.core.essentials.di.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 @ContributesBinding(AppScope::class)
@@ -30,8 +32,12 @@ import kotlinx.coroutines.flow.map
 class GetRecipesForProductsUseCaseImpl(
     private val recipes: RecipeRepository,
 ) : GetRecipesForProductsUseCase {
-    override suspend fun invoke(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage =
-        recipes.forProductsPage(productIds, page, pageSize)
+    override suspend fun invoke(
+        productIds: List<ProductId>,
+        page: Int,
+        pageSize: Int,
+        filters: RecipeCatalogFilterSelection,
+    ): RecipePage = recipes.forProductsPage(productIds, page, pageSize, filters)
 }
 
 @ContributesBinding(AppScope::class)
@@ -132,11 +138,8 @@ class ObserveSavedRecipeIdsUseCaseImpl(
 @Inject
 class ObserveSavedRecipesUseCaseImpl(
     private val saved: SavedRecipesRepository,
-    private val recipes: RecipeRepository,
 ) : ObserveSavedRecipesUseCase {
-    override fun invoke(): Flow<List<Recipe>> = saved.saved.map { ids ->
-        recipes.all().filter { it.id in ids }
-    }
+    override fun invoke(): Flow<List<Recipe>> = saved.savedRecipes
 }
 
 @ContributesBinding(AppScope::class)
@@ -144,5 +147,13 @@ class ObserveSavedRecipesUseCaseImpl(
 class ToggleSavedRecipeUseCaseImpl(
     private val saved: SavedRecipesRepository,
 ) : ToggleSavedRecipeUseCase {
-    override suspend fun invoke(id: RecipeId) = saved.toggle(id)
+    override suspend fun invoke(recipe: Recipe) = saved.toggle(recipe)
+}
+
+@ContributesBinding(AppScope::class)
+@Inject
+class GetSavedRecipeUseCaseImpl(
+    private val saved: SavedRecipesRepository,
+) : GetSavedRecipeUseCase {
+    override suspend fun invoke(id: RecipeId): Recipe? = saved.savedRecipes.first().firstOrNull { it.id == id }
 }

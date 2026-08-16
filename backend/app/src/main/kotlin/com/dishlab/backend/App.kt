@@ -6,6 +6,7 @@ import com.dishlab.application.service.IdentityService
 import com.dishlab.application.service.InMemoryIngredientRepository
 import com.dishlab.application.service.InMemoryRecipeRepository
 import com.dishlab.application.service.InMemoryUserAccountRepository
+import com.dishlab.application.service.RecipeRepository
 import com.dishlab.infrastructure.ai.OpenRouterProductNameNormalizer
 import com.dishlab.infrastructure.ai.OpenRouterRecipeIngredientValidator
 import com.dishlab.infrastructure.ai.OpenRouterRecipeValidationProvider
@@ -85,6 +86,7 @@ fun Application.module() {
 fun Application.appModule(
     authVerifier: FirebaseAuthVerifier,
     testRecipeCatalogRepository: RecipeCatalogRepository? = null,
+    testRecipeRepository: RecipeRepository? = null,
 ) {
     install(ContentNegotiation) {
         json(
@@ -122,8 +124,9 @@ fun Application.appModule(
     )
     val unitConversionService = UnitConversionService()
     val openRouterApiKey = env("OPENROUTER_API_KEY")?.trim()?.takeIf(String::isNotBlank)
-    val recipeRepo = dbDataSource
-        ?.let { PostgresRecipeRepository(it) }
+    val recipeRepo = testRecipeRepository
+        ?: dbDataSource
+            ?.let { PostgresRecipeRepository(it) }
         ?: InMemoryRecipeRepository()
     val recipeCatalogService = testRecipeCatalogRepository?.let(::RecipeCatalogService)
         ?: env("RECIPE_CATALOG_DB")

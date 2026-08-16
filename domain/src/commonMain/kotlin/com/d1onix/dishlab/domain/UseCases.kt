@@ -21,7 +21,12 @@ fun interface GetProductsUseCase {
 }
 
 fun interface GetRecipesForProductsUseCase {
-    suspend operator fun invoke(productIds: List<ProductId>, page: Int, pageSize: Int): RecipePage
+    suspend operator fun invoke(
+        productIds: List<ProductId>,
+        page: Int,
+        pageSize: Int,
+        filters: RecipeCatalogFilterSelection,
+    ): RecipePage
 }
 
 fun interface GetAllRecipesUseCase {
@@ -53,12 +58,17 @@ fun interface ObserveSavedRecipesUseCase {
     operator fun invoke(): Flow<List<Recipe>>
 }
 
+/** Resolves a single saved recipe from the local cache — works fully offline. */
+fun interface GetSavedRecipeUseCase {
+    suspend operator fun invoke(id: RecipeId): Recipe?
+}
+
 fun interface ObserveSavedRecipeIdsUseCase {
     operator fun invoke(): Flow<Set<RecipeId>>
 }
 
 fun interface ToggleSavedRecipeUseCase {
-    suspend operator fun invoke(id: RecipeId)
+    suspend operator fun invoke(recipe: Recipe)
 }
 
 fun interface ObserveScanHistoryUseCase {

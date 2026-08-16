@@ -106,16 +106,3 @@ class DiscoverRecipesViewModel(
 
     private companion object { const val PAGE_SIZE = 20 }
 }
-
-private fun RecipeCatalogFilterSelection.toggle(
-    group: RecipeCatalogFilterGroup,
-    option: String,
-): RecipeCatalogFilterSelection = when (group) {
-    RecipeCatalogFilterGroup.Category -> copy(categories = categories.flip(option))
-    RecipeCatalogFilterGroup.Cuisine -> copy(cuisines = cuisines.flip(option))
-    RecipeCatalogFilterGroup.Equipment -> copy(equipment = equipment.flip(option))
-    RecipeCatalogFilterGroup.Technique -> copy(techniques = techniques.flip(option))
-}
-
-private fun Set<String>.flip(option: String): Set<String> =
-    if (option in this) this - option else this + option
