@@ -98,6 +98,6 @@ interface ProductComparisonStore {
     suspend fun clear()
 
     companion object {
-        const val MAX_PRODUCTS = 5
+        const val MAX_PRODUCTS = 4
     }
 }

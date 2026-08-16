@@ -374,13 +374,13 @@ private fun GradeScoreTile(selectedGrade: String, label: String, hint: String) {
     }
 }
 
-private fun ProductPackagingComponent.summary(): String = buildString {
+internal fun ProductPackagingComponent.summary(): String = buildString {
     numberOfUnits?.takeIf { it > 0 }?.let { append(it).append("× ") }
     append(listOf(shape, material, recycling).filter(String::isNotBlank).joinToString(" · "))
     quantityPerUnit.takeIf(String::isNotBlank)?.let { append(" (").append(it).append(')') }
 }.trim()
 
-private fun Int.novaExplanation(): String = when (this) {
+internal fun Int.novaExplanation(): String = when (this) {
     1 -> "Unprocessed or minimally processed food"
     2 -> "Processed culinary ingredient"
     3 -> "Processed food"
