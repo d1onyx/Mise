@@ -89,7 +89,12 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
             composable<ScanRoute> { entry ->
                 val route = entry.toRoute<ScanRoute>()
                 ScanScreen(
-                    viewModel = viewModel { graph.scanViewModelFactory.create(route.showBackNavigation) },
+                    viewModel = viewModel {
+                        graph.scanViewModelFactory.create(
+                            route.showBackNavigation,
+                            route.addToComparison,
+                        )
+                    },
                     showBackNavigation = route.showBackNavigation,
                 )
             }
@@ -97,7 +102,13 @@ fun AppNavHost(graph: AppGraph, onExit: () -> Unit) {
             composable<ScanNotFoundRoute> { entry ->
                 val route = entry.toRoute<ScanNotFoundRoute>()
                 ScanNotFoundScreen(
-                    viewModel { graph.scanNotFoundViewModelFactory.create(route.barcode, route.showBackNavigation) },
+                    viewModel {
+                        graph.scanNotFoundViewModelFactory.create(
+                            route.barcode,
+                            route.showBackNavigation,
+                            route.addToComparison,
+                        )
+                    },
                 )
             }
 

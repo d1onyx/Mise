@@ -15,7 +15,7 @@
 
     <string name="comparison_title">Compare products</string>
     <string name="comparison_empty">Scan two or more products to compare their nutrition and scores.</string>
-    <string name="comparison_add">Scan product</string>
+    <string name="comparison_add">Add product</string>
     <string name="comparison_clear">clear</string>
     <string name="comparison_best">BEST SCORE</string>
     <string name="comparison_remove">remove</string>
