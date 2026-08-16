@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -163,7 +164,12 @@ internal fun ScanContent(
     // panel takes the whole screen, leaving room for the keyboard.
     Column(modifier.fillMaxSize().background(colors.backgroundDeep)) {
         if (!state.manualEntryVisible) {
-            Box(Modifier.weight(1f).fillMaxWidth()) {
+            // clipToBounds is the belt to COMPATIBLE's suspenders: even a
+            // TextureView-backed preview can be measured a pixel taller than
+            // its Compose bounds during a resize (rotation, this Box's own
+            // weight changing), and without a hard clip that sliver of live
+            // feed shows past the seam into the panel below.
+            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
                 cameraPreview(state.camera, onAction)
 
                 // The chrome sits on live video, so it needs its own contrast floor.
