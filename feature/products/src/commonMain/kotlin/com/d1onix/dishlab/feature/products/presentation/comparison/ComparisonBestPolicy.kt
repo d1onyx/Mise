@@ -44,7 +44,7 @@ internal object ComparisonBestPolicy {
         comparator: Comparator<T>,
     ): ProductId? {
         val parsed = values.mapNotNull { (id, value) -> parse(value)?.let { id to it } }
-        if (parsed.size < 2) return null
+        if (parsed.size != values.size || parsed.size < 2) return null
         val winningValue = parsed.maxWithOrNull { first, second -> comparator.compare(first.second, second.second) }?.second
             ?: return null
         return parsed.singleOrNull { it.second == winningValue }?.first

@@ -45,4 +45,14 @@ class ComparisonBestPolicyTest {
     fun `equal values do not falsely claim a winner`() {
         assertNull(ComparisonBestPolicy.bestNutrient("Salt", listOf(first to "0.2", second to "0.2")))
     }
+
+    @Test
+    fun `a missing value prevents highlighting a partial comparison`() {
+        assertNull(
+            ComparisonBestPolicy.bestNutrient(
+                "Protein",
+                listOf(first to "12", second to "3", ProductId("third") to ""),
+            ),
+        )
+    }
 }
