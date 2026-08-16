@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
@@ -43,6 +45,7 @@ fun MiseSearchField(
     placeholder: String,
     modifier: Modifier = Modifier,
     textFieldModifier: Modifier = Modifier,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
 ) {
     val colors = MiseTheme.colors
     Row(
@@ -64,6 +67,7 @@ fun MiseSearchField(
                 singleLine = true,
                 textStyle = LocalTextStyle.current.merge(MiseTheme.typography.body).copy(color = colors.text),
                 cursorBrush = SolidColor(colors.lime),
+                keyboardOptions = keyboardOptions,
                 modifier = Modifier.fillMaxWidth().then(textFieldModifier),
             )
         }
