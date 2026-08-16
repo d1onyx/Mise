@@ -1,8 +1,13 @@
 package com.d1onix.dishlab.feature.products.presentation.connections
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
+import androidx.compose.foundation.gestures.AnchoredDraggableState
+import androidx.compose.foundation.gestures.DraggableAnchors
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -21,16 +27,16 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.screenIn
@@ -39,7 +45,6 @@ import com.d1onix.dishlab.designsystem.component.MisePanel
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.ProductAvatar
 import com.d1onix.dishlab.designsystem.component.SectionLabel
-import com.d1onix.dishlab.designsystem.component.rememberSingleUseClick
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
@@ -57,6 +62,7 @@ import com.d1onix.dishlab.feature.products.resources.connections_product_picker
 import com.d1onix.dishlab.feature.products.resources.connections_summary
 import com.d1onix.dishlab.feature.products.resources.connections_title
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.roundToInt
 
 @Composable
 fun ConnectionOverviewScreen(viewModel: ConnectionOverviewViewModel) {
@@ -165,7 +171,6 @@ internal fun ConnectionOverviewContent(
                     end = 20.dp,
                     bottom = 28.dp,
                 ),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(visibleProducts, key = { it.id.value }) { product ->
                     ConnectionProductRow(
@@ -204,6 +209,7 @@ private fun ProductPickerItem(
         borderColor = if (selected) accent.copy(alpha = 0.75f) else colors.border,
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
         onClick = onClick,
+        singleUse = false,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -305,6 +311,7 @@ private fun ConnectionGroupButton(
         borderColor = if (selected) colors.violet.copy(alpha = 0.65f) else colors.border,
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 11.dp),
         onClick = onClick,
+        singleUse = false,
     ) {
         Text(
             text = text,
@@ -327,36 +334,20 @@ private fun ConnectionProductRow(
     val actionLabel = stringResource(
         if (connected) Res.string.connections_disconnect else Res.string.connections_connect
     )
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onConnectionChange()
-            }
-            false
-        }
-    )
-
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        enableDismissFromEndToStart = true,
-        backgroundContent = {
-            SwipeConnectionAction(
-                connected = connected,
-                label = actionLabel,
-                color = actionColor,
-                onClick = onConnectionChange,
-            )
-        },
+    ConnectionSwipeRow(
+        connected = connected,
+        label = actionLabel,
+        color = actionColor,
+        onConnectionChange = onConnectionChange,
     ) {
-        MisePanel(
-            modifier = Modifier.fillMaxWidth(),
-            cornerRadius = 8,
-            contentPadding = PaddingValues(12.dp),
-            onClick = onClick,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(colors.background)
+                .clickable(onClick = onClick),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -382,9 +373,69 @@ private fun ConnectionProductRow(
                     modifier = Modifier.size(18.dp),
                 )
             }
+            Box(
+                Modifier
+                    .padding(start = 72.dp)
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(colors.border),
+            )
         }
     }
 }
+
+@Composable
+@OptIn(ExperimentalFoundationApi::class)
+private fun ConnectionSwipeRow(
+    connected: Boolean,
+    label: String,
+    color: Color,
+    onConnectionChange: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val state = remember { AnchoredDraggableState(ConnectionSwipeValue.Closed) }
+    val offset = state.offset.takeUnless(Float::isNaN) ?: 0f
+
+    LaunchedEffect(state.currentValue) {
+        if (state.currentValue == ConnectionSwipeValue.Delete) onConnectionChange()
+    }
+
+    Box(
+        modifier = Modifier.fillMaxWidth().onSizeChanged { size ->
+            state.updateAnchors(
+                DraggableAnchors {
+                    ConnectionSwipeValue.Closed at 0f
+                    ConnectionSwipeValue.Revealed at -size.width * 0.5f
+                    ConnectionSwipeValue.Delete at -size.width.toFloat()
+                }
+            )
+        },
+    ) {
+        if (offset < 0f) {
+            SwipeConnectionAction(
+                connected = connected,
+                label = label,
+                color = color,
+                onClick = onConnectionChange,
+                modifier = Modifier.matchParentSize().clip(ConnectionSwipeShape),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .clip(ConnectionSwipeShape)
+                .offset { androidx.compose.ui.unit.IntOffset(offset.roundToInt(), 0) }
+                .anchoredDraggable(
+                    state = state,
+                    orientation = Orientation.Horizontal,
+                    flingBehavior = AnchoredDraggableDefaults.flingBehavior(state),
+                ),
+        ) { content() }
+    }
+}
+
+private enum class ConnectionSwipeValue { Closed, Revealed, Delete }
+
+private val ConnectionSwipeShape = RoundedCornerShape(14.dp)
 
 @Composable
 private fun SwipeConnectionAction(
@@ -392,16 +443,12 @@ private fun SwipeConnectionAction(
     label: String,
     color: Color,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(8.dp)
-    val singleUseClick = rememberSingleUseClick(onClick = onClick)
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clip(shape)
-            .background(color.copy(alpha = 0.14f), shape)
-            .border(1.dp, color.copy(alpha = 0.55f), shape)
-            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick)
+        modifier = modifier
+            .background(color.copy(alpha = 0.14f))
+            .clickable(onClick = onClick)
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.CenterEnd,
     ) {
