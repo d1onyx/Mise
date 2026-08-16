@@ -1,10 +1,12 @@
 package com.d1onix.dishlab.feature.products.presentation.comparison
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -279,7 +281,7 @@ private fun ComparisonFactRow(
                     ),
                     color = if (detail.product.id == highlightProductId) colors.lime else colors.text,
                     textAlign = TextAlign.End,
-                    modifier = Modifier.weight(1f),
+                    modifier = bestValueModifier(detail.product.id == highlightProductId),
                 )
             }
         }
@@ -307,7 +309,7 @@ private fun ComparisonNutrientRow(name: String, details: List<ComparedDetail>, p
                     ),
                     color = if (detail.product.id == bestProductId) colors.lime else colors.text,
                     textAlign = TextAlign.End,
-                    modifier = Modifier.weight(1f),
+                    modifier = bestValueModifier(detail.product.id == bestProductId),
                 )
             }
         }
@@ -316,3 +318,19 @@ private fun ComparisonNutrientRow(name: String, details: List<ComparedDetail>, p
 
 @Composable
 private fun Divider() = Box(Modifier.fillMaxWidth().height(1.dp).background(MiseTheme.colors.border))
+
+/** Makes a winner visually distinct even in the compact four-column comparison table. */
+@Composable
+private fun RowScope.bestValueModifier(isBest: Boolean): Modifier {
+    val colors = MiseTheme.colors
+    val shape = RoundedCornerShape(6.dp)
+    return if (isBest) {
+        Modifier
+            .weight(1f)
+            .background(colors.lime.copy(alpha = 0.16f), shape)
+            .border(1.dp, colors.lime.copy(alpha = 0.72f), shape)
+            .padding(horizontal = 3.dp, vertical = 2.dp)
+    } else {
+        Modifier.weight(1f)
+    }
+}
