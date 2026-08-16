@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.component.EmptyState
 import com.d1onix.dishlab.designsystem.component.MiseFact
@@ -36,6 +35,7 @@ import com.d1onix.dishlab.designsystem.component.MiseTabPager
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.component.VerdictBadge
+import com.d1onix.dishlab.designsystem.component.ZoomableProductImage
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductPackagingComponent
@@ -83,7 +83,6 @@ import com.d1onix.dishlab.feature.products.resources.product_tab_overview
 import com.d1onix.dishlab.feature.products.resources.product_tab_photos
 import com.d1onix.dishlab.feature.products.resources.product_traces
 import org.jetbrains.compose.resources.stringResource
-import coil3.compose.AsyncImage
 
 /**
  * The product sheet: score, verdict, and everything OFF reports about the
@@ -407,11 +406,10 @@ private fun ProductPhotoTile(title: String, imageUrl: String, contentDescription
                 .background(colors.surface),
             contentAlignment = Alignment.Center,
         ) {
-            AsyncImage(
-                model = imageUrl,
+            ZoomableProductImage(
+                imageUrl = imageUrl,
                 contentDescription = contentDescription,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize().padding(12.dp),
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
