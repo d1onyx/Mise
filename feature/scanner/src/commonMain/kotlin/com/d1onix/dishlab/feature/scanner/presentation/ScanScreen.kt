@@ -350,12 +350,14 @@ private fun ScannerControlPanel(
                 MiseGhostButton(
                     text = stringResource(Res.string.scan_manual_cancel),
                     onClick = { onAction(ScanAction.ManualEntryToggled) },
+                    singleUse = false,
                     modifier = Modifier.fillMaxWidth(),
                 )
             } else {
                 MiseGhostButton(
                     text = stringResource(Res.string.scan_manual_entry),
                     onClick = { onAction(ScanAction.ManualEntryToggled) },
+                    singleUse = false,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(14.dp))
@@ -391,6 +393,7 @@ private fun ScanHintButton(
             tint = if (highlighted) colors.onLime else colors.text,
             borderColor = if (highlighted) colors.mint else colors.borderStrong,
             background = if (highlighted) colors.mint else colors.panel,
+            singleUse = false,
         )
         Spacer(Modifier.height(6.dp))
         Text(
@@ -1142,4 +1145,3 @@ private fun ScanStatus(
         }
     }
 }
-

@@ -157,7 +157,12 @@ internal fun RecipeListContent(
         }
         if (state.loadError) {
             EmptyState(stringResource(Res.string.recipes_error), Modifier.fillMaxWidth())
-            MisePrimaryButton(stringResource(Res.string.recipes_retry), { onAction(RecipeListAction.RetryClicked) }, Modifier.fillMaxWidth().padding(horizontal = 20.dp))
+            MisePrimaryButton(
+                text = stringResource(Res.string.recipes_retry),
+                onClick = { onAction(RecipeListAction.RetryClicked) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                singleUse = false,
+            )
             return@Column
         }
         if (state.visible.isEmpty()) {

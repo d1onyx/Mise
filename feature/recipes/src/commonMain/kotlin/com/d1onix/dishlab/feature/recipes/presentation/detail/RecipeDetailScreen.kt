@@ -298,6 +298,7 @@ private fun RecipeDetailUnavailableContent(
             MisePrimaryButton(
                 text = stringResource(Res.string.recipe_retry),
                 onClick = { onAction(RecipeDetailAction.RetryClicked) },
+                singleUse = false,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             )
         }

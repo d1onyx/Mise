@@ -116,6 +116,7 @@ internal fun ComparisonContent(
                 ),
                 onClick = { onAction(ComparisonAction.SelectAllToggled) },
                 color = MiseTheme.colors.lime,
+                singleUse = false,
             )
         }
         LazyRow(
@@ -174,6 +175,7 @@ private fun ComparedProductCard(
     MisePanel(
         modifier = Modifier.width(144.dp).height(200.dp),
         cornerRadius = 8,
+        singleUse = false,
         background = if (selected) colors.lime.copy(alpha = 0.08f) else colors.panel,
         borderColor = if (selected) colors.lime else colors.border,
         contentPadding = PaddingValues(12.dp),

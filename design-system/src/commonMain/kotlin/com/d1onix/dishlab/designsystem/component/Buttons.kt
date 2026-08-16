@@ -33,12 +33,13 @@ fun MisePrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    singleUse: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(vertical = 17.dp, horizontal = 20.dp),
 ) {
     val colors = MiseTheme.colors
     val shape = RoundedCornerShape(18.dp)
     val singleUseClick = rememberSingleUseClick(onClick = onClick)
-    val isEnabled = enabled && singleUseClick.enabled
+    val isEnabled = enabled && (!singleUse || singleUseClick.enabled)
     Box(
         modifier = modifier
             .alpha(if (isEnabled) 1f else 0.45f)
@@ -53,7 +54,7 @@ fun MisePrimaryButton(
                 brush = Brush.linearGradient(listOf(colors.lime, colors.limeDeep)),
                 shape = shape,
             )
-            .clickable(enabled = isEnabled, onClick = singleUseClick)
+            .clickable(enabled = isEnabled, onClick = if (singleUse) singleUseClick else onClick)
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
     ) {
@@ -72,6 +73,7 @@ fun MiseGhostButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    singleUse: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(vertical = 15.dp, horizontal = 18.dp),
 ) {
     val colors = MiseTheme.colors
@@ -79,10 +81,13 @@ fun MiseGhostButton(
     val singleUseClick = rememberSingleUseClick(onClick = onClick)
     Box(
         modifier = modifier
-            .alpha(if (singleUseClick.enabled) 1f else 0.45f)
+            .alpha(if (!singleUse || singleUseClick.enabled) 1f else 0.45f)
             .clip(shape)
             .border(1.dp, colors.border, shape)
-            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick)
+            .clickable(
+                enabled = !singleUse || singleUseClick.enabled,
+                onClick = if (singleUse) singleUseClick else onClick,
+            )
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
     ) {
@@ -97,6 +102,7 @@ fun MiseTextAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     color: Color = MiseTheme.colors.textFaint,
+    singleUse: Boolean = true,
 ) {
     val singleUseClick = rememberSingleUseClick(onClick = onClick)
     Text(
@@ -105,9 +111,12 @@ fun MiseTextAction(
         color = color,
         textAlign = TextAlign.Center,
         modifier = modifier
-            .alpha(if (singleUseClick.enabled) 1f else 0.45f)
+            .alpha(if (!singleUse || singleUseClick.enabled) 1f else 0.45f)
             .clip(RoundedCornerShape(8.dp))
-            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick)
+            .clickable(
+                enabled = !singleUse || singleUseClick.enabled,
+                onClick = if (singleUse) singleUseClick else onClick,
+            )
             .padding(vertical = 6.dp),
     )
 }
