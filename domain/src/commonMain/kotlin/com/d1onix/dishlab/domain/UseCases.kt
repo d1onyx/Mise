@@ -58,6 +58,11 @@ fun interface ObserveSavedRecipesUseCase {
     operator fun invoke(): Flow<List<Recipe>>
 }
 
+/** Resolves a single saved recipe from the local cache — works fully offline. */
+fun interface GetSavedRecipeUseCase {
+    suspend operator fun invoke(id: RecipeId): Recipe?
+}
+
 fun interface ObserveSavedRecipeIdsUseCase {
     operator fun invoke(): Flow<Set<RecipeId>>
 }
