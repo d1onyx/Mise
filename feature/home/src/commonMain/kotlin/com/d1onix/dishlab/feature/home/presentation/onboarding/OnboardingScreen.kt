@@ -2,7 +2,6 @@ package com.d1onix.dishlab.feature.home.presentation.onboarding
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -24,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.MiseGhostButton
+import com.d1onix.dishlab.designsystem.component.debouncedClickable
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.MiseTextAction
@@ -191,7 +191,7 @@ private fun PreferenceChip(text: String, selected: Boolean, onClick: () -> Unit)
             .clip(shape)
             .background(if (selected) colors.lime else colors.panel, shape)
             .border(1.dp, if (selected) colors.lime else colors.border, shape)
-            .clickable(onClick = onClick)
+            .debouncedClickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 11.dp),
     )
 }

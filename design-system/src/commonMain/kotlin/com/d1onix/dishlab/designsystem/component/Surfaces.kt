@@ -2,7 +2,6 @@ package com.d1onix.dishlab.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -41,7 +40,7 @@ fun MisePanel(
             .clip(shape)
             .background(background, shape)
             .border(1.dp, borderColor, shape)
-            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+            .let { if (onClick != null) it.debouncedClickable(onClick = onClick) else it }
             .padding(contentPadding),
         content = content,
     )

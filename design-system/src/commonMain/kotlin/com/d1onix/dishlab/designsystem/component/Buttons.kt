@@ -2,7 +2,6 @@ package com.d1onix.dishlab.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -51,7 +50,7 @@ fun MisePrimaryButton(
                 brush = Brush.linearGradient(listOf(colors.lime, colors.limeDeep)),
                 shape = shape,
             )
-            .clickable(enabled = enabled, onClick = onClick)
+            .debouncedClickable(enabled = enabled, onClick = onClick)
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
     ) {
@@ -78,7 +77,7 @@ fun MiseGhostButton(
         modifier = modifier
             .clip(shape)
             .border(1.dp, colors.border, shape)
-            .clickable(onClick = onClick)
+            .debouncedClickable(onClick = onClick)
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
     ) {
@@ -101,7 +100,7 @@ fun MiseTextAction(
         textAlign = TextAlign.Center,
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .debouncedClickable(onClick = onClick)
             .padding(vertical = 6.dp),
     )
 }
@@ -122,7 +121,7 @@ fun MiseCircleButton(
             .clip(CircleShape)
             .background(background, CircleShape)
             .border(1.dp, borderColor, CircleShape)
-            .clickable(onClick = onClick),
+            .debouncedClickable(onClick = onClick),
         contentAlignment = Alignment.Center,
         content = { content() },
     )

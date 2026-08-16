@@ -2,7 +2,6 @@ package com.d1onix.dishlab.feature.recipes.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.component.MiseTag
 import com.d1onix.dishlab.designsystem.component.ProductAvatar
+import com.d1onix.dishlab.designsystem.component.debouncedClickable
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.Recipe
@@ -56,7 +56,7 @@ fun RecipeCard(
             .clip(RoundedCornerShape(20.dp))
             .background(colors.panel)
             .border(1.dp, colors.border, RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick),
+            .debouncedClickable(onClick = onClick),
     ) {
         Box(
             Modifier

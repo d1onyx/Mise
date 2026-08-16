@@ -2,7 +2,6 @@ package com.d1onix.dishlab.feature.products.presentation.connections
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.EmptyState
+import com.d1onix.dishlab.designsystem.component.debouncedClickable
 import com.d1onix.dishlab.designsystem.component.MisePanel
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.ProductAvatar
@@ -399,7 +399,7 @@ private fun SwipeConnectionAction(
             .clip(shape)
             .background(color.copy(alpha = 0.14f), shape)
             .border(1.dp, color.copy(alpha = 0.55f), shape)
-            .clickable(onClick = onClick)
+            .debouncedClickable(onClick = onClick)
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.CenterEnd,
     ) {

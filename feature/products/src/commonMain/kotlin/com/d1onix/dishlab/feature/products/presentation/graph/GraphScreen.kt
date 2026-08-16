@@ -1,7 +1,6 @@
 package com.d1onix.dishlab.feature.products.presentation.graph
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +43,7 @@ import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
+import com.d1onix.dishlab.designsystem.component.debouncedClickable
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
@@ -227,7 +227,7 @@ private fun GraphTitleButton(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .debouncedClickable(onClick = onClick)
             .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
