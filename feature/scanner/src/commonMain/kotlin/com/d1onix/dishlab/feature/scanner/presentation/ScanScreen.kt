@@ -30,6 +30,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -297,14 +299,24 @@ private fun ScannerControlPanel(
             }
         }
 
+        val manualBarcodeFocusRequester = remember { FocusRequester() }
+        // Grabs focus the moment the field appears, so the keyboard is
+        // already up and ready to type — no extra tap to reach it.
+        LaunchedEffect(state.manualEntryVisible) {
+            if (state.manualEntryVisible) manualBarcodeFocusRequester.requestFocus()
+        }
+
         Column(
             Modifier
-                .align(Alignment.TopCenter)
+                .align(if (state.manualEntryVisible) Alignment.Center else Alignment.TopCenter)
                 .widthIn(max = 320.dp)
                 .fillMaxWidth()
-                // Anchored below the corner hints (when they're showing)
-                // instead of dead-centered, so it can never sit under them.
-                .padding(top = if (state.manualEntryVisible) 24.dp else 84.dp),
+                // Not manual entry: anchored below the corner hints instead
+                // of dead-centered, so it can never sit under them. Manual
+                // entry: centered in the (now full-screen, keyboard-clear)
+                // panel instead of pinned near the top, so the field sits at
+                // a comfortable thumb reach rather than up near the notch.
+                .then(if (state.manualEntryVisible) Modifier else Modifier.padding(top = 84.dp)),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (state.manualEntryVisible) {
@@ -313,6 +325,7 @@ private fun ScannerControlPanel(
                     onValueChange = { onAction(ScanAction.ManualBarcodeChanged(it)) },
                     placeholder = stringResource(Res.string.scan_manual_placeholder),
                     modifier = Modifier.fillMaxWidth(),
+                    textFieldModifier = Modifier.focusRequester(manualBarcodeFocusRequester),
                 )
                 Spacer(Modifier.height(12.dp))
                 MisePrimaryButton(

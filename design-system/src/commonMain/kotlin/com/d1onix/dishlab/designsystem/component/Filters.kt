@@ -29,13 +29,20 @@ import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 
-/** Search box used on the Recipes and Saved screens. */
+/**
+ * Search box used on the Recipes and Saved screens.
+ *
+ * [textFieldModifier] reaches the inner [BasicTextField] specifically — callers
+ * that need to attach a `FocusRequester` (autofocus on open) have nowhere else
+ * to hang it, since [modifier] applies to the outer, non-focusable [Row].
+ */
 @Composable
 fun MiseSearchField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    textFieldModifier: Modifier = Modifier,
 ) {
     val colors = MiseTheme.colors
     Row(
@@ -57,7 +64,7 @@ fun MiseSearchField(
                 singleLine = true,
                 textStyle = LocalTextStyle.current.merge(MiseTheme.typography.body).copy(color = colors.text),
                 cursorBrush = SolidColor(colors.lime),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().then(textFieldModifier),
             )
         }
     }
