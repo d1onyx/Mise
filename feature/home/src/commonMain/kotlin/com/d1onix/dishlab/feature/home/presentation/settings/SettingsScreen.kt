@@ -69,7 +69,7 @@ internal fun SettingsContent(state: SettingsUiState, onAction: (SettingsAction) 
 @Composable
 private fun SettingsToggle(title: String, body: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     val colors = MiseTheme.colors
-    MisePanel(Modifier.fillMaxWidth(), cornerRadius = 8, onClick = { onCheckedChange(!checked) }, contentPadding = PaddingValues(14.dp)) {
+    MisePanel(Modifier.fillMaxWidth(), cornerRadius = 8, onClick = { onCheckedChange(!checked) }, singleUse = false, contentPadding = PaddingValues(14.dp)) {
         androidx.compose.foundation.layout.Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f)) { Text(title, style = MiseTheme.typography.body, color = colors.text); Text(body, style = MiseTheme.typography.bodySmall, color = colors.textMuted) }
             Switch(checked = checked, onCheckedChange = null, colors = SwitchDefaults.colors(checkedThumbColor = colors.onLime, checkedTrackColor = colors.lime))

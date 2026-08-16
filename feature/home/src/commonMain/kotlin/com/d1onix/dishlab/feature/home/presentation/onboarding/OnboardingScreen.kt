@@ -29,7 +29,6 @@ import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.MiseTextAction
 import com.d1onix.dishlab.designsystem.component.SectionLabel
-import com.d1onix.dishlab.designsystem.component.rememberSingleUseClick
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.AllergenPreference
 import com.d1onix.dishlab.domain.model.DietPreference
@@ -185,17 +184,15 @@ private fun sectionTitle(section: OnboardingSection): String = stringResource(
 private fun PreferenceChip(text: String, selected: Boolean, onClick: () -> Unit) {
     val colors = MiseTheme.colors
     val shape = RoundedCornerShape(8.dp)
-    val singleUseClick = rememberSingleUseClick(onClick = onClick)
     Text(
         text = text,
         style = MiseTheme.typography.body,
         color = if (selected) colors.onLime else colors.text,
         modifier = Modifier
-            .alpha(if (singleUseClick.enabled) 1f else 0.45f)
             .clip(shape)
             .background(if (selected) colors.lime else colors.panel, shape)
             .border(1.dp, if (selected) colors.lime else colors.border, shape)
-            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick)
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 11.dp),
     )
 }

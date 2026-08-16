@@ -33,6 +33,7 @@ fun MisePanel(
     borderColor: Color = MiseTheme.colors.border,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     onClick: (() -> Unit)? = null,
+    singleUse: Boolean = true,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(cornerRadius.dp)
@@ -44,7 +45,10 @@ fun MisePanel(
             .border(1.dp, borderColor, shape)
             .let {
                 if (singleUseClick != null) {
-                    it.clickable(enabled = singleUseClick.enabled, onClick = singleUseClick)
+                    it.clickable(
+                        enabled = !singleUse || singleUseClick.enabled,
+                        onClick = if (singleUse) singleUseClick else onClick,
+                    )
                 } else {
                     it
                 }
