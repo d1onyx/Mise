@@ -2,6 +2,7 @@ package com.d1onix.dishlab.feature.recipes.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,13 +17,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.component.MiseTag
 import com.d1onix.dishlab.designsystem.component.ProductAvatar
-import com.d1onix.dishlab.designsystem.component.debouncedClickable
+import com.d1onix.dishlab.designsystem.component.rememberDebouncedClick
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.Recipe
@@ -49,14 +51,16 @@ fun RecipeCard(
 ) {
     val colors = MiseTheme.colors
     val accent = products.firstOrNull()?.let { Color(it.accentColor) } ?: colors.violet
+    val debouncedClick = rememberDebouncedClick(onClick = onClick)
 
     Column(
         modifier
+            .alpha(if (debouncedClick.enabled) 1f else 0.7f)
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(colors.panel)
             .border(1.dp, colors.border, RoundedCornerShape(20.dp))
-            .debouncedClickable(onClick = onClick),
+            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick),
     ) {
         Box(
             Modifier

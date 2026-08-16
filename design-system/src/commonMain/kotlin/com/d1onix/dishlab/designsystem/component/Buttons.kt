@@ -2,6 +2,7 @@ package com.d1onix.dishlab.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,9 +37,11 @@ fun MisePrimaryButton(
 ) {
     val colors = MiseTheme.colors
     val shape = RoundedCornerShape(18.dp)
+    val debouncedClick = rememberDebouncedClick(onClick = onClick)
+    val isEnabled = enabled && debouncedClick.enabled
     Box(
         modifier = modifier
-            .alpha(if (enabled) 1f else 0.45f)
+            .alpha(if (isEnabled) 1f else 0.45f)
             .shadow(
                 elevation = 24.dp,
                 shape = shape,
@@ -50,7 +53,7 @@ fun MisePrimaryButton(
                 brush = Brush.linearGradient(listOf(colors.lime, colors.limeDeep)),
                 shape = shape,
             )
-            .debouncedClickable(enabled = enabled, onClick = onClick)
+            .clickable(enabled = isEnabled, onClick = debouncedClick)
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
     ) {
@@ -73,11 +76,13 @@ fun MiseGhostButton(
 ) {
     val colors = MiseTheme.colors
     val shape = RoundedCornerShape(16.dp)
+    val debouncedClick = rememberDebouncedClick(onClick = onClick)
     Box(
         modifier = modifier
+            .alpha(if (debouncedClick.enabled) 1f else 0.45f)
             .clip(shape)
             .border(1.dp, colors.border, shape)
-            .debouncedClickable(onClick = onClick)
+            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick)
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
     ) {
@@ -93,14 +98,16 @@ fun MiseTextAction(
     modifier: Modifier = Modifier,
     color: Color = MiseTheme.colors.textFaint,
 ) {
+    val debouncedClick = rememberDebouncedClick(onClick = onClick)
     Text(
         text = text,
         style = MiseTheme.typography.monoSmall,
         color = color,
         textAlign = TextAlign.Center,
         modifier = modifier
+            .alpha(if (debouncedClick.enabled) 1f else 0.45f)
             .clip(RoundedCornerShape(8.dp))
-            .debouncedClickable(onClick = onClick)
+            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick)
             .padding(vertical = 6.dp),
     )
 }
@@ -115,13 +122,15 @@ fun MiseCircleButton(
     background: Color = Color.Transparent,
     content: @Composable () -> Unit,
 ) {
+    val debouncedClick = rememberDebouncedClick(onClick = onClick)
     Box(
         modifier = modifier
+            .alpha(if (debouncedClick.enabled) 1f else 0.45f)
             .size(size.dp)
             .clip(CircleShape)
             .background(background, CircleShape)
             .border(1.dp, borderColor, CircleShape)
-            .debouncedClickable(onClick = onClick),
+            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick),
         contentAlignment = Alignment.Center,
         content = { content() },
     )

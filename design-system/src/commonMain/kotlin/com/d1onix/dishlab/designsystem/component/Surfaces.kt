@@ -2,6 +2,7 @@ package com.d1onix.dishlab.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -35,12 +36,19 @@ fun MisePanel(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(cornerRadius.dp)
+    val debouncedClick = onClick?.let { rememberDebouncedClick(onClick = it) }
     Box(
         modifier = modifier
             .clip(shape)
             .background(background, shape)
             .border(1.dp, borderColor, shape)
-            .let { if (onClick != null) it.debouncedClickable(onClick = onClick) else it }
+            .let {
+                if (debouncedClick != null) {
+                    it.clickable(enabled = debouncedClick.enabled, onClick = debouncedClick)
+                } else {
+                    it
+                }
+            }
             .padding(contentPadding),
         content = content,
     )

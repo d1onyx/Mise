@@ -2,6 +2,7 @@ package com.d1onix.dishlab.feature.home.presentation.onboarding
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -18,16 +19,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.MiseGhostButton
-import com.d1onix.dishlab.designsystem.component.debouncedClickable
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.MiseTextAction
 import com.d1onix.dishlab.designsystem.component.SectionLabel
+import com.d1onix.dishlab.designsystem.component.rememberDebouncedClick
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.AllergenPreference
 import com.d1onix.dishlab.domain.model.DietPreference
@@ -183,15 +185,17 @@ private fun sectionTitle(section: OnboardingSection): String = stringResource(
 private fun PreferenceChip(text: String, selected: Boolean, onClick: () -> Unit) {
     val colors = MiseTheme.colors
     val shape = RoundedCornerShape(8.dp)
+    val debouncedClick = rememberDebouncedClick(onClick = onClick)
     Text(
         text = text,
         style = MiseTheme.typography.body,
         color = if (selected) colors.onLime else colors.text,
         modifier = Modifier
+            .alpha(if (debouncedClick.enabled) 1f else 0.45f)
             .clip(shape)
             .background(if (selected) colors.lime else colors.panel, shape)
             .border(1.dp, if (selected) colors.lime else colors.border, shape)
-            .debouncedClickable(onClick = onClick)
+            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick)
             .padding(horizontal = 16.dp, vertical = 11.dp),
     )
 }

@@ -1,6 +1,7 @@
 package com.d1onix.dishlab.feature.products.presentation.graph
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -43,7 +45,7 @@ import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
-import com.d1onix.dishlab.designsystem.component.debouncedClickable
+import com.d1onix.dishlab.designsystem.component.rememberDebouncedClick
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
@@ -224,10 +226,12 @@ private fun GraphLoadingSkeleton(modifier: Modifier = Modifier) {
 @Composable
 private fun GraphTitleButton(onClick: () -> Unit) {
     val colors = MiseTheme.colors
+    val debouncedClick = rememberDebouncedClick(onClick = onClick)
     Row(
         modifier = Modifier
+            .alpha(if (debouncedClick.enabled) 1f else 0.45f)
             .clip(RoundedCornerShape(8.dp))
-            .debouncedClickable(onClick = onClick)
+            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick)
             .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),

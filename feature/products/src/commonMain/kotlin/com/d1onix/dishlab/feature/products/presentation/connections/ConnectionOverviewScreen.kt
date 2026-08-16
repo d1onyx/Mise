@@ -2,6 +2,7 @@ package com.d1onix.dishlab.feature.products.presentation.connections
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,11 +35,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.EmptyState
-import com.d1onix.dishlab.designsystem.component.debouncedClickable
 import com.d1onix.dishlab.designsystem.component.MisePanel
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.ProductAvatar
 import com.d1onix.dishlab.designsystem.component.SectionLabel
+import com.d1onix.dishlab.designsystem.component.rememberDebouncedClick
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
@@ -393,13 +394,14 @@ private fun SwipeConnectionAction(
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(8.dp)
+    val debouncedClick = rememberDebouncedClick(onClick = onClick)
     Box(
         modifier = Modifier
             .fillMaxSize()
             .clip(shape)
             .background(color.copy(alpha = 0.14f), shape)
             .border(1.dp, color.copy(alpha = 0.55f), shape)
-            .debouncedClickable(onClick = onClick)
+            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick)
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.CenterEnd,
     ) {
