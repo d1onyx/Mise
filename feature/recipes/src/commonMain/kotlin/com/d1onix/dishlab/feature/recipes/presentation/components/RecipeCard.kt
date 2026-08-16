@@ -17,12 +17,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.d1onix.dishlab.designsystem.component.MiseTag
 import com.d1onix.dishlab.designsystem.component.ProductAvatar
+import com.d1onix.dishlab.designsystem.component.rememberSingleUseClick
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.Recipe
@@ -49,14 +51,16 @@ fun RecipeCard(
 ) {
     val colors = MiseTheme.colors
     val accent = products.firstOrNull()?.let { Color(it.accentColor) } ?: colors.violet
+    val singleUseClick = rememberSingleUseClick(onClick = onClick)
 
     Column(
         modifier
+            .alpha(if (singleUseClick.enabled) 1f else 0.7f)
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(colors.panel)
             .border(1.dp, colors.border, RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick),
+            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick),
     ) {
         Box(
             Modifier
