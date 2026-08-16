@@ -44,7 +44,9 @@ interface RecipeRepository {
 
 interface SavedRecipesRepository {
     val saved: Flow<Set<RecipeId>>
-    suspend fun toggle(id: RecipeId)
+    /** Full content of saved recipes, cached locally at save time so it resolves fully offline. */
+    val savedRecipes: Flow<List<Recipe>>
+    suspend fun toggle(recipe: Recipe)
 }
 
 interface ScanHistoryRepository {
