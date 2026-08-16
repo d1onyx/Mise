@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -23,12 +24,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
+import kotlin.math.max
 
 /**
  * A tappable product image that opens in a full-screen viewer. The viewer
@@ -71,6 +74,8 @@ private fun ZoomableProductImageDialog(
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var viewportSize by remember { mutableStateOf(IntSize.Zero) }
+    var dismissDragDistance by remember { mutableFloatStateOf(0f) }
+    val dismissThreshold = with(LocalDensity.current) { 96.dp.toPx() }
     val transformableState = rememberTransformableState { centroid, zoomChange, panChange, _ ->
         val nextScale = (scale * zoomChange).coerceIn(1f, 5f)
         val maxTranslationX = viewportSize.width * (nextScale - 1f) / 2f
@@ -92,7 +97,18 @@ private fun ZoomableProductImageDialog(
                     ).coerceIn(-maxTranslationY, maxTranslationY),
             )
         }
+        if (scale == 1f && nextScale == 1f) {
+            dismissDragDistance = max(0f, dismissDragDistance + panChange.y)
+            if (dismissDragDistance >= dismissThreshold) onDismiss()
+        } else {
+            dismissDragDistance = 0f
+        }
         scale = nextScale
+    }
+    val isTransforming = transformableState.isTransformInProgress
+
+    LaunchedEffect(isTransforming) {
+        if (!isTransforming) dismissDragDistance = 0f
     }
 
     Dialog(
