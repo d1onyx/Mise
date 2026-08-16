@@ -39,7 +39,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,6 +59,7 @@ import com.d1onix.dishlab.designsystem.component.MiseTextAction
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.component.VerdictBadge
+import com.d1onix.dishlab.designsystem.component.ZoomableProductImage
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
@@ -114,7 +114,6 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_graph
 import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_nutrition
 import com.kashif.cameraK.permissions.providePermissions
 import org.jetbrains.compose.resources.stringResource
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.sin
@@ -518,11 +517,10 @@ private fun ScannedPhotoTile(title: String, imageUrl: String, contentDescription
                 .background(colors.surface),
             contentAlignment = Alignment.Center,
         ) {
-            AsyncImage(
-                model = imageUrl,
+            ZoomableProductImage(
+                imageUrl = imageUrl,
                 contentDescription = contentDescription,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize().padding(12.dp),
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
@@ -560,11 +558,10 @@ private fun ScanOverviewPage(product: Product) {
                 .background(colors.surface),
             contentAlignment = Alignment.Center,
         ) {
-            AsyncImage(
-                model = imageUrl,
+            ZoomableProductImage(
+                imageUrl = imageUrl,
                 contentDescription = product.name,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize().padding(12.dp),
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
