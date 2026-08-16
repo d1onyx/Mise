@@ -71,7 +71,9 @@ class RecipeDetailViewModel(
         when (action) {
             RecipeDetailAction.BackClicked -> router.goBack()
             RecipeDetailAction.RetryClicked -> launch("reloadRecipe") { loadRecipe() }
-            RecipeDetailAction.SaveClicked -> launch("toggleSaved") { toggleSaved(recipeId) }
+            RecipeDetailAction.SaveClicked -> _uiState.value.recipe?.let { recipe ->
+                launch("toggleSaved") { toggleSaved(recipe) }
+            }
         }
     }
 

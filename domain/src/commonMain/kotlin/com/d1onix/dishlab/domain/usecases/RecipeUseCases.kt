@@ -136,11 +136,8 @@ class ObserveSavedRecipeIdsUseCaseImpl(
 @Inject
 class ObserveSavedRecipesUseCaseImpl(
     private val saved: SavedRecipesRepository,
-    private val recipes: RecipeRepository,
 ) : ObserveSavedRecipesUseCase {
-    override fun invoke(): Flow<List<Recipe>> = saved.saved.map { ids ->
-        recipes.all().filter { it.id in ids }
-    }
+    override fun invoke(): Flow<List<Recipe>> = saved.savedRecipes
 }
 
 @ContributesBinding(AppScope::class)
@@ -148,5 +145,5 @@ class ObserveSavedRecipesUseCaseImpl(
 class ToggleSavedRecipeUseCaseImpl(
     private val saved: SavedRecipesRepository,
 ) : ToggleSavedRecipeUseCase {
-    override suspend fun invoke(id: RecipeId) = saved.toggle(id)
+    override suspend fun invoke(recipe: Recipe) = saved.toggle(recipe)
 }
