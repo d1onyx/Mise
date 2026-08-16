@@ -204,7 +204,7 @@ private fun ProductPickerItem(
     val colors = MiseTheme.colors
     val accent = Color(product.accentColor)
     MisePanel(
-        modifier = Modifier.width(92.dp),
+        modifier = Modifier.width(184.dp),
         cornerRadius = 8,
         background = if (selected) accent.copy(alpha = 0.10f) else colors.panel,
         borderColor = if (selected) accent.copy(alpha = 0.75f) else colors.border,
