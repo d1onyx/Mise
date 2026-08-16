@@ -24,6 +24,15 @@ class OpenFoodFactsDtosTest {
         assertEquals("en:pet-1-polyethylene-terephthalate", product.packaging.single().material)
         assertEquals(1004, product.sourceSchemaVersion)
         assertEquals(42L, product.sourceRevision)
+        assertEquals("2023", product.nutriScoreVersion)
+        assertEquals("en:waters", product.comparedToCategory)
+        assertEquals("12-2026", product.expirationDate)
+        assertEquals("Local spring", product.originNote)
+        // pnns_groups_1/2 carry a digit right after the underscore, which the
+        // SnakeCase naming strategy alone would map to "pnns_groups1" — this
+        // guards the @SerialName override that keeps the real OFF field name.
+        assertEquals("Beverages", product.pnnsGroup)
+        assertEquals("Waters and flavored waters", product.pnnsSubgroup)
     }
 
     @Test
@@ -82,6 +91,12 @@ class OpenFoodFactsDtosTest {
                   }
                 },
                 "nutriscore_grade": "a",
+                "nutriscore_version": "2023",
+                "compared_to_category": "en:waters",
+                "expiration_date": "12-2026",
+                "origin": "Local spring",
+                "pnns_groups_1": "Beverages",
+                "pnns_groups_2": "Waters and flavored waters",
                 "environmental_score_grade": "b",
                 "packagings": [
                   {

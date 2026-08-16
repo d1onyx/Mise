@@ -18,9 +18,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
@@ -46,16 +47,19 @@ import com.d1onix.dishlab.designsystem.anim.MiseEasing
 import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.anim.screenIn
+import com.d1onix.dishlab.designsystem.component.EmptyState
+import com.d1onix.dishlab.designsystem.component.MiseFact
+import com.d1onix.dishlab.designsystem.component.MiseFactList
 import com.d1onix.dishlab.designsystem.component.MiseGhostButton
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MiseGradeScoreScale
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.MiseSearchField
+import com.d1onix.dishlab.designsystem.component.MiseTabPager
 import com.d1onix.dishlab.designsystem.component.MiseTextAction
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.component.VerdictBadge
-import com.d1onix.dishlab.designsystem.component.ZoomableProductImage
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
@@ -88,14 +92,20 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_eco_score_hint
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_add
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_alternatives
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_incomplete
-import com.d1onix.dishlab.feature.scanner.resources.scan_review_nutrition
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_open_graph
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_question
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_compare_another
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_skip
 import com.d1onix.dishlab.feature.scanner.resources.scan_review_title
+import com.d1onix.dishlab.feature.scanner.resources.scan_no_extra_photos
+import com.d1onix.dishlab.feature.scanner.resources.scan_not_set
+import com.d1onix.dishlab.feature.scanner.resources.scan_nutrients_per
 import com.d1onix.dishlab.feature.scanner.resources.scan_server_unavailable
 import com.d1onix.dishlab.feature.scanner.resources.scan_server_retry
+import com.d1onix.dishlab.feature.scanner.resources.scan_tab_composition
+import com.d1onix.dishlab.feature.scanner.resources.scan_tab_nutrition
+import com.d1onix.dishlab.feature.scanner.resources.scan_tab_overview
+import com.d1onix.dishlab.feature.scanner.resources.scan_tab_photos
 import com.d1onix.dishlab.feature.scanner.resources.scan_title
 import com.d1onix.dishlab.feature.scanner.resources.scan_title_resolving
 import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_barcodes
@@ -104,6 +114,7 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_graph
 import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_nutrition
 import com.kashif.cameraK.permissions.providePermissions
 import org.jetbrains.compose.resources.stringResource
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.sin
@@ -375,192 +386,70 @@ private fun ScannedProductReview(
             )
         }
 
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(scoreColor.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
-                        .border(
-                            1.dp,
-                            scoreColor.copy(alpha = 0.4f),
-                            RoundedCornerShape(8.dp),
-                        )
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        ScoreRing(score = product.score, color = scoreColor, size = 68, strokeWidth = 6) {
-                            Text(
-                                text = product.score.toString(),
-                                style = MiseTheme.typography.mono,
-                                color = scoreColor,
-                            )
-                        }
-                        Spacer(Modifier.height(6.dp))
-                        VerdictBadge(product.verdict.label, scoreColor)
-                    }
-                    Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
-                        Text(product.name, style = MiseTheme.typography.title, color = colors.text)
+        Column(Modifier.weight(1f).padding(horizontal = 20.dp, vertical = 12.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(scoreColor.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+                    .border(1.dp, scoreColor.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    ScoreRing(score = product.score, color = scoreColor, size = 68, strokeWidth = 6) {
                         Text(
-                            product.category,
-                            style = MiseTheme.typography.monoSmall,
-                            color = colors.textMuted,
+                            text = product.score.toString(),
+                            style = MiseTheme.typography.mono,
+                            color = scoreColor,
                         )
                     }
+                    Spacer(Modifier.height(6.dp))
+                    VerdictBadge(product.verdict.label, scoreColor)
+                }
+                Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
+                    Text(product.name, style = MiseTheme.typography.title, color = colors.text)
+                    Text(
+                        product.category,
+                        style = MiseTheme.typography.monoSmall,
+                        color = colors.textMuted,
+                    )
                 }
             }
 
             if (!product.hasCompleteData) {
-                item {
-                    Text(
-                        text = stringResource(Res.string.scan_review_incomplete),
-                        style = MiseTheme.typography.monoSmall,
-                        color = colors.amber,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(colors.amber.copy(alpha = 0.10f), RoundedCornerShape(8.dp))
-                            .border(
-                                1.dp,
-                                colors.amber.copy(alpha = 0.3f),
-                                RoundedCornerShape(8.dp),
-                            )
-                            .padding(12.dp),
-                    )
-                }
-            }
-
-            product.details.imageUrl.trim().takeIf { it.startsWith("https://") }?.let { imageUrl ->
-                item {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(204.dp)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(colors.surface),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        ZoomableProductImage(
-                            imageUrl = imageUrl,
-                            contentDescription = product.name,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
-                }
-            }
-
-            listOfNotNull(
-                product.details.ingredientsImageUrl.trim().takeIf { it.startsWith("https://") }?.let { "Ingredients photo" to it },
-                product.details.nutritionImageUrl.trim().takeIf { it.startsWith("https://") }?.let { "Nutrition facts photo" to it },
-                product.details.packagingImageUrl.trim().takeIf { it.startsWith("https://") }?.let { "Packaging photo" to it },
-            ).forEach { (title, url) ->
-                item { ScannedPhotoTile(title = title, imageUrl = url, contentDescription = product.name) }
-            }
-
-            item {
+                Spacer(Modifier.height(12.dp))
                 Text(
-                    text = product.summary,
-                    style = MiseTheme.typography.body,
-                    color = colors.text.copy(alpha = 0.82f),
+                    text = stringResource(Res.string.scan_review_incomplete),
+                    style = MiseTheme.typography.monoSmall,
+                    color = colors.amber,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(colors.amber.copy(alpha = 0.10f), RoundedCornerShape(8.dp))
+                        .border(1.dp, colors.amber.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                        .padding(12.dp),
                 )
             }
 
-            product.details.nutriScore.cleanNutriScoreGrade()?.let { grade ->
-                item {
-                    ScannedGradeScoreScale(
-                        grade = grade,
-                        label = stringResource(Res.string.scan_nutri_score),
-                        hint = stringResource(Res.string.scan_nutri_score_hint),
-                    )
-                }
-            }
+            Spacer(Modifier.height(14.dp))
 
-            product.details.ecoScore.cleanNutriScoreGrade()?.let { grade ->
-                item {
-                    ScannedGradeScoreScale(
-                        grade = grade,
-                        label = stringResource(Res.string.scan_eco_score),
-                        hint = stringResource(Res.string.scan_eco_score_hint),
-                    )
-                }
-            }
-
-            product.scanDetails().forEach { (title, value) ->
-                item { ScannedDetailTile(title, value) }
-            }
-
-            val scannedNutrients = product.details.nutrients.ifEmpty { product.nutrients }
-                .filter { nutrient -> nutrient.amount.toDoubleOrNull()?.let { it.isFinite() && it > 0 } == true }
-            if (scannedNutrients.isNotEmpty()) {
-                item { SectionLabel(stringResource(Res.string.scan_review_nutrition)) }
-                scannedNutrients.chunked(3).forEach { nutrients ->
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            nutrients.forEach { nutrient ->
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .background(colors.panel, RoundedCornerShape(8.dp))
-                                        .border(1.dp, colors.border, RoundedCornerShape(8.dp))
-                                        .padding(12.dp),
-                                ) {
-                                    Text(
-                                        nutrient.name.uppercase(),
-                                        style = MiseTheme.typography.monoTiny,
-                                        color = colors.textMuted,
-                                    )
-                                    Row(verticalAlignment = Alignment.Bottom) {
-                                        Text(
-                                            nutrient.amount,
-                                            style = MiseTheme.typography.titleSmall,
-                                            color = colors.text,
-                                        )
-                                        Text(
-                                            nutrient.unit,
-                                            style = MiseTheme.typography.monoTiny,
-                                            color = colors.textMuted,
-                                            modifier = Modifier.padding(start = 2.dp, bottom = 1.dp),
-                                        )
-                                    }
-                                }
-                            }
-                            repeat(3 - nutrients.size) { Spacer(Modifier.weight(1f)) }
-                        }
+            val tabs = listOf(
+                stringResource(Res.string.scan_tab_overview),
+                stringResource(Res.string.scan_tab_nutrition),
+                stringResource(Res.string.scan_tab_composition),
+                stringResource(Res.string.scan_tab_photos),
+            )
+            MiseTabPager(tabs = tabs, modifier = Modifier.weight(1f)) { page ->
+                Column(
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    when (page) {
+                        0 -> ScanOverviewPage(product)
+                        1 -> ScanNutritionPage(product)
+                        2 -> ScanCompositionPage(product)
+                        else -> ScanPhotosPage(product)
                     }
-                }
-            }
-
-            if (product.alternatives.isNotEmpty()) {
-                item { SectionLabel(stringResource(Res.string.scan_review_alternatives)) }
-                items(product.alternatives.size) { index ->
-                    val alternative = product.alternatives[index]
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(colors.lime.copy(alpha = 0.07f), RoundedCornerShape(8.dp))
-                            .border(
-                                1.dp,
-                                colors.lime.copy(alpha = 0.2f),
-                                RoundedCornerShape(8.dp),
-                            )
-                            .padding(horizontal = 14.dp, vertical = 11.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(alternative.name, style = MiseTheme.typography.body, color = colors.text)
-                        Text(
-                            alternative.score.toString(),
-                            style = MiseTheme.typography.mono,
-                            color = colors.lime,
-                        )
-                    }
+                    Spacer(Modifier.height(8.dp))
                 }
             }
         }
@@ -629,28 +518,13 @@ private fun ScannedPhotoTile(title: String, imageUrl: String, contentDescription
                 .background(colors.surface),
             contentAlignment = Alignment.Center,
         ) {
-            ZoomableProductImage(
-                imageUrl = imageUrl,
+            AsyncImage(
+                model = imageUrl,
                 contentDescription = contentDescription,
-                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize().padding(12.dp),
             )
         }
-    }
-}
-
-@Composable
-private fun ScannedDetailTile(title: String, value: String) {
-    val colors = MiseTheme.colors
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(colors.panel, RoundedCornerShape(10.dp))
-            .border(1.dp, colors.border, RoundedCornerShape(10.dp))
-            .padding(12.dp),
-    ) {
-        Text(title.uppercase(), style = MiseTheme.typography.monoTiny, color = colors.textMuted)
-        Spacer(Modifier.height(4.dp))
-        Text(value, style = MiseTheme.typography.bodySmall, color = colors.text)
     }
 }
 
@@ -672,49 +546,171 @@ private fun ScannedGradeScoreScale(grade: String, label: String, hint: String) {
     }
 }
 
-internal fun Product.scanDetails(): List<Pair<String, String>> = buildList {
-    fun String.clean() = trim().takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
-    fun List<String>.tags() = mapNotNull { it.clean()?.substringAfter(':')?.replace('-', ' ') }
-        .joinToString().takeIf(String::isNotBlank)
+@Composable
+private fun ScanOverviewPage(product: Product) {
+    val colors = MiseTheme.colors
+    val placeholder = stringResource(Res.string.scan_not_set)
 
-    details.brand.clean()?.let { add("Brand" to it) }
-    details.quantity.clean()?.let { add("Quantity" to it) }
-    details.servingSize.clean()?.let { add("Serving size" to it) }
-    details.ingredientsText.clean()?.let { add("Ingredients" to it) }
-    details.ingredients
-        .filter { it.name.clean() != null }
-        .joinToString { ingredient ->
-            val percent = ingredient.percent ?: ingredient.percentEstimate
-            ingredient.name.trim() + (percent?.let { " (${it.toInt()}%)" } ?: "")
+    product.details.imageUrl.trim().takeIf { it.startsWith("https://") }?.let { imageUrl ->
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(204.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(colors.surface),
+            contentAlignment = Alignment.Center,
+        ) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = product.name,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize().padding(12.dp),
+            )
         }
-        .takeIf(String::isNotBlank)
-        ?.let { add("Ingredients breakdown" to it) }
-    details.allergens.tags()?.let { add("Allergens" to it) }
-    details.traces.tags()?.let { add("May contain traces of" to it) }
-    details.additives.tags()?.let { add("Additives" to it) }
-    details.categories.tags()?.let { add("Categories" to it) }
-    details.labels.tags()?.let { add("Labels" to it) }
-    details.countries.tags()?.let { add("Sold in" to it) }
-    details.origins.tags()?.let { add("Ingredient origin" to it) }
-    details.packaging.takeIf(List<ProductPackagingComponent>::isNotEmpty)?.let { components ->
-        add("Packaging" to components.joinToString { it.scanSummary() })
     }
-    details.nutrientLevels.takeIf(Map<String, String>::isNotEmpty)?.let { levels ->
-        add("Nutrient levels" to levels.entries.joinToString { (name, level) -> "${name.clean() ?: name}: $level" })
+    Text(
+        text = product.summary,
+        style = MiseTheme.typography.body,
+        color = colors.text.copy(alpha = 0.82f),
+    )
+    product.details.nutriScore.cleanNutriScoreGrade()?.let { grade ->
+        ScannedGradeScoreScale(
+            grade = grade,
+            label = stringResource(Res.string.scan_nutri_score),
+            hint = stringResource(Res.string.scan_nutri_score_hint),
+        )
     }
-    details.foodGroups.tags()?.let { add("Food groups" to it) }
-    details.manufacturingPlaces.tags()?.let { add("Manufactured in" to it) }
-    details.purchasePlaces.tags()?.let { add("Purchased in" to it) }
-    details.stores.tags()?.let { add("Stores" to it) }
-    details.novaGroup?.takeIf { it in 1..4 }?.let { group ->
-        add("NOVA $group" to when (group) {
-            1 -> "Unprocessed or minimally processed food"
-            2 -> "Processed culinary ingredient"
-            3 -> "Processed food"
-            else -> "Ultra-processed food"
-        })
+    product.details.ecoScore.cleanNutriScoreGrade()?.let { grade ->
+        ScannedGradeScoreScale(
+            grade = grade,
+            label = stringResource(Res.string.scan_eco_score),
+            hint = stringResource(Res.string.scan_eco_score_hint),
+        )
+    }
+
+    MiseFactList(placeholder = placeholder, facts = product.overviewFacts())
+
+    if (product.alternatives.isNotEmpty()) {
+        SectionLabel(stringResource(Res.string.scan_review_alternatives))
+        product.alternatives.forEach { alternative ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(colors.lime.copy(alpha = 0.07f), RoundedCornerShape(8.dp))
+                    .border(1.dp, colors.lime.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 14.dp, vertical = 11.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(alternative.name, style = MiseTheme.typography.body, color = colors.text)
+                Text(
+                    alternative.score.toString(),
+                    style = MiseTheme.typography.mono,
+                    color = colors.lime,
+                )
+            }
+        }
     }
 }
+
+@Composable
+private fun ScanNutritionPage(product: Product) {
+    val placeholder = stringResource(Res.string.scan_not_set)
+
+    MiseFactList(placeholder = placeholder, facts = product.nutritionFacts())
+
+    val scannedNutrients = product.details.nutrients.ifEmpty { product.nutrients }
+        .filter { nutrient -> nutrient.amount.toDoubleOrNull()?.let { it.isFinite() && it > 0 } == true }
+    if (scannedNutrients.isNotEmpty()) {
+        val perLabel = product.details.nutrientsPer.ifBlank { "100 g" }
+        SectionLabel(stringResource(Res.string.scan_nutrients_per, perLabel))
+        MiseFactList(
+            placeholder = placeholder,
+            facts = scannedNutrients.map { MiseFact(it.name, "${it.amount} ${it.unit}".trim()) },
+        )
+    }
+}
+
+@Composable
+private fun ScanCompositionPage(product: Product) {
+    MiseFactList(placeholder = stringResource(Res.string.scan_not_set), facts = product.compositionFacts())
+}
+
+@Composable
+private fun ScanPhotosPage(product: Product) {
+    val photos = listOfNotNull(
+        product.details.ingredientsImageUrl.trim().takeIf { it.startsWith("https://") }?.let { "Ingredients photo" to it },
+        product.details.nutritionImageUrl.trim().takeIf { it.startsWith("https://") }?.let { "Nutrition facts photo" to it },
+        product.details.packagingImageUrl.trim().takeIf { it.startsWith("https://") }?.let { "Packaging photo" to it },
+    )
+    if (photos.isEmpty()) {
+        EmptyState(text = stringResource(Res.string.scan_no_extra_photos))
+        return
+    }
+    photos.forEach { (title, url) -> ScannedPhotoTile(title = title, imageUrl = url, contentDescription = product.name) }
+}
+
+private fun String.cleanScanValue() = trim().takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }.orEmpty()
+
+private fun List<String>.scanTags() = mapNotNull { it.cleanScanValue().ifBlank { null }?.substringAfter(':')?.replace('-', ' ') }
+    .joinToString()
+
+/** Identity facts a shopper reads at a glance — brand, portion, plain-text ingredients, allergens. */
+internal fun Product.overviewFacts(): List<MiseFact> = listOf(
+    MiseFact("Brand", details.brand.cleanScanValue()),
+    MiseFact("Quantity", details.quantity.cleanScanValue()),
+    MiseFact("Serving size", details.servingSize.cleanScanValue()),
+    MiseFact("Best before", details.expirationDate.cleanScanValue()),
+    MiseFact("Ingredients", details.ingredientsText.cleanScanValue()),
+    MiseFact("Allergens", details.allergens.scanTags()),
+)
+
+/** Everything about how the nutrients themselves should be read. */
+internal fun Product.nutritionFacts(): List<MiseFact> = listOf(
+    MiseFact(
+        "NOVA",
+        details.novaGroup?.takeIf { it in 1..4 }?.let { group ->
+            "$group · ${
+                when (group) {
+                    1 -> "Unprocessed or minimally processed food"
+                    2 -> "Processed culinary ingredient"
+                    3 -> "Processed food"
+                    else -> "Ultra-processed food"
+                }
+            }"
+        }.orEmpty(),
+    ),
+    MiseFact("Nutri-Score version", details.nutriScoreVersion.cleanScanValue()),
+    MiseFact("Scored against", details.comparedToCategory.cleanScanValue()),
+) + details.nutrientLevels.map { (name, level) -> MiseFact(name.cleanScanValue().ifBlank { name }, level) }
+
+/** What the product is made of and where it comes from. */
+internal fun Product.compositionFacts(): List<MiseFact> = listOf(
+    MiseFact(
+        "Ingredients breakdown",
+        details.ingredients
+            .filter { it.name.cleanScanValue().isNotBlank() }
+            .joinToString { ingredient ->
+                val percent = ingredient.percent ?: ingredient.percentEstimate
+                ingredient.name.trim() + (percent?.let { " (${it.toInt()}%)" } ?: "")
+            },
+    ),
+    MiseFact("May contain traces of", details.traces.scanTags()),
+    MiseFact("Additives", details.additives.scanTags()),
+    MiseFact("Categories", details.categories.scanTags()),
+    MiseFact("Labels", details.labels.scanTags()),
+    MiseFact(
+        "Food classification",
+        listOf(details.pnnsGroup, details.pnnsSubgroup).filter(String::isNotBlank).joinToString(" · ")
+            .ifBlank { details.foodGroups.scanTags() },
+    ),
+    MiseFact("Sold in", details.countries.scanTags()),
+    MiseFact("Ingredient origin", details.origins.scanTags().ifBlank { details.originNote.cleanScanValue() }),
+    MiseFact("Manufactured in", details.manufacturingPlaces.scanTags()),
+    MiseFact("Purchased in", details.purchasePlaces.scanTags()),
+    MiseFact("Stores", details.stores.scanTags()),
+    MiseFact("Packaging", details.packaging.joinToString { it.scanSummary() }),
+)
 
 private fun ProductPackagingComponent.scanSummary(): String = buildString {
     numberOfUnits?.takeIf { it > 0 }?.let { append(it).append("× ") }

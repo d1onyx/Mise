@@ -8,6 +8,7 @@ import com.d1onix.dishlab.domain.model.ProductIngredient
 import com.d1onix.dishlab.domain.model.ProductPackagingComponent
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ProductDetailCardModelTest {
@@ -16,7 +17,12 @@ class ProductDetailCardModelTest {
     fun `full OFF snapshot maps into independent card sections`() {
         val card = fullProduct().toDetailCardModel()
 
-        assertEquals(6, card.facts.size)
+        assertEquals("Mill", card.brand)
+        assertEquals("500 g", card.quantity)
+        assertEquals("50 g", card.servingSize)
+        assertEquals("A", card.nutriScoreGrade)
+        assertEquals(1, card.novaGroup)
+        assertEquals("B", card.ecoScoreGrade)
         assertEquals("Oats", card.ingredients)
         assertEquals(listOf("Gluten"), card.allergens)
         assertEquals(2, card.nutrients.size)
@@ -24,11 +30,13 @@ class ProductDetailCardModelTest {
     }
 
     @Test
-    fun `empty OFF fields produce no empty card sections`() {
+    fun `missing OFF fields surface as blank instead of absent — the row still has a slot`() {
         val card = fullProduct().copy(details = ProductDetails(brand = "Mill")).toDetailCardModel()
 
-        assertEquals(listOf(ProductDetailFactKind.Brand), card.facts.map { it.kind })
-        assertEquals(null, card.ingredients)
+        assertEquals("Mill", card.brand)
+        assertEquals("", card.quantity)
+        assertEquals("", card.ingredients)
+        assertEquals(null, card.novaGroup)
         assertTrue(card.allergens.isEmpty())
         assertTrue(card.categories.isEmpty())
         assertTrue(card.labels.isEmpty())
@@ -43,7 +51,7 @@ class ProductDetailCardModelTest {
     }
 
     @Test
-    fun `invalid product fields are omitted from the detail card`() {
+    fun `invalid product fields are blanked out instead of passed through`() {
         val card = fullProduct().copy(
             details = ProductDetails(
                 brand = " null ",
@@ -55,7 +63,10 @@ class ProductDetailCardModelTest {
             ),
         ).toDetailCardModel()
 
-        assertTrue(card.facts.isEmpty())
+        assertEquals("", card.brand)
+        assertEquals("", card.nutriScoreGrade)
+        assertEquals(null, card.novaGroup)
+        assertEquals("", card.ecoScoreGrade)
         assertTrue(card.allergens.isEmpty())
         assertEquals(null, card.imageUrl)
     }
@@ -162,6 +173,41 @@ class ProductDetailCardModelTest {
         assertTrue(card.ingredientsImageUrl!!.startsWith("https://"))
         assertTrue(card.nutritionImageUrl!!.startsWith("https://"))
         assertTrue(card.packagingImageUrl!!.startsWith("https://"))
+    }
+
+    @Test
+    fun `pnns classification compared-to category expiration and nutri-score version reach the card`() {
+        val card = fullProduct().copy(
+            details = fullProduct().details.copy(
+                pnnsGroup = "Cereals and potatoes",
+                pnnsSubgroup = "Cereals",
+                comparedToCategory = "en:peanut-butters",
+                expirationDate = "12-2024",
+                nutriScoreVersion = "2023",
+                originNote = "Made with local wheat",
+                nutrientsPer = "100 g",
+            ),
+        ).toDetailCardModel()
+
+        assertEquals("Cereals and potatoes", card.pnnsGroup)
+        assertEquals("Cereals", card.pnnsSubgroup)
+        assertEquals("Peanut Butters", card.comparedToCategory)
+        assertEquals("12-2024", card.expirationDate)
+        assertEquals("2023", card.nutriScoreVersion)
+        assertEquals("Made with local wheat", card.originNote)
+        assertEquals("100 g", card.nutrientsPer)
+    }
+
+    @Test
+    fun `absent optional fields surface as blank strings never null`() {
+        val card = fullProduct().copy(details = ProductDetails()).toDetailCardModel()
+
+        assertEquals("", card.pnnsGroup)
+        assertEquals("", card.comparedToCategory)
+        assertEquals("", card.expirationDate)
+        assertEquals("", card.originNote)
+        assertEquals("", card.nutrientsPer)
+        assertNull(card.novaGroup)
     }
 
     private fun fullProduct() = Product(

@@ -7,9 +7,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Text
 import com.d1onix.dishlab.designsystem.component.AmbientConstellation
 import com.d1onix.dishlab.designsystem.component.FilterChipBar
+import com.d1onix.dishlab.designsystem.component.MiseFact
+import com.d1onix.dishlab.designsystem.component.MiseFactList
 import com.d1onix.dishlab.designsystem.component.MiseSearchField
+import com.d1onix.dishlab.designsystem.component.MiseTabPager
 import com.d1onix.dishlab.designsystem.component.MiseToast
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 
@@ -80,5 +85,37 @@ private fun FilterChipBarExpandedPreview() {
             onOptionClick = { _, _ -> },
             modifier = Modifier.padding(vertical = 12.dp),
         )
+    }
+}
+
+/** Mixes real values with a blank one, so the placeholder styling is visible too. */
+@MiseWidthPreviews
+@Composable
+private fun MiseFactListPreview() {
+    MiseTheme {
+        MiseFactList(
+            facts = listOf(
+                MiseFact("Brand", "Morning Mill"),
+                MiseFact("Quantity", "500 g"),
+                MiseFact("Manufactured in", ""),
+                MiseFact("Stores", "Tesco, Sainsbury's"),
+            ),
+            placeholder = "Not set",
+            modifier = Modifier.padding(vertical = 12.dp),
+        )
+    }
+}
+
+/** Fixed height here only because a preview has no surrounding sheet to bound it. */
+@MiseWidthPreviews
+@Composable
+private fun MiseTabPagerPreview() {
+    MiseTheme {
+        MiseTabPager(
+            tabs = listOf("Overview", "Nutrition", "Sourcing"),
+            modifier = Modifier.height(160.dp).padding(vertical = 12.dp),
+        ) { index ->
+            Text("Page $index", style = MiseTheme.typography.body, color = MiseTheme.colors.text)
+        }
     }
 }
