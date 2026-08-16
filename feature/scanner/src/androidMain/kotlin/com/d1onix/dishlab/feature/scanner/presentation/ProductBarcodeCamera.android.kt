@@ -29,6 +29,7 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
 /**
@@ -54,8 +55,8 @@ actual fun ProductBarcodeCamera(
     }
     val executor = remember { Executors.newSingleThreadExecutor() }
     val scanner = remember { BarcodeScanning.getClient(productBarcodeOptions) }
-    val analyzer = remember(scanner) {
-        MlKitProductBarcodeAnalyzer(scanner) { callbackState.value(it) }
+    val analyzer = remember(scanner, executor) {
+        MlKitProductBarcodeAnalyzer(scanner, executor) { callbackState.value(it) }
     }
 
     // Held so the torch effect below can reach the camera CameraX handed back.
@@ -154,6 +155,7 @@ private fun ProcessCameraProvider.hasCameraSafely(selector: CameraSelector): Boo
 
 private class MlKitProductBarcodeAnalyzer(
     private val scanner: BarcodeScanner,
+    private val executor: Executor,
     private val onBarcodeDetected: (String) -> Unit,
 ) : ImageAnalysis.Analyzer {
     private val isProcessing = AtomicBoolean(false)
@@ -171,17 +173,24 @@ private class MlKitProductBarcodeAnalyzer(
             return
         }
 
-            val input = InputImage.fromMediaImage(mediaImage, image.imageInfo.rotationDegrees)
-            scanner.process(input)
-                .addOnSuccessListener { barcodes ->
-                    barcodes.firstNotNullOfOrNull(Barcode::getRawValue)
-                        ?.takeIf(String::isNotBlank)
-                        ?.let(onBarcodeDetected)
-                }
-                .addOnCompleteListener {
-                    isProcessing.set(false)
-                    image.close()
-                }
+        val input = InputImage.fromMediaImage(mediaImage, image.imageInfo.rotationDegrees)
+        // Google Play services Tasks default their listeners to the *main*
+        // thread when no executor is given, even though analyze() itself
+        // already runs on the background [executor]. Left unset, every
+        // barcode result and the ImageProxy.close() that follows it hopped
+        // onto the UI thread and fought the Compose animations for frame
+        // time — the visible camera lag. Pinning both listeners to the same
+        // background executor keeps that work off the UI thread entirely.
+        scanner.process(input)
+            .addOnSuccessListener(executor) { barcodes ->
+                barcodes.firstNotNullOfOrNull(Barcode::getRawValue)
+                    ?.takeIf(String::isNotBlank)
+                    ?.let(onBarcodeDetected)
+            }
+            .addOnCompleteListener(executor) {
+                isProcessing.set(false)
+                image.close()
+            }
     }
 }
 

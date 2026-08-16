@@ -43,7 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.MiseEasing
-import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.MiseGhostButton
@@ -105,8 +104,6 @@ import com.kashif.cameraK.permissions.providePermissions
 import org.jetbrains.compose.resources.stringResource
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
-import kotlin.math.PI
-import kotlin.math.sin
 
 @Composable
 fun ScanScreen(viewModel: ScanViewModel, showBackNavigation: Boolean = false) {
@@ -786,9 +783,9 @@ private fun viewfinderScrim(): Brush = Brush.verticalGradient(
 
 /**
  * The 250dp reticle. Everything about it is derived from [phase], so the frame
- * itself reports what the scanner is doing: lime and sweeping while it hunts,
- * snapped wide and still the moment a code is locked, cyan with a spinner while
- * the lookup runs, red when it failed.
+ * itself reports what the scanner is doing: mint and sweeping top-to-bottom
+ * while it hunts, snapped wide and still the moment a code is locked, cyan
+ * with a spinner while the lookup runs, red when it failed.
  */
 @Composable
 private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier) {
@@ -808,14 +805,7 @@ private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier) {
         animationSpec = tween(durationMillis = 340, easing = MiseEasing),
         label = "reticleCorner",
     )
-    val barAlpha by animateFloatAsState(
-        targetValue = if (phase == ScanPhase.Searching) 1f else 0.25f,
-        animationSpec = tween(durationMillis = 340, easing = MiseEasing),
-        label = "reticleBars",
-    )
-
-    val sweep = rememberSweep(durationMillis = 2400, label = "scanLine")
-    val pulse = rememberPulse(durationMillis = 2400, from = 0.25f, to = 0.6f, label = "scanPulse")
+    val sweep = rememberSweep(durationMillis = 1800, label = "scanLine")
     val spin = rememberSweep(durationMillis = 1100, label = "scanSpin")
 
     Canvas(modifier.size(250.dp)) {
@@ -837,23 +827,10 @@ private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier) {
             }
         }
 
-        // The decorative barcode behind the line, faded out once a real code won.
-        val bars = listOf(8, 3, 5, 2, 7, 3, 9, 2, 4, 6, 3, 8, 2, 5, 3, 7)
-        var x = inset + 20.dp.toPx()
-        bars.forEach { width ->
-            drawRect(
-                color = accent,
-                topLeft = Offset(x, size.height / 2 - 45.dp.toPx()),
-                size = Size(width.dp.toPx() * 0.7f, 90.dp.toPx()),
-                alpha = pulse.value * barAlpha,
-            )
-            x += (width + 3).dp.toPx() * 0.7f
-        }
-
         if (phase == ScanPhase.Searching) {
-            // `sin` turns the linear sweep into the prototype's back-and-forth line.
-            val travel = sin(sweep.value * 2f * PI.toFloat()) * (size.height / 2 - inset)
-            val y = size.height / 2 + travel
+            // Straight top-to-bottom sweep that snaps back to the top on
+            // restart — reads as the line "blinking" downward each pass.
+            val y = inset + sweep.value * (size.height - 2 * inset)
             drawLine(
                 brush = Brush.horizontalGradient(
                     listOf(Color.Transparent, accent, Color.Transparent),
