@@ -32,6 +32,7 @@ import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 
 /**
  * CameraX scanner for product codes. ML Kit receives the CameraX rotation so
@@ -200,16 +201,34 @@ private class MlKitProductBarcodeAnalyzer(
         // onto the UI thread and fought the Compose animations for frame
         // time — the visible camera lag. Pinning both listeners to the same
         // background executor keeps that work off the UI thread entirely.
+        //
+        // Wrapped in rejectSafely(): a successful scan navigates away, which
+        // disposes this composable and shuts the executor down — but ML Kit
+        // resolves this same Task asynchronously and, on a background
+        // thread, tries to hand the result back through the now-terminated
+        // executor. That threw RejectedExecutionException straight out of
+        // Play Services' own Handler.dispatchMessage on the main thread,
+        // crashing the app on every scan. The result is moot once the
+        // screen is gone, so the rejection is simply dropped.
         scanner.process(input)
-            .addOnSuccessListener(executor) { barcodes ->
+            .addOnSuccessListener(executor.rejectSafely()) { barcodes ->
                 barcodes.firstNotNullOfOrNull(Barcode::getRawValue)
                     ?.takeIf(String::isNotBlank)
                     ?.let(onBarcodeDetected)
             }
-            .addOnCompleteListener(executor) {
+            .addOnCompleteListener(executor.rejectSafely()) {
                 isProcessing.set(false)
                 image.close()
             }
+    }
+}
+
+private fun Executor.rejectSafely(): Executor = Executor { command ->
+    try {
+        execute(command)
+    } catch (_: RejectedExecutionException) {
+        // The executor was shut down after the screen was left — nothing
+        // is listening for this result anymore.
     }
 }
 
