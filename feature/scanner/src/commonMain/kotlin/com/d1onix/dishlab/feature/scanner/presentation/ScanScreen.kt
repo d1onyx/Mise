@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -205,20 +206,6 @@ internal fun ScanContent(
                     Spacer(Modifier.weight(1f))
                 }
             }
-
-            // A hard edge here would read as "the camera just got cut off", so
-            // the seam is a visible accent rule plus a panel that rounds up
-            // into it — it reads as a deliberate sheet, not a clipped feed.
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(Color.Transparent, colors.mint.copy(alpha = 0.7f), Color.Transparent),
-                        ),
-                    ),
-            )
         }
 
         ScannerControlPanel(
@@ -245,12 +232,23 @@ private fun ScannerControlPanel(
     val colors = MiseTheme.colors
     Box(
         modifier
-            .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
             .background(colors.surface)
-            .border(
-                1.dp,
-                colors.border,
-                RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
+            .then(
+                // Only a straight top rule — no sides, no rounding. It's the
+                // seam with the camera above; the panel expands to fill the
+                // whole screen for manual entry, so there's no seam to mark.
+                if (state.manualEntryVisible) {
+                    Modifier
+                } else {
+                    Modifier.drawBehind {
+                        drawLine(
+                            color = colors.border,
+                            start = Offset.Zero,
+                            end = Offset(size.width, 0f),
+                            strokeWidth = 1.dp.toPx(),
+                        )
+                    }
+                },
             )
             .safeDrawingPadding()
             // Only relevant once the panel fills the screen for manual entry:
