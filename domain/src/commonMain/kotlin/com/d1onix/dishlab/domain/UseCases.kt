@@ -63,7 +63,7 @@ fun interface ObserveSavedRecipeIdsUseCase {
 }
 
 fun interface ToggleSavedRecipeUseCase {
-    suspend operator fun invoke(id: RecipeId)
+    suspend operator fun invoke(recipe: Recipe)
 }
 
 fun interface ObserveScanHistoryUseCase {
