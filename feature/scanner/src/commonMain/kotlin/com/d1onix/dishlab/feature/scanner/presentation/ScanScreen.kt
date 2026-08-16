@@ -241,11 +241,15 @@ private fun ScannerControlPanel(
                     Modifier
                 } else {
                     Modifier.drawBehind {
+                        // Fading mint accent instead of a flat hairline —
+                        // it reads as a deliberate seam, not a stray rule.
                         drawLine(
-                            color = colors.border,
+                            brush = Brush.horizontalGradient(
+                                listOf(Color.Transparent, colors.mint.copy(alpha = 0.7f), Color.Transparent),
+                            ),
                             start = Offset.Zero,
                             end = Offset(size.width, 0f),
-                            strokeWidth = 1.dp.toPx(),
+                            strokeWidth = 2.dp.toPx(),
                         )
                     }
                 },
