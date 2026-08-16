@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -170,14 +172,17 @@ private fun ComparedProductCard(
 ) {
     val colors = MiseTheme.colors
     MisePanel(
-        modifier = Modifier.width(144.dp),
+        modifier = Modifier.width(144.dp).height(200.dp),
         cornerRadius = 8,
         background = if (selected) colors.lime.copy(alpha = 0.08f) else colors.panel,
         borderColor = if (selected) colors.lime else colors.border,
         contentPadding = PaddingValues(12.dp),
         onClick = onToggle,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -190,8 +195,21 @@ private fun ComparedProductCard(
                     color = colors.lime,
                 )
             }
-            Text(product.name, style = MiseTheme.typography.titleSmall, color = colors.text)
-            Text(product.category, style = MiseTheme.typography.monoTiny, color = colors.textMuted)
+            Text(
+                text = product.name,
+                style = MiseTheme.typography.titleSmall,
+                color = colors.text,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = product.category,
+                style = MiseTheme.typography.monoTiny,
+                color = colors.textMuted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.weight(1f))
             MiseTextAction(
                 text = stringResource(Res.string.comparison_remove),
                 onClick = onRemove,
