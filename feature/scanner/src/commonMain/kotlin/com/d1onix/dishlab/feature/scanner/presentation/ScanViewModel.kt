@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.update
 class ScanViewModel(
     dependencies: CommonDependencies,
     @Assisted private val showBackNavigation: Boolean,
+    @Assisted private val addToComparison: Boolean,
     private val getProductByBarcode: GetProductByBarcodeUseCase,
     private val recordScan: RecordScanUseCase,
     private val session: ScanSessionStore,
@@ -124,9 +125,9 @@ class ScanViewModel(
             val product = getProductByBarcode(barcode)
             if (product == null) {
                 _uiState.update { it.copy(isResolving = false, detectedBarcode = null) }
-                router.openNotFound(barcode, showBackNavigation)
+                router.openNotFound(barcode, showBackNavigation, addToComparison)
             } else {
-                present(product)
+                if (addToComparison) addScannedProductToComparison(product) else present(product)
             }
         } catch (exception: CancellationException) {
             throw exception
@@ -182,6 +183,12 @@ class ScanViewModel(
         }
     }
 
+    private suspend fun addScannedProductToComparison(product: Product) {
+        comparison.add(product.id)
+        launch("recordScan") { recordScan(product.id) }
+        router.openComparison()
+    }
+
     private fun skipReviewedProduct() {
         if (_uiState.value.reviewedProduct == null) return
         router.goBack()
@@ -200,6 +207,6 @@ class ScanViewModel(
 
     @AssistedFactory
     fun interface Factory {
-        fun create(showBackNavigation: Boolean): ScanViewModel
+        fun create(showBackNavigation: Boolean, addToComparison: Boolean): ScanViewModel
     }
 }

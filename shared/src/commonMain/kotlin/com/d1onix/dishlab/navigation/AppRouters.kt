@@ -41,9 +41,13 @@ class ScannerRouterImpl(private val router: AppRouter) : ScannerRouter {
     /** `replace`, so backing out of the graph does not return to the viewfinder. */
     override fun openCombinationGraph() = router.replace(GraphRoute)
     override fun openComparison() = router.replace(ComparisonRoute)
-    override fun openNotFound(barcode: String, showBackNavigation: Boolean) =
-        router.replace(ScanNotFoundRoute(barcode, showBackNavigation))
-    override fun openScanner(showBackNavigation: Boolean) = router.replace(ScanRoute(showBackNavigation))
+    override fun openNotFound(
+        barcode: String,
+        showBackNavigation: Boolean,
+        addToComparison: Boolean,
+    ) = router.replace(ScanNotFoundRoute(barcode, showBackNavigation, addToComparison))
+    override fun openScanner(showBackNavigation: Boolean, addToComparison: Boolean) =
+        router.replace(ScanRoute(showBackNavigation, addToComparison))
     override fun openRecipes() = router.launch(DiscoverRecipesRoute)
     override fun goBack() = router.goBack()
 }
@@ -57,7 +61,8 @@ class ProductsRouterImpl(private val router: AppRouter) : ProductsRouter {
     override fun openCombinationGraph() = router.launch(GraphRoute)
     override fun openConnectionOverview() = router.launch(ConnectionOverviewRoute)
     override fun openComparison() = router.launch(ComparisonRoute)
-    override fun openComparisonScanner() = router.launch(ScanRoute(showBackNavigation = true))
+    override fun openComparisonScanner() =
+        router.launch(ScanRoute(showBackNavigation = true, addToComparison = true))
     override fun openSettings() = router.launch(SettingsRoute)
     override fun goBack() = router.goBack()
 }

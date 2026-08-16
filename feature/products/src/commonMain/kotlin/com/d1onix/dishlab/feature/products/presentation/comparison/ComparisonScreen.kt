@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
@@ -19,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.screenIn
@@ -29,10 +29,8 @@ import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.MiseTextAction
 import com.d1onix.dishlab.designsystem.component.ScoreBadge
-import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
-import com.d1onix.dishlab.domain.model.ProductId
 import com.d1onix.dishlab.feature.products.resources.Res
 import com.d1onix.dishlab.feature.products.resources.comparison_add
 import com.d1onix.dishlab.feature.products.resources.comparison_add_selected
@@ -41,7 +39,6 @@ import com.d1onix.dishlab.feature.products.resources.comparison_clear
 import com.d1onix.dishlab.feature.products.resources.comparison_empty
 import com.d1onix.dishlab.feature.products.resources.comparison_error
 import com.d1onix.dishlab.feature.products.resources.comparison_loading
-import com.d1onix.dishlab.feature.products.resources.comparison_nutrition
 import com.d1onix.dishlab.feature.products.resources.comparison_remove
 import com.d1onix.dishlab.feature.products.resources.comparison_select_hint
 import com.d1onix.dishlab.feature.products.resources.comparison_select_all
@@ -123,7 +120,7 @@ internal fun ComparisonContent(
         }
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(state.products, key = { it.id.value }) { product ->
                 ComparedProductCard(
@@ -136,16 +133,10 @@ internal fun ComparisonContent(
             }
         }
 
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            item { SectionLabel(stringResource(Res.string.comparison_nutrition)) }
-            items(nutrientNames(state.products), key = { it }) { nutrientName ->
-                NutrientComparisonRow(nutrientName, state.products)
-            }
-        }
+        ComparisonDetailTabs(
+            products = state.products,
+            modifier = Modifier.weight(1f).padding(horizontal = 20.dp, vertical = 12.dp),
+        )
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
@@ -181,14 +172,17 @@ private fun ComparedProductCard(
 ) {
     val colors = MiseTheme.colors
     MisePanel(
-        modifier = Modifier.width(164.dp),
+        modifier = Modifier.width(144.dp).height(200.dp),
         cornerRadius = 8,
         background = if (selected) colors.lime.copy(alpha = 0.08f) else colors.panel,
         borderColor = if (selected) colors.lime else colors.border,
-        contentPadding = PaddingValues(14.dp),
+        contentPadding = PaddingValues(12.dp),
         onClick = onToggle,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -201,8 +195,21 @@ private fun ComparedProductCard(
                     color = colors.lime,
                 )
             }
-            Text(product.name, style = MiseTheme.typography.titleSmall, color = colors.text)
-            Text(product.category, style = MiseTheme.typography.monoTiny, color = colors.textMuted)
+            Text(
+                text = product.name,
+                style = MiseTheme.typography.titleSmall,
+                color = colors.text,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = product.category,
+                style = MiseTheme.typography.monoTiny,
+                color = colors.textMuted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.weight(1f))
             MiseTextAction(
                 text = stringResource(Res.string.comparison_remove),
                 onClick = onRemove,
@@ -211,36 +218,3 @@ private fun ComparedProductCard(
         }
     }
 }
-
-@Composable
-private fun NutrientComparisonRow(name: String, products: List<Product>) {
-    val colors = MiseTheme.colors
-    MisePanel(
-        modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 8,
-        contentPadding = PaddingValues(14.dp),
-    ) {
-        Column {
-            Text(name.uppercase(), style = MiseTheme.typography.monoTiny, color = colors.textMuted)
-            Spacer(Modifier.height(8.dp))
-            products.mapNotNull { product ->
-                product.nutrients.firstOrNull { it.name == name }?.let { product to it }
-            }.forEach { (product, nutrient) ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(product.name, style = MiseTheme.typography.bodySmall, color = colors.text)
-                    Text(
-                        "${nutrient.amount} ${nutrient.unit}",
-                        style = MiseTheme.typography.monoSmall,
-                        color = colors.textMuted,
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun nutrientNames(products: List<Product>): List<String> =
-    products.flatMap { product -> product.nutrients.map { it.name } }.distinct().take(12)

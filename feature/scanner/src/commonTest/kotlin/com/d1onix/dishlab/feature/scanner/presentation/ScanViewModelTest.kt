@@ -171,6 +171,27 @@ class ScanViewModelTest {
     }
 
     @Test
+    fun `a product scanned from comparison is added and returns there immediately`() = runTest(dispatcher) {
+        val session = FakeSessionStore()
+        val router = FakeRouter()
+        val comparison = FakeComparisonStore()
+        val viewModel = viewModel(
+            session = session,
+            router = router,
+            comparison = comparison,
+            addToComparison = true,
+        )
+
+        viewModel.onAction(ScanAction.BarcodeDetected("111"))
+        testScheduler.advanceUntilIdle()
+
+        assertTrue(session.products.value.isEmpty())
+        assertEquals(listOf(ProductId("barcode:111")), comparison.products.value)
+        assertEquals(1, router.comparisonOpened)
+        assertNull(viewModel.uiState.value.reviewedProduct)
+    }
+
+    @Test
     fun `camera controls stay inert until the camera reports what it supports`() =
         runTest(dispatcher) {
             val viewModel = viewModel(FakeSessionStore(), FakeRouter())
@@ -255,6 +276,7 @@ class ScanViewModelTest {
         router: ScannerRouter,
         recorded: MutableList<ProductId> = mutableListOf(),
         comparison: ProductComparisonStore = FakeComparisonStore(),
+        addToComparison: Boolean = false,
         productLookup: suspend (String) -> Product? = { barcode ->
             if (barcode == "111") product else null
         },
@@ -263,6 +285,7 @@ class ScanViewModelTest {
         getProductByBarcode = GetProductByBarcodeUseCase(productLookup),
         recordScan = RecordScanUseCase { id -> recorded += id },
         showBackNavigation = false,
+        addToComparison = addToComparison,
         session = session,
         comparison = comparison,
         router = router,
@@ -347,11 +370,15 @@ class ScanViewModelTest {
         }
         override fun openComparison() { comparisonOpened++ }
 
-        override fun openNotFound(barcode: String, showBackNavigation: Boolean) {
+        override fun openNotFound(
+            barcode: String,
+            showBackNavigation: Boolean,
+            addToComparison: Boolean,
+        ) {
             notFoundBarcodes += barcode
         }
 
-        override fun openScanner(showBackNavigation: Boolean) = Unit
+        override fun openScanner(showBackNavigation: Boolean, addToComparison: Boolean) = Unit
         override fun openRecipes() = Unit
         override fun goBack() {
             backCount++

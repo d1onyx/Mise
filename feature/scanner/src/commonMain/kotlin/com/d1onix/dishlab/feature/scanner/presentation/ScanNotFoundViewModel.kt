@@ -27,6 +27,7 @@ class ScanNotFoundViewModel(
     dependencies: CommonDependencies,
     @Assisted barcode: String,
     @Assisted private val showBackNavigation: Boolean,
+    @Assisted private val addToComparison: Boolean,
     private val router: ScannerRouter,
 ) : AbstractViewModel(dependencies), WithMviState<ScanNotFoundUiState> {
 
@@ -35,13 +36,17 @@ class ScanNotFoundViewModel(
 
     fun onAction(action: ScanNotFoundAction) {
         when (action) {
-            ScanNotFoundAction.RetryClicked -> router.openScanner(showBackNavigation)
+            ScanNotFoundAction.RetryClicked -> router.openScanner(showBackNavigation, addToComparison)
             ScanNotFoundAction.HomeClicked -> router.goBack()
         }
     }
 
     @AssistedFactory
     fun interface Factory {
-        fun create(barcode: String, showBackNavigation: Boolean): ScanNotFoundViewModel
+        fun create(
+            barcode: String,
+            showBackNavigation: Boolean,
+            addToComparison: Boolean,
+        ): ScanNotFoundViewModel
     }
 }

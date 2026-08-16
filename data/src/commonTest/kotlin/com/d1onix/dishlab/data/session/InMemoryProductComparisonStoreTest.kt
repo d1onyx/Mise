@@ -9,15 +9,15 @@ import kotlin.test.assertTrue
 
 class InMemoryProductComparisonStoreTest {
     @Test
-    fun `comparison accepts five unique products and rejects the sixth`() = runTest {
+    fun `comparison accepts four unique products and rejects the fifth`() = runTest {
         val store = InMemoryProductComparisonStore()
 
-        repeat(5) { index ->
+        repeat(4) { index ->
             assertTrue(store.add(ProductId("product-$index")))
         }
 
-        assertFalse(store.add(ProductId("product-5")))
-        assertEquals(5, store.products.value.size)
+        assertFalse(store.add(ProductId("product-4")))
+        assertEquals(4, store.products.value.size)
     }
 
     @Test

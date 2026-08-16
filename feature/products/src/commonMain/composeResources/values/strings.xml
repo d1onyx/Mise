@@ -15,12 +15,15 @@
 
     <string name="comparison_title">Compare products</string>
     <string name="comparison_empty">Scan two or more products to compare their nutrition and scores.</string>
-    <string name="comparison_add">Scan product</string>
+    <string name="comparison_add">Add product</string>
     <string name="comparison_clear">clear</string>
     <string name="comparison_best">BEST SCORE</string>
     <string name="comparison_remove">remove</string>
     <string name="comparison_select_hint">Tap products to select which ones should be added to the graph.</string>
     <string name="comparison_nutrition">Nutrition side by side</string>
+    <string name="comparison_score">DishLab score</string>
+    <string name="comparison_summary">Summary</string>
+    <string name="comparison_nutrients_per">Nutrients reported per</string>
     <string name="comparison_add_selected">Add selected (%1$d)</string>
     <string name="comparison_select_all">select all</string>
     <string name="comparison_clear_selection">clear selection</string>
