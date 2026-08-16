@@ -97,6 +97,33 @@ class BackendProductRepositoryTest {
     }
 
     @Test
+    fun `nutrients are ordered like a nutrition-facts label instead of alphabetically by the OFF JSON key`() {
+        val details = ClientProductSnapshotDto(
+            barcode = BARCODE,
+            name = "Oats",
+            nutrition = ClientProductNutritionDto(
+                // Deliberately alphabetical, matching how OFF's JSON keys arrive.
+                nutrients = mapOf(
+                    "carbohydrates" to ClientNutrientValueDto(value = 66.0, unit = "g"),
+                    "energy-kcal" to ClientNutrientValueDto(value = 389.0, unit = "kcal"),
+                    "fat" to ClientNutrientValueDto(value = 7.0, unit = "g"),
+                    "fiber" to ClientNutrientValueDto(value = 10.0, unit = "g"),
+                    "proteins" to ClientNutrientValueDto(value = 13.0, unit = "g"),
+                    "salt" to ClientNutrientValueDto(value = 0.1, unit = "g"),
+                    "saturated-fat" to ClientNutrientValueDto(value = 1.2, unit = "g"),
+                    "sugars" to ClientNutrientValueDto(value = 1.0, unit = "g"),
+                    "vitamin-c" to ClientNutrientValueDto(value = 5.0, unit = "mg"),
+                ),
+            ),
+        ).toDetails()
+
+        assertEquals(
+            listOf("Energy Kcal", "Fat", "Saturated Fat", "Carbohydrates", "Sugars", "Fiber", "Proteins", "Salt", "Vitamin C"),
+            details.nutrients.map { it.name },
+        )
+    }
+
+    @Test
     fun `nutrient levels food groups sourcing and extra photos reach ProductDetails`() {
         val details = ClientProductSnapshotDto(
             barcode = BARCODE,

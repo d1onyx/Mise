@@ -271,12 +271,28 @@ private fun ClientPackagingComponentDto.toDomain() = ProductPackagingComponent(
     recycling = recycling.toDisplayTaxonomyTag(),
 )
 
+/**
+ * The order a nutrition-facts label reads in, not the alphabetical order OFF's
+ * JSON keys happen to arrive in (`carbohydrates` sorts before `energy`).
+ * Anything not listed here falls after these, in whatever order it arrived.
+ */
+private val NUTRIENT_DISPLAY_ORDER = listOf(
+    "energy-kcal", "energy", "energy-kj",
+    "fat", "saturated-fat",
+    "carbohydrates", "sugars", "starch",
+    "fiber",
+    "proteins",
+    "salt", "sodium",
+)
+
 private fun Map<String, ClientNutrientValueDto>.toDomainNutrients(): List<Nutrient> =
     mapNotNull { (key, nutrient) ->
         (nutrient.value ?: nutrient.computedValue)?.let { amount ->
-            Nutrient(key.toDisplayTaxonomyTag(), amount.display(), nutrient.unit)
+            key to Nutrient(key.toDisplayTaxonomyTag(), amount.display(), nutrient.unit)
         }
     }
+        .sortedBy { (key, _) -> NUTRIENT_DISPLAY_ORDER.indexOf(key).takeIf { it >= 0 } ?: Int.MAX_VALUE }
+        .map { it.second }
 
 private fun String.normalizedOrTag(fallbackTag: String): String =
     trim().ifBlank { fallbackTag.toDisplayTaxonomyTag() }
