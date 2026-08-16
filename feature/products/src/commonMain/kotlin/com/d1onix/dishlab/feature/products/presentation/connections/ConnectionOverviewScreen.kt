@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -36,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -203,7 +203,7 @@ private fun ProductPickerItem(
     val colors = MiseTheme.colors
     val accent = Color(product.accentColor)
     MisePanel(
-        modifier = Modifier.width(92.dp),
+        modifier = Modifier.size(ConnectionPickerWidth, ConnectionPickerHeight),
         cornerRadius = 8,
         background = if (selected) accent.copy(alpha = 0.10f) else colors.panel,
         borderColor = if (selected) accent.copy(alpha = 0.75f) else colors.border,
@@ -347,7 +347,10 @@ private fun ConnectionProductRow(
                 .clickable(onClick = onClick),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(ConnectionRowHeight)
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -364,6 +367,7 @@ private fun ConnectionProductRow(
                         ),
                         style = MiseTheme.typography.monoTiny,
                         color = if (connected) colors.lime else colors.textMuted,
+                        maxLines = 1,
                     )
                 }
                 Icon(
@@ -417,13 +421,14 @@ private fun ConnectionSwipeRow(
                 label = label,
                 color = color,
                 onClick = onConnectionChange,
-                modifier = Modifier.matchParentSize().clip(ConnectionSwipeShape),
+                modifier = Modifier.matchParentSize(),
             )
         }
         Box(
             modifier = Modifier
-                .clip(ConnectionSwipeShape)
                 .offset { androidx.compose.ui.unit.IntOffset(offset.roundToInt(), 0) }
+                .clip(if (offset < 0f) ConnectionSwipeShape else RectangleShape)
+                .background(MiseTheme.colors.background)
                 .anchoredDraggable(
                     state = state,
                     orientation = Orientation.Horizontal,
@@ -436,6 +441,9 @@ private fun ConnectionSwipeRow(
 private enum class ConnectionSwipeValue { Closed, Revealed, Delete }
 
 private val ConnectionSwipeShape = RoundedCornerShape(14.dp)
+private val ConnectionPickerWidth = 92.dp
+private val ConnectionPickerHeight = 88.dp
+private val ConnectionRowHeight = 64.dp
 
 @Composable
 private fun SwipeConnectionAction(
