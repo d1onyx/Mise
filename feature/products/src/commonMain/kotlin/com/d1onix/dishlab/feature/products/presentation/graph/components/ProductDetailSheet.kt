@@ -32,6 +32,7 @@ import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.component.VerdictBadge
+import com.d1onix.dishlab.designsystem.component.ZoomableProductImage
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
 import com.d1onix.dishlab.domain.model.ProductPackagingComponent
@@ -71,7 +72,6 @@ import com.d1onix.dishlab.feature.products.resources.product_serving_size
 import com.d1onix.dishlab.feature.products.resources.product_stores
 import com.d1onix.dishlab.feature.products.resources.product_traces
 import org.jetbrains.compose.resources.stringResource
-import coil3.compose.AsyncImage
 
 /**
  * The product sheet: score, verdict, nutrients and alternatives.
@@ -183,11 +183,10 @@ fun ProductDetailSheet(
                         .background(colors.surface),
                     contentAlignment = Alignment.Center,
                 ) {
-                    AsyncImage(
-                        model = imageUrl,
+                    ZoomableProductImage(
+                        imageUrl = imageUrl,
                         contentDescription = product.name,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize().padding(12.dp),
+                        modifier = Modifier.fillMaxSize(),
                     )
                 }
             }
@@ -420,11 +419,10 @@ private fun ProductPhotoTile(title: String, imageUrl: String, contentDescription
                 .background(colors.surface),
             contentAlignment = Alignment.Center,
         ) {
-            AsyncImage(
-                model = imageUrl,
+            ZoomableProductImage(
+                imageUrl = imageUrl,
                 contentDescription = contentDescription,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize().padding(12.dp),
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }

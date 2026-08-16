@@ -55,6 +55,7 @@ import com.d1onix.dishlab.designsystem.component.MiseTextAction
 import com.d1onix.dishlab.designsystem.component.ScoreRing
 import com.d1onix.dishlab.designsystem.component.SectionLabel
 import com.d1onix.dishlab.designsystem.component.VerdictBadge
+import com.d1onix.dishlab.designsystem.component.ZoomableProductImage
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
@@ -103,7 +104,6 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_graph
 import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_nutrition
 import com.kashif.cameraK.permissions.providePermissions
 import org.jetbrains.compose.resources.stringResource
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.sin
@@ -444,11 +444,10 @@ private fun ScannedProductReview(
                             .background(colors.surface),
                         contentAlignment = Alignment.Center,
                     ) {
-                        AsyncImage(
-                            model = imageUrl,
+                        ZoomableProductImage(
+                            imageUrl = imageUrl,
                             contentDescription = product.name,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize().padding(12.dp),
+                            modifier = Modifier.fillMaxSize(),
                         )
                     }
                 }
@@ -630,11 +629,10 @@ private fun ScannedPhotoTile(title: String, imageUrl: String, contentDescription
                 .background(colors.surface),
             contentAlignment = Alignment.Center,
         ) {
-            AsyncImage(
-                model = imageUrl,
+            ZoomableProductImage(
+                imageUrl = imageUrl,
                 contentDescription = contentDescription,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize().padding(12.dp),
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
