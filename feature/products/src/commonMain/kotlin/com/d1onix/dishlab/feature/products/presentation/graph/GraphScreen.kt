@@ -120,6 +120,7 @@ internal fun GraphContent(
                         tint = if (state.isEditingConnections) colors.onLime else colors.violet,
                         borderColor = if (state.isEditingConnections) colors.lime else colors.border,
                         background = if (state.isEditingConnections) colors.lime else colors.panel,
+                        singleUse = false,
                     )
                     MiseIconCircleButton(
                         icon = MiseIcons.Plus,

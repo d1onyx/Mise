@@ -39,6 +39,7 @@ import com.d1onix.dishlab.designsystem.component.MisePanel
 import com.d1onix.dishlab.designsystem.component.MiseScreenHeader
 import com.d1onix.dishlab.designsystem.component.ProductAvatar
 import com.d1onix.dishlab.designsystem.component.SectionLabel
+import com.d1onix.dishlab.designsystem.component.rememberSingleUseClick
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
@@ -393,13 +394,14 @@ private fun SwipeConnectionAction(
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(8.dp)
+    val singleUseClick = rememberSingleUseClick(onClick = onClick)
     Box(
         modifier = Modifier
             .fillMaxSize()
             .clip(shape)
             .background(color.copy(alpha = 0.14f), shape)
             .border(1.dp, color.copy(alpha = 0.55f), shape)
-            .clickable(onClick = onClick)
+            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick)
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.CenterEnd,
     ) {

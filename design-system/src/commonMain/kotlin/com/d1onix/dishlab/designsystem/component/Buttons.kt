@@ -120,17 +120,19 @@ fun MiseCircleButton(
     size: Int = 38,
     borderColor: Color = MiseTheme.colors.borderStrong,
     background: Color = Color.Transparent,
+    singleUse: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val singleUseClick = rememberSingleUseClick(onClick = onClick)
+    val isEnabled = !singleUse || singleUseClick.enabled
     Box(
         modifier = modifier
-            .alpha(if (singleUseClick.enabled) 1f else 0.45f)
+            .alpha(if (isEnabled) 1f else 0.45f)
             .size(size.dp)
             .clip(CircleShape)
             .background(background, CircleShape)
             .border(1.dp, borderColor, CircleShape)
-            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick),
+            .clickable(enabled = isEnabled, onClick = if (singleUse) singleUseClick else onClick),
         contentAlignment = Alignment.Center,
         content = { content() },
     )
@@ -147,8 +149,9 @@ fun MiseIconCircleButton(
     tint: Color = MiseTheme.colors.text,
     borderColor: Color = MiseTheme.colors.borderStrong,
     background: Color = Color.Transparent,
+    singleUse: Boolean = true,
 ) {
-    MiseCircleButton(onClick, modifier, size, borderColor, background) {
+    MiseCircleButton(onClick, modifier, size, borderColor, background, singleUse) {
         Icon(icon, contentDescription, Modifier.size(iconSize.dp), tint = tint)
     }
 }
