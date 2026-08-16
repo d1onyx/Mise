@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -203,7 +204,7 @@ private fun ProductPickerItem(
     val colors = MiseTheme.colors
     val accent = Color(product.accentColor)
     MisePanel(
-        modifier = Modifier.size(ConnectionPickerWidth, ConnectionPickerHeight),
+        modifier = Modifier.width(92.dp),
         cornerRadius = 8,
         background = if (selected) accent.copy(alpha = 0.10f) else colors.panel,
         borderColor = if (selected) accent.copy(alpha = 0.75f) else colors.border,
@@ -441,8 +442,6 @@ private fun ConnectionSwipeRow(
 private enum class ConnectionSwipeValue { Closed, Revealed, Delete }
 
 private val ConnectionSwipeShape = RoundedCornerShape(14.dp)
-private val ConnectionPickerWidth = 92.dp
-private val ConnectionPickerHeight = 88.dp
 private val ConnectionRowHeight = 64.dp
 
 @Composable
