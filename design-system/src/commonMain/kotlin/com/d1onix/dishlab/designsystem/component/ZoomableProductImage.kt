@@ -71,16 +71,25 @@ private fun ZoomableProductImageDialog(
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var viewportSize by remember { mutableStateOf(IntSize.Zero) }
-    val transformableState = rememberTransformableState { _, zoomChange, panChange, _ ->
+    val transformableState = rememberTransformableState { centroid, zoomChange, panChange, _ ->
         val nextScale = (scale * zoomChange).coerceIn(1f, 5f)
         val maxTranslationX = viewportSize.width * (nextScale - 1f) / 2f
         val maxTranslationY = viewportSize.height * (nextScale - 1f) / 2f
         offset = if (nextScale == 1f) {
             Offset.Zero
         } else {
+            val zoomFactor = nextScale / scale
+            val centroidFromCenter = Offset(
+                x = centroid.x - viewportSize.width / 2f,
+                y = centroid.y - viewportSize.height / 2f,
+            )
             Offset(
-                x = (offset.x + panChange.x).coerceIn(-maxTranslationX, maxTranslationX),
-                y = (offset.y + panChange.y).coerceIn(-maxTranslationY, maxTranslationY),
+                x = (
+                    offset.x * zoomFactor + centroidFromCenter.x * (1f - zoomFactor) + panChange.x
+                    ).coerceIn(-maxTranslationX, maxTranslationX),
+                y = (
+                    offset.y * zoomFactor + centroidFromCenter.y * (1f - zoomFactor) + panChange.y
+                    ).coerceIn(-maxTranslationY, maxTranslationY),
             )
         }
         scale = nextScale
