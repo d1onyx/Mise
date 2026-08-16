@@ -6,6 +6,7 @@ import com.d1onix.dishlab.domain.GetRecipeUseCase
 import com.d1onix.dishlab.domain.GetAllRecipesUseCase
 import com.d1onix.dishlab.domain.GetRecipeCatalogFiltersUseCase
 import com.d1onix.dishlab.domain.GetRecipesForProductsUseCase
+import com.d1onix.dishlab.domain.GetSavedRecipeUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipeIdsUseCase
 import com.d1onix.dishlab.domain.ObserveSavedRecipesUseCase
 import com.d1onix.dishlab.domain.ToggleSavedRecipeUseCase
@@ -23,6 +24,7 @@ import com.d1onyx.core.essentials.di.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 @ContributesBinding(AppScope::class)
@@ -146,4 +148,12 @@ class ToggleSavedRecipeUseCaseImpl(
     private val saved: SavedRecipesRepository,
 ) : ToggleSavedRecipeUseCase {
     override suspend fun invoke(recipe: Recipe) = saved.toggle(recipe)
+}
+
+@ContributesBinding(AppScope::class)
+@Inject
+class GetSavedRecipeUseCaseImpl(
+    private val saved: SavedRecipesRepository,
+) : GetSavedRecipeUseCase {
+    override suspend fun invoke(id: RecipeId): Recipe? = saved.savedRecipes.first().firstOrNull { it.id == id }
 }
