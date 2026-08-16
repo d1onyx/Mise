@@ -124,7 +124,7 @@ fun ScanScreen(viewModel: ScanViewModel, showBackNavigation: Boolean = false) {
         showBackNavigation = showBackNavigation,
         // The camera is a platform concern, injected as a slot so the content
         // itself stays renderable in a preview.
-        cameraPreview = { controls, dispatch -> CameraLayer(controls, dispatch) },
+        cameraPreview = { controls, active, dispatch -> CameraLayer(controls, active, dispatch) },
     )
 }
 
@@ -134,7 +134,7 @@ internal fun ScanContent(
     onAction: (ScanAction) -> Unit,
     showBackNavigation: Boolean = false,
     modifier: Modifier = Modifier,
-    cameraPreview: @Composable (CameraControls, (ScanAction) -> Unit) -> Unit = { _, _ -> },
+    cameraPreview: @Composable (CameraControls, Boolean, (ScanAction) -> Unit) -> Unit = { _, _, _ -> },
 ) {
     val colors = MiseTheme.colors
 
@@ -164,15 +164,27 @@ internal fun ScanContent(
     // Typing a barcode needs neither: the camera goes away entirely and the
     // panel takes the whole screen, leaving room for the keyboard.
     Column(modifier.fillMaxSize().background(colors.backgroundDeep)) {
-        if (!state.manualEntryVisible) {
-            // clipToBounds is the belt to COMPATIBLE's suspenders: even a
-            // TextureView-backed preview can be measured a pixel taller than
-            // its Compose bounds during a resize (rotation, this Box's own
-            // weight changing), and without a hard clip that sliver of live
-            // feed shows past the seam into the panel below.
-            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
-                cameraPreview(state.camera, onAction)
+        // The camera composable stays mounted across the manual-entry toggle
+        // instead of leaving composition — unbinding and rebinding CameraX
+        // (plus closing/recreating the ML Kit scanner) on every keystroke
+        // sheet open/close raced with in-flight analysis frames and could
+        // freeze the app. Manual entry instead shrinks this box to zero and
+        // tells the camera to stop analyzing, which is instant and safe.
+        //
+        // clipToBounds is the belt to COMPATIBLE's suspenders: even a
+        // TextureView-backed preview can be measured a pixel taller than its
+        // Compose bounds during a resize, and without a hard clip that
+        // sliver of live feed shows past the seam into the panel below.
+        Box(
+            if (state.manualEntryVisible) {
+                Modifier.size(0.dp)
+            } else {
+                Modifier.weight(1f).fillMaxWidth().clipToBounds()
+            },
+        ) {
+            cameraPreview(state.camera, !state.manualEntryVisible, onAction)
 
+            if (!state.manualEntryVisible) {
                 // The chrome sits on live video, so it needs its own contrast floor.
                 Box(Modifier.fillMaxSize().background(viewfinderScrim()))
 
@@ -872,7 +884,7 @@ private fun String.cleanNutriScoreGrade(): String? = trim().uppercase()
  * barcode entry work even when a camera is unavailable.
  */
 @Composable
-private fun CameraLayer(controls: CameraControls, onAction: (ScanAction) -> Unit) {
+private fun CameraLayer(controls: CameraControls, active: Boolean, onAction: (ScanAction) -> Unit) {
     val permissions = providePermissions()
     var granted by remember { mutableStateOf(permissions.hasCameraPermission()) }
     var denied by remember { mutableStateOf(false) }
@@ -892,6 +904,7 @@ private fun CameraLayer(controls: CameraControls, onAction: (ScanAction) -> Unit
     ProductBarcodeCamera(
         facing = controls.facing,
         torchOn = controls.torchOn,
+        active = active,
         onBarcodeDetected = { onAction(ScanAction.BarcodeDetected(it)) },
         onCapabilitiesChanged = { onAction(ScanAction.CameraCapabilitiesChanged(it)) },
         modifier = Modifier.fillMaxSize(),
