@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -148,43 +151,97 @@ internal fun ScanContent(
         return
     }
 
-    Box(modifier.fillMaxSize().background(colors.backgroundDeep)) {
-        cameraPreview(state.camera, onAction)
+    // A barcode is a small, flat thing — it never needed the full screen as a
+    // viewfinder. Only the top half is live camera; the bottom half is a
+    // plain panel of controls, not a floating overlay on top of the feed.
+    Column(modifier.fillMaxSize().background(colors.backgroundDeep)) {
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            cameraPreview(state.camera, onAction)
 
-        // The chrome sits on live video, so it needs its own contrast floor.
-        Box(Modifier.fillMaxSize().background(viewfinderScrim()))
+            // The chrome sits on live video, so it needs its own contrast floor.
+            Box(Modifier.fillMaxSize().background(viewfinderScrim()))
+
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .padding(horizontal = 22.dp, vertical = 20.dp)
+                    .screenIn(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                RootScannerTopBar(
+                    isResolving = state.isResolving,
+                    showBackNavigation = showBackNavigation,
+                    onBackClick = { onAction(ScanAction.BackClicked) },
+                )
+
+                Spacer(Modifier.weight(1f))
+
+                ScanReticle(phase = state.phase)
+
+                Spacer(Modifier.height(20.dp))
+                ScanProgressTrail(phase = state.phase, modifier = Modifier.fillMaxWidth())
+
+                Spacer(Modifier.height(14.dp))
+                ScanStatus(state = state, onAction = onAction)
+
+                Spacer(Modifier.weight(1f))
+            }
+        }
+
+        ScannerControlPanel(
+            state = state,
+            onAction = onAction,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        )
+    }
+}
+
+/**
+ * Everything below the viewfinder. Torch and lens-flip sit as labelled hints
+ * in the top corners rather than a bottom-nav-style bar, since they are
+ * occasional actions, not the primary flow through this screen.
+ */
+@Composable
+private fun ScannerControlPanel(
+    state: ScanUiState,
+    onAction: (ScanAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier
+            .background(MiseTheme.colors.backgroundDeep)
+            .safeDrawingPadding()
+            .padding(horizontal = 22.dp, vertical = 20.dp),
+    ) {
+        if (state.camera.canSwitchFacing) {
+            ScanHintButton(
+                icon = MiseIcons.CameraFlip,
+                label = stringResource(Res.string.scan_switch_camera),
+                onClick = { onAction(ScanAction.CameraFacingToggled) },
+                modifier = Modifier.align(Alignment.TopStart),
+            )
+        }
+
+        if (state.camera.canToggleTorch) {
+            ScanHintButton(
+                icon = if (state.camera.torchOn) MiseIcons.Flash else MiseIcons.FlashOff,
+                label = stringResource(
+                    if (state.camera.torchOn) Res.string.scan_torch_off else Res.string.scan_torch_on,
+                ),
+                onClick = { onAction(ScanAction.TorchToggled) },
+                highlighted = state.camera.torchOn,
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
+        }
 
         Column(
             Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(horizontal = 22.dp, vertical = 20.dp)
-                .screenIn(),
+                .align(Alignment.Center)
+                .widthIn(max = 320.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            RootScannerTopBar(
-                isResolving = state.isResolving,
-                showBackNavigation = showBackNavigation,
-                onBackClick = { onAction(ScanAction.BackClicked) },
-            )
-
-            Spacer(Modifier.weight(1f))
-
-            ScanReticle(phase = state.phase)
-
-            Spacer(Modifier.height(26.dp))
-            ScanProgressTrail(phase = state.phase, modifier = Modifier.fillMaxWidth())
-
-            Spacer(Modifier.height(18.dp))
-            ScanStatus(state = state, onAction = onAction)
-
-            Spacer(Modifier.weight(1f))
-
-            if (state.camera.canToggleTorch || state.camera.canSwitchFacing) {
-                CameraControlBar(controls = state.camera, onAction = onAction)
-                Spacer(Modifier.height(16.dp))
-            }
-
             if (state.manualEntryVisible) {
                 MiseSearchField(
                     value = state.manualBarcode,
@@ -211,16 +268,47 @@ internal fun ScanContent(
                     onClick = { onAction(ScanAction.ManualEntryToggled) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(8.dp))
-                // This is navigation, not an alternative way to scan. Keep it
-                // thumb-reachable but visually quieter than scan controls.
+                Spacer(Modifier.height(14.dp))
                 MiseTextAction(
                     text = stringResource(Res.string.scan_browse_recipes),
                     onClick = { onAction(ScanAction.RecipesClicked) },
-                    modifier = Modifier.align(Alignment.End),
                 )
             }
         }
+    }
+}
+
+/** A corner affordance: icon + short caption, read as a hint rather than a toolbar button. */
+@Composable
+private fun ScanHintButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    highlighted: Boolean = false,
+) {
+    val colors = MiseTheme.colors
+    Column(
+        modifier = modifier.width(88.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        MiseIconCircleButton(
+            icon = icon,
+            contentDescription = label,
+            onClick = onClick,
+            size = 44,
+            iconSize = 18,
+            tint = if (highlighted) colors.onLime else colors.text,
+            borderColor = if (highlighted) colors.mint else colors.borderStrong,
+            background = if (highlighted) colors.mint else colors.panel,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = label,
+            style = MiseTheme.typography.monoTiny,
+            color = colors.textMuted,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -981,42 +1069,3 @@ private fun ScanStatus(
     }
 }
 
-/** Torch and lens, shown only once the camera has confirmed it supports them. */
-@Composable
-private fun CameraControlBar(
-    controls: CameraControls,
-    onAction: (ScanAction) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val colors = MiseTheme.colors
-    Row(
-        modifier,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (controls.canToggleTorch) {
-            MiseIconCircleButton(
-                icon = if (controls.torchOn) MiseIcons.Flash else MiseIcons.FlashOff,
-                contentDescription = stringResource(
-                    if (controls.torchOn) Res.string.scan_torch_off else Res.string.scan_torch_on,
-                ),
-                onClick = { onAction(ScanAction.TorchToggled) },
-                size = 48,
-                iconSize = 19,
-                tint = if (controls.torchOn) colors.onLime else colors.text,
-                borderColor = if (controls.torchOn) colors.lime else colors.borderStrong,
-                background = if (controls.torchOn) colors.lime else colors.panel,
-            )
-        }
-        if (controls.canSwitchFacing) {
-            MiseIconCircleButton(
-                icon = MiseIcons.CameraFlip,
-                contentDescription = stringResource(Res.string.scan_switch_camera),
-                onClick = { onAction(ScanAction.CameraFacingToggled) },
-                size = 48,
-                iconSize = 19,
-                background = colors.panel,
-            )
-        }
-    }
-}
