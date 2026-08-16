@@ -21,6 +21,10 @@ data class MiseColors(
     val lime: Color = Color(0xFFC8FF4D),
     val limeDeep: Color = Color(0xFFA6E02E),
     val onLime: Color = Color(0xFF0A1500),
+    /** Softer spring-green used where lime would sit on screen for a long,
+     *  continuous stretch (e.g. the scan viewfinder) — same family, lower
+     *  luminance so it doesn't fatigue the eye like [lime] does. */
+    val mint: Color = Color(0xFF5FE0A6),
     val violet: Color = Color(0xFF8B7BFF),
     val cyan: Color = Color(0xFF4EE9E0),
     val onCyan: Color = Color(0xFF04121A),

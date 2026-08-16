@@ -15,9 +15,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +30,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,17 +41,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.d1onix.dishlab.designsystem.anim.MiseEasing
-import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.anim.screenIn
 import com.d1onix.dishlab.designsystem.component.EmptyState
@@ -115,8 +127,6 @@ import com.d1onix.dishlab.feature.scanner.resources.scan_loading_fact_nutrition
 import com.kashif.cameraK.permissions.providePermissions
 import org.jetbrains.compose.resources.stringResource
 import kotlinx.coroutines.delay
-import kotlin.math.PI
-import kotlin.math.sin
 
 @Composable
 fun ScanScreen(viewModel: ScanViewModel, showBackNavigation: Boolean = false) {
@@ -127,7 +137,7 @@ fun ScanScreen(viewModel: ScanViewModel, showBackNavigation: Boolean = false) {
         showBackNavigation = showBackNavigation,
         // The camera is a platform concern, injected as a slot so the content
         // itself stays renderable in a preview.
-        cameraPreview = { controls, dispatch -> CameraLayer(controls, dispatch) },
+        cameraPreview = { controls, active, dispatch -> CameraLayer(controls, active, dispatch) },
     )
 }
 
@@ -137,7 +147,7 @@ internal fun ScanContent(
     onAction: (ScanAction) -> Unit,
     showBackNavigation: Boolean = false,
     modifier: Modifier = Modifier,
-    cameraPreview: @Composable (CameraControls, (ScanAction) -> Unit) -> Unit = { _, _ -> },
+    cameraPreview: @Composable (CameraControls, Boolean, (ScanAction) -> Unit) -> Unit = { _, _, _ -> },
 ) {
     val colors = MiseTheme.colors
 
@@ -161,49 +171,173 @@ internal fun ScanContent(
         return
     }
 
-    Box(modifier.fillMaxSize().background(colors.backgroundDeep)) {
-        cameraPreview(state.camera, onAction)
+    // A barcode is a small, flat thing — it never needed the full screen as a
+    // viewfinder. Only the top half is live camera; the bottom half is a
+    // plain panel of controls, not a floating overlay on top of the feed.
+    // Typing a barcode needs neither: the camera goes away entirely and the
+    // panel takes the whole screen, leaving room for the keyboard.
+    Column(modifier.fillMaxSize().background(colors.backgroundDeep)) {
+        // The camera composable stays mounted across the manual-entry toggle
+        // instead of leaving composition — unbinding and rebinding CameraX
+        // (plus closing/recreating the ML Kit scanner) on every keystroke
+        // sheet open/close raced with in-flight analysis frames and could
+        // freeze the app. Manual entry instead shrinks this box to zero and
+        // tells the camera to stop analyzing, which is instant and safe.
+        //
+        // clipToBounds is the belt to COMPATIBLE's suspenders: even a
+        // TextureView-backed preview can be measured a pixel taller than its
+        // Compose bounds during a resize, and without a hard clip that
+        // sliver of live feed shows past the seam into the panel below.
+        Box(
+            if (state.manualEntryVisible) {
+                Modifier.size(0.dp)
+            } else {
+                Modifier.weight(1f).fillMaxWidth().clipToBounds()
+            },
+        ) {
+            cameraPreview(state.camera, !state.manualEntryVisible, onAction)
 
-        // The chrome sits on live video, so it needs its own contrast floor.
-        Box(Modifier.fillMaxSize().background(viewfinderScrim()))
+            if (!state.manualEntryVisible) {
+                // The chrome sits on live video, so it needs its own contrast floor.
+                Box(Modifier.fillMaxSize().background(viewfinderScrim()))
+
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .padding(horizontal = 22.dp, vertical = 20.dp)
+                        .screenIn(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    RootScannerTopBar(
+                        isResolving = state.isResolving,
+                        showBackNavigation = showBackNavigation,
+                        onBackClick = { onAction(ScanAction.BackClicked) },
+                    )
+
+                    Spacer(Modifier.weight(1f))
+
+                    // Smaller than the old full-screen reticle: this box is
+                    // now only half the display, so the frame has to fit
+                    // alongside the top bar and status text without clipping.
+                    ScanReticle(phase = state.phase, reticleSize = 190.dp)
+
+                    Spacer(Modifier.height(16.dp))
+                    ScanProgressTrail(phase = state.phase, modifier = Modifier.fillMaxWidth())
+
+                    Spacer(Modifier.height(12.dp))
+                    ScanStatus(state = state, onAction = onAction)
+
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+
+        ScannerControlPanel(
+            state = state,
+            onAction = onAction,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        )
+    }
+}
+
+/**
+ * Everything below the viewfinder. Torch and lens-flip sit as labelled hints
+ * in the top corners rather than a bottom-nav-style bar, since they are
+ * occasional actions, not the primary flow through this screen. They step
+ * aside while manual entry is open so the keyboard flow never has to share
+ * the panel with them.
+ */
+@Composable
+private fun ScannerControlPanel(
+    state: ScanUiState,
+    onAction: (ScanAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MiseTheme.colors
+    Box(
+        modifier
+            .background(colors.surface)
+            .then(
+                // Only a straight top rule — no sides, no rounding. It's the
+                // seam with the camera above; the panel expands to fill the
+                // whole screen for manual entry, so there's no seam to mark.
+                if (state.manualEntryVisible) {
+                    Modifier
+                } else {
+                    Modifier.drawBehind {
+                        // Fading mint accent instead of a flat hairline —
+                        // it reads as a deliberate seam, not a stray rule.
+                        drawLine(
+                            brush = Brush.horizontalGradient(
+                                listOf(Color.Transparent, colors.mint.copy(alpha = 0.7f), Color.Transparent),
+                            ),
+                            start = Offset.Zero,
+                            end = Offset(size.width, 0f),
+                            strokeWidth = 2.dp.toPx(),
+                        )
+                    }
+                },
+            )
+            .safeDrawingPadding()
+            // Only relevant once the panel fills the screen for manual entry:
+            // keeps the field and buttons clear of the keyboard instead of
+            // sitting underneath it.
+            .imePadding()
+            .padding(horizontal = 22.dp, vertical = 20.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        if (!state.manualEntryVisible) {
+            if (state.camera.canSwitchFacing) {
+                ScanHintButton(
+                    icon = MiseIcons.CameraFlip,
+                    label = stringResource(Res.string.scan_switch_camera),
+                    onClick = { onAction(ScanAction.CameraFacingToggled) },
+                    modifier = Modifier.align(Alignment.TopStart),
+                )
+            }
+
+            if (state.camera.canToggleTorch) {
+                ScanHintButton(
+                    icon = if (state.camera.torchOn) MiseIcons.Flash else MiseIcons.FlashOff,
+                    label = stringResource(
+                        if (state.camera.torchOn) Res.string.scan_torch_off else Res.string.scan_torch_on,
+                    ),
+                    onClick = { onAction(ScanAction.TorchToggled) },
+                    highlighted = state.camera.torchOn,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
+        }
+
+        val manualBarcodeFocusRequester = remember { FocusRequester() }
+        // Grabs focus the moment the field appears, so the keyboard is
+        // already up and ready to type — no extra tap to reach it.
+        LaunchedEffect(state.manualEntryVisible) {
+            if (state.manualEntryVisible) manualBarcodeFocusRequester.requestFocus()
+        }
 
         Column(
             Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(horizontal = 22.dp, vertical = 20.dp)
-                .screenIn(),
+                .align(if (state.manualEntryVisible) Alignment.Center else Alignment.TopCenter)
+                .widthIn(max = 320.dp)
+                .fillMaxWidth()
+                // Not manual entry: anchored below the corner hints instead
+                // of dead-centered, so it can never sit under them. Manual
+                // entry: centered in the (now full-screen, keyboard-clear)
+                // panel instead of pinned near the top, so the field sits at
+                // a comfortable thumb reach rather than up near the notch.
+                .then(if (state.manualEntryVisible) Modifier else Modifier.padding(top = 84.dp)),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            RootScannerTopBar(
-                isResolving = state.isResolving,
-                showBackNavigation = showBackNavigation,
-                onBackClick = { onAction(ScanAction.BackClicked) },
-            )
-
-            Spacer(Modifier.weight(1f))
-
-            ScanReticle(phase = state.phase)
-
-            Spacer(Modifier.height(26.dp))
-            ScanProgressTrail(phase = state.phase, modifier = Modifier.fillMaxWidth())
-
-            Spacer(Modifier.height(18.dp))
-            ScanStatus(state = state, onAction = onAction)
-
-            Spacer(Modifier.weight(1f))
-
-            if (state.camera.canToggleTorch || state.camera.canSwitchFacing) {
-                CameraControlBar(controls = state.camera, onAction = onAction)
-                Spacer(Modifier.height(16.dp))
-            }
-
             if (state.manualEntryVisible) {
                 MiseSearchField(
                     value = state.manualBarcode,
                     onValueChange = { onAction(ScanAction.ManualBarcodeChanged(it)) },
                     placeholder = stringResource(Res.string.scan_manual_placeholder),
                     modifier = Modifier.fillMaxWidth(),
+                    textFieldModifier = Modifier.focusRequester(manualBarcodeFocusRequester),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
                 Spacer(Modifier.height(12.dp))
                 MisePrimaryButton(
@@ -224,16 +358,49 @@ internal fun ScanContent(
                     onClick = { onAction(ScanAction.ManualEntryToggled) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(8.dp))
-                // This is navigation, not an alternative way to scan. Keep it
-                // thumb-reachable but visually quieter than scan controls.
+                Spacer(Modifier.height(14.dp))
                 MiseTextAction(
                     text = stringResource(Res.string.scan_browse_recipes),
                     onClick = { onAction(ScanAction.RecipesClicked) },
-                    modifier = Modifier.align(Alignment.End),
                 )
             }
         }
+    }
+}
+
+/** A corner affordance: icon + short caption, read as a hint rather than a toolbar button. */
+@Composable
+private fun ScanHintButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    highlighted: Boolean = false,
+) {
+    val colors = MiseTheme.colors
+    Column(
+        modifier = modifier.width(104.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        MiseIconCircleButton(
+            icon = icon,
+            contentDescription = label,
+            onClick = onClick,
+            size = 44,
+            iconSize = 18,
+            tint = if (highlighted) colors.onLime else colors.text,
+            borderColor = if (highlighted) colors.mint else colors.borderStrong,
+            background = if (highlighted) colors.mint else colors.panel,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = label,
+            style = MiseTheme.typography.monoTiny,
+            color = colors.textMuted,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -723,7 +890,7 @@ private fun String.cleanNutriScoreGrade(): String? = trim().uppercase()
  * barcode entry work even when a camera is unavailable.
  */
 @Composable
-private fun CameraLayer(controls: CameraControls, onAction: (ScanAction) -> Unit) {
+private fun CameraLayer(controls: CameraControls, active: Boolean, onAction: (ScanAction) -> Unit) {
     val permissions = providePermissions()
     var granted by remember { mutableStateOf(permissions.hasCameraPermission()) }
     var denied by remember { mutableStateOf(false) }
@@ -743,6 +910,7 @@ private fun CameraLayer(controls: CameraControls, onAction: (ScanAction) -> Unit
     ProductBarcodeCamera(
         facing = controls.facing,
         torchOn = controls.torchOn,
+        active = active,
         onBarcodeDetected = { onAction(ScanAction.BarcodeDetected(it)) },
         onCapabilitiesChanged = { onAction(ScanAction.CameraCapabilitiesChanged(it)) },
         modifier = Modifier.fillMaxSize(),
@@ -776,17 +944,17 @@ private fun viewfinderScrim(): Brush = Brush.verticalGradient(
 )
 
 /**
- * The 250dp reticle. Everything about it is derived from [phase], so the frame
- * itself reports what the scanner is doing: lime and sweeping while it hunts,
- * snapped wide and still the moment a code is locked, cyan with a spinner while
- * the lookup runs, red when it failed.
+ * The reticle. Everything about it is derived from [phase], so the frame
+ * itself reports what the scanner is doing: mint and sweeping top-to-bottom
+ * while it hunts, snapped wide and still the moment a code is locked, cyan
+ * with a spinner while the lookup runs, red when it failed.
  */
 @Composable
-private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier) {
+private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier, reticleSize: Dp = 250.dp) {
     val colors = MiseTheme.colors
     val accent by animateColorAsState(
         targetValue = when (phase) {
-            ScanPhase.Searching -> colors.lime
+            ScanPhase.Searching -> colors.mint
             ScanPhase.Resolving -> colors.cyan
             ScanPhase.Failed -> colors.red
         },
@@ -799,17 +967,10 @@ private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier) {
         animationSpec = tween(durationMillis = 340, easing = MiseEasing),
         label = "reticleCorner",
     )
-    val barAlpha by animateFloatAsState(
-        targetValue = if (phase == ScanPhase.Searching) 1f else 0.25f,
-        animationSpec = tween(durationMillis = 340, easing = MiseEasing),
-        label = "reticleBars",
-    )
-
-    val sweep = rememberSweep(durationMillis = 2400, label = "scanLine")
-    val pulse = rememberPulse(durationMillis = 2400, from = 0.25f, to = 0.6f, label = "scanPulse")
+    val sweep = rememberSweep(durationMillis = 1800, label = "scanLine")
     val spin = rememberSweep(durationMillis = 1100, label = "scanSpin")
 
-    Canvas(modifier.size(250.dp)) {
+    Canvas(modifier.size(reticleSize)) {
         val corner = size.minDimension * cornerFraction
         val stroke = 3.dp.toPx()
         val inset = 24.dp.toPx()
@@ -828,23 +989,10 @@ private fun ScanReticle(phase: ScanPhase, modifier: Modifier = Modifier) {
             }
         }
 
-        // The decorative barcode behind the line, faded out once a real code won.
-        val bars = listOf(8, 3, 5, 2, 7, 3, 9, 2, 4, 6, 3, 8, 2, 5, 3, 7)
-        var x = inset + 20.dp.toPx()
-        bars.forEach { width ->
-            drawRect(
-                color = accent,
-                topLeft = Offset(x, size.height / 2 - 45.dp.toPx()),
-                size = Size(width.dp.toPx() * 0.7f, 90.dp.toPx()),
-                alpha = pulse.value * barAlpha,
-            )
-            x += (width + 3).dp.toPx() * 0.7f
-        }
-
         if (phase == ScanPhase.Searching) {
-            // `sin` turns the linear sweep into the prototype's back-and-forth line.
-            val travel = sin(sweep.value * 2f * PI.toFloat()) * (size.height / 2 - inset)
-            val y = size.height / 2 + travel
+            // Straight top-to-bottom sweep that snaps back to the top on
+            // restart — reads as the line "blinking" downward each pass.
+            val y = inset + sweep.value * (size.height - 2 * inset)
             drawLine(
                 brush = Brush.horizontalGradient(
                     listOf(Color.Transparent, accent, Color.Transparent),
@@ -886,7 +1034,7 @@ private fun ScanProgressTrail(phase: ScanPhase, modifier: Modifier = Modifier) {
         ScanPhase.Searching -> -1
         ScanPhase.Resolving, ScanPhase.Failed -> 1
     }
-    val accent = if (phase == ScanPhase.Failed) colors.red else colors.lime
+    val accent = if (phase == ScanPhase.Failed) colors.red else colors.mint
 
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         steps.forEachIndexed { index, label ->
@@ -995,42 +1143,3 @@ private fun ScanStatus(
     }
 }
 
-/** Torch and lens, shown only once the camera has confirmed it supports them. */
-@Composable
-private fun CameraControlBar(
-    controls: CameraControls,
-    onAction: (ScanAction) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val colors = MiseTheme.colors
-    Row(
-        modifier,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (controls.canToggleTorch) {
-            MiseIconCircleButton(
-                icon = if (controls.torchOn) MiseIcons.Flash else MiseIcons.FlashOff,
-                contentDescription = stringResource(
-                    if (controls.torchOn) Res.string.scan_torch_off else Res.string.scan_torch_on,
-                ),
-                onClick = { onAction(ScanAction.TorchToggled) },
-                size = 48,
-                iconSize = 19,
-                tint = if (controls.torchOn) colors.onLime else colors.text,
-                borderColor = if (controls.torchOn) colors.lime else colors.borderStrong,
-                background = if (controls.torchOn) colors.lime else colors.panel,
-            )
-        }
-        if (controls.canSwitchFacing) {
-            MiseIconCircleButton(
-                icon = MiseIcons.CameraFlip,
-                contentDescription = stringResource(Res.string.scan_switch_camera),
-                onClick = { onAction(ScanAction.CameraFacingToggled) },
-                size = 48,
-                iconSize = 19,
-                background = colors.panel,
-            )
-        }
-    }
-}

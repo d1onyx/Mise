@@ -18,6 +18,7 @@ import com.kashif.qrscannerplugin.QRScannerPlugin
 actual fun ProductBarcodeCamera(
     facing: CameraFacing,
     torchOn: Boolean,
+    active: Boolean,
     onBarcodeDetected: (String) -> Unit,
     onCapabilitiesChanged: (CameraCapabilities) -> Unit,
     modifier: Modifier,
@@ -28,9 +29,13 @@ actual fun ProductBarcodeCamera(
         setupPlugins = { holder -> scanner.attachToStateHolder(holder) },
     )
     val capabilitiesState = rememberUpdatedState(onCapabilitiesChanged)
+    val activeState = rememberUpdatedState(active)
 
     LaunchedEffect(scanner) {
-        scanner.getQrCodeFlow().collect(onBarcodeDetected)
+        // Manual entry pauses detection without tearing the camera down —
+        // mirrors the Android side, so a code drifting into frame while the
+        // user is typing can't hijack them into the resolving screen.
+        scanner.getQrCodeFlow().collect { if (activeState.value) onBarcodeDetected(it) }
     }
 
     val ready = cameraState as? CameraKState.Ready

@@ -5,8 +5,12 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import android.util.Size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -14,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,7 +30,9 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 
 /**
  * CameraX scanner for product codes. ML Kit receives the CameraX rotation so
@@ -35,6 +42,7 @@ import java.util.concurrent.Executors
 actual fun ProductBarcodeCamera(
     facing: CameraFacing,
     torchOn: Boolean,
+    active: Boolean,
     onBarcodeDetected: (String) -> Unit,
     onCapabilitiesChanged: (CameraCapabilities) -> Unit,
     modifier: Modifier,
@@ -43,15 +51,23 @@ actual fun ProductBarcodeCamera(
     val lifecycleOwner = LocalLifecycleOwner.current
     val callbackState = rememberUpdatedState(onBarcodeDetected)
     val capabilitiesState = rememberUpdatedState(onCapabilitiesChanged)
+    val activeState = rememberUpdatedState(active)
     val previewView = remember {
         PreviewView(context).apply {
             scaleType = PreviewView.ScaleType.FILL_CENTER
+            // PERFORMANCE (the default) backs the preview with a SurfaceView,
+            // which is composited by the OS on its own layer instead of being
+            // drawn through Compose's canvas. That layer ignores our rounded
+            // panel's clip path, so slivers of the live feed showed through
+            // past its intended bounds. COMPATIBLE uses a TextureView instead,
+            // which is a normal View and clips correctly against Compose UI.
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
         }
     }
     val executor = remember { Executors.newSingleThreadExecutor() }
     val scanner = remember { BarcodeScanning.getClient(productBarcodeOptions) }
-    val analyzer = remember(scanner) {
-        MlKitProductBarcodeAnalyzer(scanner) { callbackState.value(it) }
+    val analyzer = remember(scanner, executor) {
+        MlKitProductBarcodeAnalyzer(scanner, executor, activeState) { callbackState.value(it) }
     }
 
     // Held so the torch effect below can reach the camera CameraX handed back.
@@ -69,6 +85,21 @@ actual fun ProductBarcodeCamera(
                 val analysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
+                    // A barcode needs far less detail than the sensor's default max
+                    // resolution. Capping analysis frames to ~720p keeps ML Kit's
+                    // per-frame decode cheap so it never backs up behind the live
+                    // preview and stutters it — plenty of pixels for a barcode.
+                    .setResolutionSelector(
+                        ResolutionSelector.Builder()
+                            .setResolutionStrategy(
+                                ResolutionStrategy(
+                                    Size(1280, 720),
+                                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+                                ),
+                            )
+                            .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                            .build(),
+                    )
                     .build()
                     .also { it.setAnalyzer(executor, analyzer) }
 
@@ -135,11 +166,21 @@ private fun ProcessCameraProvider.hasCameraSafely(selector: CameraSelector): Boo
 
 private class MlKitProductBarcodeAnalyzer(
     private val scanner: BarcodeScanner,
+    private val executor: Executor,
+    private val active: State<Boolean>,
     private val onBarcodeDetected: (String) -> Unit,
 ) : ImageAnalysis.Analyzer {
     private val isProcessing = AtomicBoolean(false)
 
     override fun analyze(image: ImageProxy) {
+        // Manual entry pauses analysis without unbinding the camera: a
+        // barcode drifting into frame while the user is typing must not
+        // hijack them into the resolving screen.
+        if (!active.value) {
+            image.close()
+            return
+        }
+
         if (!isProcessing.compareAndSet(false, true)) {
             image.close()
             return
@@ -152,17 +193,42 @@ private class MlKitProductBarcodeAnalyzer(
             return
         }
 
-            val input = InputImage.fromMediaImage(mediaImage, image.imageInfo.rotationDegrees)
-            scanner.process(input)
-                .addOnSuccessListener { barcodes ->
-                    barcodes.firstNotNullOfOrNull(Barcode::getRawValue)
-                        ?.takeIf(String::isNotBlank)
-                        ?.let(onBarcodeDetected)
-                }
-                .addOnCompleteListener {
-                    isProcessing.set(false)
-                    image.close()
-                }
+        val input = InputImage.fromMediaImage(mediaImage, image.imageInfo.rotationDegrees)
+        // Google Play services Tasks default their listeners to the *main*
+        // thread when no executor is given, even though analyze() itself
+        // already runs on the background [executor]. Left unset, every
+        // barcode result and the ImageProxy.close() that follows it hopped
+        // onto the UI thread and fought the Compose animations for frame
+        // time — the visible camera lag. Pinning both listeners to the same
+        // background executor keeps that work off the UI thread entirely.
+        //
+        // Wrapped in rejectSafely(): a successful scan navigates away, which
+        // disposes this composable and shuts the executor down — but ML Kit
+        // resolves this same Task asynchronously and, on a background
+        // thread, tries to hand the result back through the now-terminated
+        // executor. That threw RejectedExecutionException straight out of
+        // Play Services' own Handler.dispatchMessage on the main thread,
+        // crashing the app on every scan. The result is moot once the
+        // screen is gone, so the rejection is simply dropped.
+        scanner.process(input)
+            .addOnSuccessListener(executor.rejectSafely()) { barcodes ->
+                barcodes.firstNotNullOfOrNull(Barcode::getRawValue)
+                    ?.takeIf(String::isNotBlank)
+                    ?.let(onBarcodeDetected)
+            }
+            .addOnCompleteListener(executor.rejectSafely()) {
+                isProcessing.set(false)
+                image.close()
+            }
+    }
+}
+
+private fun Executor.rejectSafely(): Executor = Executor { command ->
+    try {
+        execute(command)
+    } catch (_: RejectedExecutionException) {
+        // The executor was shut down after the screen was left — nothing
+        // is listening for this result anymore.
     }
 }
 
