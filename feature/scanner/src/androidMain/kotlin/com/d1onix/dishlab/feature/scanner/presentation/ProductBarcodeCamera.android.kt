@@ -51,6 +51,13 @@ actual fun ProductBarcodeCamera(
     val previewView = remember {
         PreviewView(context).apply {
             scaleType = PreviewView.ScaleType.FILL_CENTER
+            // PERFORMANCE (the default) backs the preview with a SurfaceView,
+            // which is composited by the OS on its own layer instead of being
+            // drawn through Compose's canvas. That layer ignores our rounded
+            // panel's clip path, so slivers of the live feed showed through
+            // past its intended bounds. COMPATIBLE uses a TextureView instead,
+            // which is a normal View and clips correctly against Compose UI.
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
         }
     }
     val executor = remember { Executors.newSingleThreadExecutor() }

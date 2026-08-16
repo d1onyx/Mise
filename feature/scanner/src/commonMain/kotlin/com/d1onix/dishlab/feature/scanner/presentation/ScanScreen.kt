@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -158,57 +159,61 @@ internal fun ScanContent(
     // A barcode is a small, flat thing — it never needed the full screen as a
     // viewfinder. Only the top half is live camera; the bottom half is a
     // plain panel of controls, not a floating overlay on top of the feed.
+    // Typing a barcode needs neither: the camera goes away entirely and the
+    // panel takes the whole screen, leaving room for the keyboard.
     Column(modifier.fillMaxSize().background(colors.backgroundDeep)) {
-        Box(Modifier.weight(1f).fillMaxWidth()) {
-            cameraPreview(state.camera, onAction)
+        if (!state.manualEntryVisible) {
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                cameraPreview(state.camera, onAction)
 
-            // The chrome sits on live video, so it needs its own contrast floor.
-            Box(Modifier.fillMaxSize().background(viewfinderScrim()))
+                // The chrome sits on live video, so it needs its own contrast floor.
+                Box(Modifier.fillMaxSize().background(viewfinderScrim()))
 
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .safeDrawingPadding()
-                    .padding(horizontal = 22.dp, vertical = 20.dp)
-                    .screenIn(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                RootScannerTopBar(
-                    isResolving = state.isResolving,
-                    showBackNavigation = showBackNavigation,
-                    onBackClick = { onAction(ScanAction.BackClicked) },
-                )
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .padding(horizontal = 22.dp, vertical = 20.dp)
+                        .screenIn(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    RootScannerTopBar(
+                        isResolving = state.isResolving,
+                        showBackNavigation = showBackNavigation,
+                        onBackClick = { onAction(ScanAction.BackClicked) },
+                    )
 
-                Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.weight(1f))
 
-                // Smaller than the old full-screen reticle: this box is now
-                // only half the display, so the frame has to fit alongside
-                // the top bar and status text without clipping either.
-                ScanReticle(phase = state.phase, reticleSize = 190.dp)
+                    // Smaller than the old full-screen reticle: this box is
+                    // now only half the display, so the frame has to fit
+                    // alongside the top bar and status text without clipping.
+                    ScanReticle(phase = state.phase, reticleSize = 190.dp)
 
-                Spacer(Modifier.height(16.dp))
-                ScanProgressTrail(phase = state.phase, modifier = Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(16.dp))
+                    ScanProgressTrail(phase = state.phase, modifier = Modifier.fillMaxWidth())
 
-                Spacer(Modifier.height(12.dp))
-                ScanStatus(state = state, onAction = onAction)
+                    Spacer(Modifier.height(12.dp))
+                    ScanStatus(state = state, onAction = onAction)
 
-                Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.weight(1f))
+                }
             }
-        }
 
-        // A hard edge here would read as "the camera just got cut off", so the
-        // seam is a visible accent rule plus a panel that rounds up into it —
-        // it reads as a deliberate sheet, not a clipped viewfinder.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(2.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(Color.Transparent, colors.mint.copy(alpha = 0.7f), Color.Transparent),
+            // A hard edge here would read as "the camera just got cut off", so
+            // the seam is a visible accent rule plus a panel that rounds up
+            // into it — it reads as a deliberate sheet, not a clipped feed.
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(Color.Transparent, colors.mint.copy(alpha = 0.7f), Color.Transparent),
+                        ),
                     ),
-                ),
-        )
+            )
+        }
 
         ScannerControlPanel(
             state = state,
@@ -242,6 +247,10 @@ private fun ScannerControlPanel(
                 RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
             )
             .safeDrawingPadding()
+            // Only relevant once the panel fills the screen for manual entry:
+            // keeps the field and buttons clear of the keyboard instead of
+            // sitting underneath it.
+            .imePadding()
             .padding(horizontal = 22.dp, vertical = 20.dp)
             .verticalScroll(rememberScrollState()),
     ) {
@@ -275,7 +284,7 @@ private fun ScannerControlPanel(
                 .fillMaxWidth()
                 // Anchored below the corner hints (when they're showing)
                 // instead of dead-centered, so it can never sit under them.
-                .padding(top = if (state.manualEntryVisible) 0.dp else 84.dp),
+                .padding(top = if (state.manualEntryVisible) 24.dp else 84.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (state.manualEntryVisible) {
