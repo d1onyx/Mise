@@ -45,7 +45,7 @@ import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.anim.rememberSweep
 import com.d1onix.dishlab.designsystem.component.MiseIconCircleButton
 import com.d1onix.dishlab.designsystem.component.MisePrimaryButton
-import com.d1onix.dishlab.designsystem.component.rememberDebouncedClick
+import com.d1onix.dishlab.designsystem.component.rememberSingleUseClick
 import com.d1onix.dishlab.designsystem.icon.MiseIcons
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
@@ -226,12 +226,12 @@ private fun GraphLoadingSkeleton(modifier: Modifier = Modifier) {
 @Composable
 private fun GraphTitleButton(onClick: () -> Unit) {
     val colors = MiseTheme.colors
-    val debouncedClick = rememberDebouncedClick(onClick = onClick)
+    val singleUseClick = rememberSingleUseClick(onClick = onClick)
     Row(
         modifier = Modifier
-            .alpha(if (debouncedClick.enabled) 1f else 0.45f)
+            .alpha(if (singleUseClick.enabled) 1f else 0.45f)
             .clip(RoundedCornerShape(8.dp))
-            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick)
+            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick)
             .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),

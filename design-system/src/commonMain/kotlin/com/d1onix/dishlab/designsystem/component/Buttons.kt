@@ -37,8 +37,8 @@ fun MisePrimaryButton(
 ) {
     val colors = MiseTheme.colors
     val shape = RoundedCornerShape(18.dp)
-    val debouncedClick = rememberDebouncedClick(onClick = onClick)
-    val isEnabled = enabled && debouncedClick.enabled
+    val singleUseClick = rememberSingleUseClick(onClick = onClick)
+    val isEnabled = enabled && singleUseClick.enabled
     Box(
         modifier = modifier
             .alpha(if (isEnabled) 1f else 0.45f)
@@ -53,7 +53,7 @@ fun MisePrimaryButton(
                 brush = Brush.linearGradient(listOf(colors.lime, colors.limeDeep)),
                 shape = shape,
             )
-            .clickable(enabled = isEnabled, onClick = debouncedClick)
+            .clickable(enabled = isEnabled, onClick = singleUseClick)
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
     ) {
@@ -76,13 +76,13 @@ fun MiseGhostButton(
 ) {
     val colors = MiseTheme.colors
     val shape = RoundedCornerShape(16.dp)
-    val debouncedClick = rememberDebouncedClick(onClick = onClick)
+    val singleUseClick = rememberSingleUseClick(onClick = onClick)
     Box(
         modifier = modifier
-            .alpha(if (debouncedClick.enabled) 1f else 0.45f)
+            .alpha(if (singleUseClick.enabled) 1f else 0.45f)
             .clip(shape)
             .border(1.dp, colors.border, shape)
-            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick)
+            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick)
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
     ) {
@@ -98,16 +98,16 @@ fun MiseTextAction(
     modifier: Modifier = Modifier,
     color: Color = MiseTheme.colors.textFaint,
 ) {
-    val debouncedClick = rememberDebouncedClick(onClick = onClick)
+    val singleUseClick = rememberSingleUseClick(onClick = onClick)
     Text(
         text = text,
         style = MiseTheme.typography.monoSmall,
         color = color,
         textAlign = TextAlign.Center,
         modifier = modifier
-            .alpha(if (debouncedClick.enabled) 1f else 0.45f)
+            .alpha(if (singleUseClick.enabled) 1f else 0.45f)
             .clip(RoundedCornerShape(8.dp))
-            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick)
+            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick)
             .padding(vertical = 6.dp),
     )
 }
@@ -122,15 +122,15 @@ fun MiseCircleButton(
     background: Color = Color.Transparent,
     content: @Composable () -> Unit,
 ) {
-    val debouncedClick = rememberDebouncedClick(onClick = onClick)
+    val singleUseClick = rememberSingleUseClick(onClick = onClick)
     Box(
         modifier = modifier
-            .alpha(if (debouncedClick.enabled) 1f else 0.45f)
+            .alpha(if (singleUseClick.enabled) 1f else 0.45f)
             .size(size.dp)
             .clip(CircleShape)
             .background(background, CircleShape)
             .border(1.dp, borderColor, CircleShape)
-            .clickable(enabled = debouncedClick.enabled, onClick = debouncedClick),
+            .clickable(enabled = singleUseClick.enabled, onClick = singleUseClick),
         contentAlignment = Alignment.Center,
         content = { content() },
     )

@@ -36,15 +36,15 @@ fun MisePanel(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(cornerRadius.dp)
-    val debouncedClick = onClick?.let { rememberDebouncedClick(onClick = it) }
+    val singleUseClick = onClick?.let { rememberSingleUseClick(onClick = it) }
     Box(
         modifier = modifier
             .clip(shape)
             .background(background, shape)
             .border(1.dp, borderColor, shape)
             .let {
-                if (debouncedClick != null) {
-                    it.clickable(enabled = debouncedClick.enabled, onClick = debouncedClick)
+                if (singleUseClick != null) {
+                    it.clickable(enabled = singleUseClick.enabled, onClick = singleUseClick)
                 } else {
                     it
                 }

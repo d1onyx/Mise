@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextAlign
 import com.d1onix.dishlab.designsystem.anim.rememberPulse
 import com.d1onix.dishlab.designsystem.component.ScoreBadge
+import com.d1onix.dishlab.designsystem.component.rememberSingleUseClick
 import com.d1onix.dishlab.designsystem.theme.MiseTheme
 import com.d1onix.dishlab.domain.model.Product
 import kotlin.math.roundToInt
@@ -62,9 +64,11 @@ fun ProductNode(
     val currentOnDragStart by rememberUpdatedState(onDragStart)
     val currentOnDragEnd by rememberUpdatedState(onDragEnd)
     val currentOnClick by rememberUpdatedState(onClick)
+    val singleUseClick = rememberSingleUseClick { currentOnClick() }
 
     Column(
         modifier = modifier
+            .alpha(if (singleUseClick.enabled) 1f else 0.7f)
             .width(ProductNodeSize)
             .offset { position().let { IntOffset(it.x.roundToInt(), it.y.roundToInt()) } }
             .pointerInput(product.id) {
@@ -78,7 +82,7 @@ fun ProductNode(
                 }
             }
             .pointerInput(product.id) {
-                detectTapGestures { currentOnClick() }
+                detectTapGestures { singleUseClick() }
             },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
