@@ -22,6 +22,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -68,9 +70,19 @@ private fun ZoomableProductImageDialog(
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+    var viewportSize by remember { mutableStateOf(IntSize.Zero) }
     val transformableState = rememberTransformableState { _, zoomChange, panChange, _ ->
         val nextScale = (scale * zoomChange).coerceIn(1f, 5f)
-        offset = if (nextScale == 1f) Offset.Zero else offset + panChange
+        val maxTranslationX = viewportSize.width * (nextScale - 1f) / 2f
+        val maxTranslationY = viewportSize.height * (nextScale - 1f) / 2f
+        offset = if (nextScale == 1f) {
+            Offset.Zero
+        } else {
+            Offset(
+                x = (offset.x + panChange.x).coerceIn(-maxTranslationX, maxTranslationX),
+                y = (offset.y + panChange.y).coerceIn(-maxTranslationY, maxTranslationY),
+            )
+        }
         scale = nextScale
     }
 
@@ -89,6 +101,7 @@ private fun ZoomableProductImageDialog(
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .fillMaxSize()
+                    .onSizeChanged { viewportSize = it }
                     .transformable(transformableState)
                     .graphicsLayer {
                         scaleX = scale
