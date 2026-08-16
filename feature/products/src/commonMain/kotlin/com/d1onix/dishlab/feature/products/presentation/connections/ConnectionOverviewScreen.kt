@@ -350,6 +350,7 @@ private fun ConnectionProductRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(ConnectionRowHeight)
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -367,6 +368,7 @@ private fun ConnectionProductRow(
                         ),
                         style = MiseTheme.typography.monoTiny,
                         color = if (connected) colors.lime else colors.textMuted,
+                        maxLines = 1,
                     )
                 }
                 Icon(
@@ -440,6 +442,7 @@ private fun ConnectionSwipeRow(
 private enum class ConnectionSwipeValue { Closed, Revealed, Delete }
 
 private val ConnectionSwipeShape = RoundedCornerShape(14.dp)
+private val ConnectionRowHeight = 80.dp
 
 @Composable
 private fun SwipeConnectionAction(
